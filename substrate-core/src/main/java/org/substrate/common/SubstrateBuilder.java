@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.substrate.serialization.SubstrateSerializer;
 
 public class SubstrateBuilder {
-    private static final Logger LOG = LoggerFactory.getLogger(SubstrateBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(SubstrateBuilder.class);
 
     int archiverPort = 0;
     String hostAddress = null;
@@ -24,6 +24,7 @@ public class SubstrateBuilder {
     }
 
     public Substrate build() {
+        log.info("foo!");
         return null;
     }
 
