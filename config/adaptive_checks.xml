@@ -58,8 +58,10 @@
       <property name="tokens" value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
     </module>
     <module name="NeedBraces"/>
-    <module name="LeftCurly"/>
-    <module name="RightCurly"/>
+    <module name="LeftCurly">
+      <property name="option" value="nl"/>
+    </module>
+
     <module name="RightCurly">
       <property name="option" value="alone"/>
       <property name="tokens"

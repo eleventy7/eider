@@ -55,4 +55,5 @@ allprojects {
 
 project('substrate-core') {
     apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
 }

@@ -1,4 +1,5 @@
 package org.substrate.common;
 
-public class ChannelBuilder {
+public class ChannelBuilder
+{
 }

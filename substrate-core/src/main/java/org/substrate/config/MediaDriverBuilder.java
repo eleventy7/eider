@@ -1,4 +1,5 @@
 package org.substrate.config;
 
-public class MediaDriverBuilder {
+public class MediaDriverBuilder
+{
 }

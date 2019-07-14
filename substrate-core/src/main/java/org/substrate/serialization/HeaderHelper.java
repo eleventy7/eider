@@ -1,4 +1,5 @@
 package org.substrate.serialization;
 
-public class HeaderHelper {
+public class HeaderHelper
+{
 }

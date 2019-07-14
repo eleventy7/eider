@@ -1,5 +1,6 @@
 package org.substrate.common;
 
-public interface SubstrateService {
+public interface SubstrateService
+{
     int dutyCycle();
 }

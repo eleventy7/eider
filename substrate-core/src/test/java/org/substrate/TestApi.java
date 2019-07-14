@@ -5,16 +5,18 @@ import org.substrate.common.Substrate;
 import org.substrate.common.SubstrateBuilder;
 import org.substrate.worker.SubstrateWorker;
 
-public class TestApi {
+public class TestApi
+{
 
-    public void configure() {
+    public void configure()
+    {
 
         final Substrate substrate = new SubstrateBuilder()
-                .idleStratgy(new SleepingMillisIdleStrategy(10))
-                .serializer(new DummySerializer())
-                .archiverPort(5000)
-                .hostAddress("127.0.0.1")
-                .build();
+            .idleStratgy(new SleepingMillisIdleStrategy(10))
+            .serializer(new DummySerializer())
+            .archiverPort(5000)
+            .hostAddress("127.0.0.1")
+            .build();
 
         final SubstrateWorker ipcWorker1 = substrate.newWorker("worker1", new DummyService());
         final SubstrateWorker ipcWorker2 = substrate.newWorker("worker2", new DummyService());
