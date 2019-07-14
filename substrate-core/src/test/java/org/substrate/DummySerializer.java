@@ -1,17 +1,19 @@
 package org.substrate;
 
+import org.substrate.serialization.SerializationResponse;
 import org.substrate.serialization.SubstrateSerializer;
 
 public class DummySerializer implements SubstrateSerializer
 {
+
     @Override
-    public byte[] serialize(Object input)
+    public SerializationResponse serialize(final Object input)
     {
-        return new byte[0];
+        return null;
     }
 
     @Override
-    public Object deserialize(byte[] input)
+    public Object deserialize(final byte[] input, final int messageType)
     {
         return null;
     }

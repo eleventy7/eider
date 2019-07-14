@@ -2,7 +2,7 @@ package org.substrate.serialization;
 
 public interface SubstrateSerializer
 {
-    byte[] serialize(Object input);
+    SerializationResponse serialize(Object input);
 
-    Object deserialize(byte[] input);
+    Object deserialize(byte[] input, int messageType);
 }
