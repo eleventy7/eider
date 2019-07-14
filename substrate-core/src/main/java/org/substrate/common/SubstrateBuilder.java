@@ -1,6 +1,8 @@
 package org.substrate.common;
 
 
+import org.agrona.concurrent.SleepingMillisIdleStrategy;
+
 public class SubstrateBuilder {
 
     int archiverPort = 0;
@@ -19,5 +21,9 @@ public class SubstrateBuilder {
 
     public Substrate build() {
         return null;
+    }
+
+    public SubstrateBuilder idleStratgy(SleepingMillisIdleStrategy sleepingMillisIdleStrategy) {
+        return this;
     }
 }
