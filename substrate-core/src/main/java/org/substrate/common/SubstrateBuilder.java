@@ -2,8 +2,12 @@ package org.substrate.common;
 
 
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.substrate.serialization.SubstrateSerializer;
 
 public class SubstrateBuilder {
+    private static final Logger LOG = LoggerFactory.getLogger(SubstrateBuilder.class);
 
     int archiverPort = 0;
     String hostAddress = null;
@@ -24,6 +28,10 @@ public class SubstrateBuilder {
     }
 
     public SubstrateBuilder idleStratgy(SleepingMillisIdleStrategy sleepingMillisIdleStrategy) {
+        return this;
+    }
+
+    public SubstrateBuilder serializer(SubstrateSerializer serializer) {
         return this;
     }
 }

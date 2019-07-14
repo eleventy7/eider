@@ -1,13 +1,19 @@
 package org.substrate.mediums;
 
-public class ArchiveBuilder implements MediumBuilder {
-    @Override
-    public boolean isRemote() {
-        return true;
-    }
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    @Override
-    public boolean isArchived() {
-        return true;
-    }
+public class ArchiveBuilder implements MediumBuilder {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ArchiveBuilder.class);
+
+  @Override
+  public boolean isRemote() {
+    return true;
+  }
+
+  @Override
+  public boolean isArchived() {
+    return true;
+  }
 }

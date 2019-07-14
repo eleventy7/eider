@@ -1,0 +1,3 @@
+rootProject.name = 'substrate'
+
+include 'substrate-core'

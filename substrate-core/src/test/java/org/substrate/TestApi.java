@@ -5,12 +5,13 @@ import org.substrate.common.Substrate;
 import org.substrate.common.SubstrateBuilder;
 import org.substrate.worker.SubstrateWorker;
 
-public class TestIpc {
+public class TestApi {
 
     public void configure() {
 
         final Substrate substrate = new SubstrateBuilder()
                 .idleStratgy(new SleepingMillisIdleStrategy(10))
+                .serializer(new DummySerializer())
                 .archiverPort(5000)
                 .hostAddress("127.0.0.1")
                 .build();

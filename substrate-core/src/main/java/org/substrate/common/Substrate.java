@@ -1,9 +1,14 @@
 package org.substrate.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.substrate.mediums.IpcBuilder;
 import org.substrate.worker.SubstrateWorker;
 
 //holds a media driver (or archived media driver)
 public class Substrate {
+    private static final Logger LOG = LoggerFactory.getLogger(Substrate.class);
+
     public SubstrateWorker newWorker(String name, SubstrateService service) {
         return null;
     }

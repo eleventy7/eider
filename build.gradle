@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'checkstyle'
+}
+
+defaultTasks 'clean', 'build'
+
+
+def AERON_VERSION = '1.20.0'
+def AGRONA_VERSION = '1.0.3'
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven'
+
+    group 'org.substrate'
+    version '1.0-SNAPSHOT'
+
+    compileJava {
+        sourceCompatibility = 11
+        targetCompatibility = 11
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation group:'io.aeron', name: 'aeron-all', version: AERON_VERSION
+        implementation group: 'org.agrona', name: 'agrona', version: AGRONA_VERSION
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+
+        testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.5.0'
+
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.5.0'
+        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.0.0'
+        testImplementation group: 'com.google.truth', name: 'truth', version: '0.39'
+        testImplementation group: 'org.awaitility', name: 'awaitility', version: '3.1.5'
+    }
+
+    tasks.withType(Checkstyle) {
+        checkstyle {
+            configFile = "${rootDir}/config/adaptive_checks.xml" as File
+            configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
+            toolVersion = '8.22'
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+project('substrate-core') {
+    apply plugin: 'java-library'
+}
