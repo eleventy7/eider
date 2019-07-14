@@ -5,15 +5,15 @@ import org.slf4j.LoggerFactory;
 
 public class ArchiveBuilder implements MediumBuilder {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArchiveBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ArchiveBuilder.class);
 
-  @Override
-  public boolean isRemote() {
-    return true;
-  }
+    @Override
+    public boolean isRemote() {
+        return true;
+    }
 
-  @Override
-  public boolean isArchived() {
-    return true;
-  }
+    @Override
+    public boolean isArchived() {
+        return true;
+    }
 }
