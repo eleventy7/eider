@@ -123,15 +123,18 @@ public class Substrate implements AutoCloseable
 
         agentRunners.forEach(AgentRunner::close);
 
-        if (archivingMediaDriver != null) {
+        if (archivingMediaDriver != null)
+        {
             archivingMediaDriver.close();
         }
 
-        if (mediaDriver != null) {
+        if (mediaDriver != null)
+        {
             mediaDriver.close();
         }
 
-        if (aeron != null) {
+        if (aeron != null)
+        {
             aeron.close();
         }
     }
