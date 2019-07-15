@@ -76,6 +76,11 @@ public class Substrate implements AutoCloseable
 
     }
 
+    public void launchOnIndividualThreads(SubstrateWorker... workers)
+    {
+
+    }
+
     @Override
     public void close() throws Exception
     {
