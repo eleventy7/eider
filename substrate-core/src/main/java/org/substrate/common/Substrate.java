@@ -1,7 +1,11 @@
 package org.substrate.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.agrona.concurrent.AgentRunner;
+import org.agrona.concurrent.CompositeAgent;
+import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +23,10 @@ public class Substrate implements AutoCloseable
     private ArchivingMediaDriver archivingMediaDriver;
     private MediaDriver mediaDriver;
     private Aeron aeron;
+    private IdleStrategy idleStrategy;
 
     private List<SubstrateWorker> workers;
+    private List<AgentRunner> agentRunners = new ArrayList<>();
 
     private Substrate(SubstrateBuilder builder)
     {
@@ -51,54 +57,81 @@ public class Substrate implements AutoCloseable
 
     }
 
-    public void launchOnPrivateThread(SubstrateWorker worker)
+    private void ipcListener(SubstrateWorker worker, String reference)
     {
 
     }
 
-    public void externalUdpPublication(SubstrateWorker worker, String remoteHost, int port, int stream)
+    private void ipcWriter(SubstrateWorker worker, String reference)
     {
 
     }
 
-    public void externalUdpSubscription(SubstrateWorker worker, int port, int stream)
+    public void launchOnThread(SubstrateWorker worker)
+    {
+        AgentRunner runner = new AgentRunner(this.idleStrategy, this::errorHandler, null, worker);
+        agentRunners.add(runner);
+        AgentRunner.startOnThread(runner);
+    }
+
+    private void errorHandler(final Throwable throwable)
     {
 
     }
 
-    public void externalArchivePublication(SubstrateWorker worker, String alias)
+    public void udpWriter(SubstrateWorker worker, String reference, String remoteHost, int port, int stream)
+    {
+
+    }
+
+    public void udpListener(SubstrateWorker worker, String reference, int port, int stream)
+    {
+
+    }
+
+    public void archiveWriter(SubstrateWorker worker, String reference, String alias)
+    {
+
+    }
+
+    public void archiveReader(SubstrateWorker worker, String reference, String alias)
     {
 
     }
 
     public void launchOnSharedThread(SubstrateWorker... workers)
     {
+        CompositeAgent agent = new CompositeAgent(workers);
+        AgentRunner runner = new AgentRunner(this.idleStrategy, this::errorHandler, null, agent);
+        agentRunners.add(runner);
+        AgentRunner.startOnThread(runner);
 
     }
 
     public void launchOnIndividualThreads(SubstrateWorker... workers)
     {
-
+        for (SubstrateWorker worker : workers)
+        {
+            launchOnThread(worker);
+        }
     }
 
     @Override
-    public void close() throws Exception
+    public void close()
     {
         workers.forEach(worker -> worker.getService().closing());
-        workers.forEach(SubstrateWorker::onClose);
 
-        if (archivingMediaDriver != null)
-        {
+        agentRunners.forEach(AgentRunner::close);
+
+        if (archivingMediaDriver != null) {
             archivingMediaDriver.close();
         }
 
-        if (mediaDriver != null)
-        {
+        if (mediaDriver != null) {
             mediaDriver.close();
         }
 
-        if (aeron != null)
-        {
+        if (aeron != null) {
             aeron.close();
         }
     }
