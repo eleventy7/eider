@@ -14,6 +14,30 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider;
 
-include 'eider-core'
+import io.eider.serialization.SubstrateMessage;
+import io.eider.worker.SubstrateService;
+
+public class PingService extends SubstrateService
+{
+    @Override
+    public void onStart()
+    {
+
+    }
+
+    @Override
+    public void closing()
+    {
+
+    }
+
+    @Override
+    public void onMessage(final SubstrateMessage message, final String source)
+    {
+
+    }
+
+
+}

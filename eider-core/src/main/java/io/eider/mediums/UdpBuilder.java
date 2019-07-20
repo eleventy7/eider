@@ -14,6 +14,24 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.mediums;
 
-include 'eider-core'
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class UdpBuilder implements MediumBuilder
+{
+    private static final Logger log = LoggerFactory.getLogger(UdpBuilder.class);
+
+    @Override
+    public boolean isRemote()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean isArchived()
+    {
+        return false;
+    }
+}

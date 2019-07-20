@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.common;
 
-include 'eider-core'
+public class SubstrateCounters
+{
+    public int messageCount;
+}

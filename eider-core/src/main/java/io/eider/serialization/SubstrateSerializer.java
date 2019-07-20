@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.serialization;
 
-include 'eider-core'
+public interface SubstrateSerializer
+{
+    SerializationResponse serialize(SubstrateMessage input);
+
+    SubstrateMessage deserialize(byte[] input, int messageType);
+}

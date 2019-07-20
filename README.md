@@ -1,4 +1,4 @@
-# Substrate
+# Eider
 
 Opinionated Aeron API
 

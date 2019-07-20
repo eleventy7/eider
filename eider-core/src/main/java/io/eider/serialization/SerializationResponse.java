@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.serialization;
 
-include 'eider-core'
+public class SerializationResponse
+{
+    int type;
+    byte[] data;
+}

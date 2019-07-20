@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.drivers;
 
-include 'eider-core'
+public class AeronMediaDriverBuilder
+{
+}

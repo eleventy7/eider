@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.common;
 
-include 'eider-core'
+public enum SendStatus
+{
+    OK,
+    BACK_PRESSURE,
+    NOT_CONNECTED
+}

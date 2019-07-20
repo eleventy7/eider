@@ -14,6 +14,24 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider;
 
-include 'eider-core'
+import io.eider.serialization.SerializationResponse;
+import io.eider.serialization.SubstrateMessage;
+import io.eider.serialization.SubstrateSerializer;
+
+public class DummySerializer implements SubstrateSerializer
+{
+
+    @Override
+    public SerializationResponse serialize(final SubstrateMessage input)
+    {
+        return null;
+    }
+
+    @Override
+    public SubstrateMessage deserialize(final byte[] input, final int messageType)
+    {
+        return null;
+    }
+}

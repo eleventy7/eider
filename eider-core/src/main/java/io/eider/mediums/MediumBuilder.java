@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider.mediums;
 
-include 'eider-core'
+public interface MediumBuilder
+{
+    boolean isRemote();
+
+    boolean isArchived();
+}

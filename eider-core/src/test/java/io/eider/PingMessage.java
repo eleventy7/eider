@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-rootProject.name = 'eider'
+package io.eider;
 
-include 'eider-core'
+import io.eider.serialization.SubstrateMessage;
+
+public class PingMessage implements SubstrateMessage
+{
+}
