@@ -20,6 +20,7 @@ plugins {
     id 'idea'
     id 'checkstyle'
     id 'com.github.spotbugs' version '2.0.0'
+    id 'com.github.johnrengelman.shadow' version '5.1.0' apply false
 }
 
 defaultTasks 'clean', 'build'
@@ -34,8 +35,9 @@ def eiderGroup = 'io.eider'
 def eiderVersion = '0.1-SNAPSHOT'
 def eiderJavaVersion = JavaVersion.VERSION_11
 
-group = eiderGroup
-version = eiderVersion
+configurations {
+    shadow
+}
 
 allprojects {
     apply plugin: 'java'
@@ -103,7 +105,6 @@ allprojects {
             downloadSources = true
         }
     }
-
 }
 
 project('eider-core') {
@@ -124,6 +125,26 @@ project('eider-core') {
             xml.enabled = false
             html.enabled = true
         }
+    }
+
+    jar.enabled = true
+
+    jar {
+        manifest.attributes(
+                'Implementation-Title': 'Eider',
+                'Implementation-Version': "${eiderVersion}",
+                'Implementation-Vendor': 'Shaun Laurens',
+                'Automatic-Module-Name': 'io.eider.eidercore'
+        )
+    }
+
+    task sourcesJar(type: Jar) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives sourcesJar
     }
 }
 
