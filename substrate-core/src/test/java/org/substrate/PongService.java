@@ -34,16 +34,8 @@ public class PongService implements SubstrateService
     }
 
     @Override
-    public int dutyCycle()
-    {
-        return 0;
-    }
-
-    @Override
     public void onMessage(final SubstrateMessage message, final String reference)
     {
 
     }
-
-
 }

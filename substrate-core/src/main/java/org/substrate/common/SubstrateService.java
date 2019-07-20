@@ -24,7 +24,10 @@ public interface SubstrateService
 
     void closing();
 
-    int dutyCycle();
+    public default int dutyCycle()
+    {
+        return 0;
+    }
 
     void onMessage(SubstrateMessage message, String reference);
 }
