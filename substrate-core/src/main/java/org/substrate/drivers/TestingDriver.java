@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.substrate.mediums;
+package org.substrate.drivers;
 
-public interface MediumBuilder
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TestingDriver
 {
-    boolean isRemote();
+    private static final Logger log = LoggerFactory.getLogger(TestingDriver.class);
 
-    boolean isArchived();
 }

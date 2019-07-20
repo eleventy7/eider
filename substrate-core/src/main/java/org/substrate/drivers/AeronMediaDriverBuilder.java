@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package org.substrate.mediums;
+package org.substrate.drivers;
 
-public interface MediumBuilder
+public class AeronMediaDriverBuilder
 {
-    boolean isRemote();
-
-    boolean isArchived();
 }

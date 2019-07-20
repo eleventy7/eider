@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package org.substrate.mediums;
+package org.substrate.serialization;
 
-public interface MediumBuilder
+public interface SubstrateMessage
 {
-    boolean isRemote();
-
-    boolean isArchived();
 }
