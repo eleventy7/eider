@@ -17,11 +17,11 @@
 package io.eider.worker;
 
 import io.eider.common.SendStatus;
-import io.eider.serialization.SubstrateMessage;
+import io.eider.serialization.EiderMessage;
 
-public abstract class SubstrateService
+public abstract class Service
 {
-    protected SubstrateWorker worker;
+    protected Worker worker;
 
     public abstract void onStart();
 
@@ -32,14 +32,14 @@ public abstract class SubstrateService
         return 0;
     }
 
-    public abstract void onMessage(SubstrateMessage message, int messageType, String source);
+    public abstract void onMessage(EiderMessage message, int messageType, String source);
 
-    void setWorker(final SubstrateWorker worker)
+    void setWorker(final Worker worker)
     {
         this.worker = worker;
     }
 
-    protected SendStatus send(String conduit, String destination, SubstrateMessage message)
+    protected SendStatus send(String conduit, String destination, EiderMessage message)
     {
         return worker.send(conduit, destination, message);
     }

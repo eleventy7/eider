@@ -16,21 +16,21 @@
 
 package io.eider;
 
+import io.eider.serialization.EiderMessage;
 import io.eider.serialization.SerializationResponse;
-import io.eider.serialization.SubstrateMessage;
-import io.eider.serialization.SubstrateSerializer;
+import io.eider.serialization.Serializer;
 
-public class DummySerializer implements SubstrateSerializer
+public class DummySerializer implements Serializer
 {
 
     @Override
-    public SerializationResponse serialize(final SubstrateMessage input)
+    public SerializationResponse serialize(final EiderMessage input)
     {
         return new SerializationResponse(1, "ping".getBytes());
     }
 
     @Override
-    public SubstrateMessage deserialize(final byte[] input, final int messageType)
+    public EiderMessage deserialize(final byte[] input, final int messageType)
     {
         return new PingMessage();
     }

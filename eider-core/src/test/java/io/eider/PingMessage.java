@@ -16,8 +16,8 @@
 
 package io.eider;
 
-import io.eider.serialization.SubstrateMessage;
+import io.eider.serialization.EiderMessage;
 
-public class PingMessage implements SubstrateMessage
+public class PingMessage implements EiderMessage
 {
 }

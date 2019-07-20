@@ -19,13 +19,13 @@ package io.eider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.eider.common.SendStatus;
-import io.eider.serialization.SubstrateMessage;
-import io.eider.worker.SubstrateService;
+import io.eider.serialization.EiderMessage;
+import io.eider.worker.Service;
 
-public class PongService extends SubstrateService
+public class PongService extends Service
 {
     private static final Logger log = LoggerFactory.getLogger(PongService.class);
+    private int count;
 
     @Override
     public void onStart()
@@ -40,9 +40,15 @@ public class PongService extends SubstrateService
     }
 
     @Override
-    public void onMessage(final SubstrateMessage message, int messageType, final String source)
+    public void onMessage(final EiderMessage message, int messageType, final String source)
     {
-        log.info("ping");
+        log.info("pong");
+        count++;
         send("ping-pong", "ping", new PingMessage());
+    }
+
+    public int getCount()
+    {
+        return count;
     }
 }

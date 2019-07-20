@@ -16,28 +16,52 @@
 
 package io.eider;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
-import io.eider.common.Substrate;
-import io.eider.worker.SubstrateWorker;
+import io.eider.common.Eider;
+import io.eider.worker.Worker;
 
 public class PingPongTest
 {
     @Test
     public void canPingPong() throws InterruptedException
     {
-        final Substrate substrate = new Substrate.SubstrateBuilder()
+        final Eider eider = new Eider.Builder()
+            .enableIpc()
+            .describeConfig()
             .build();
 
-        final SubstrateWorker ipcWorker1 = substrate.newWorker("ping", new DummySerializer(), new PingService());
-        final SubstrateWorker ipcWorker2 = substrate.newWorker("pong", new DummySerializer(), new PongService());
+        final PingService pingService = new PingService();
+        final PongService pongService = new PongService();
 
-        substrate.twoWayIpc(ipcWorker1, ipcWorker2, "ping-pong");
+        final Worker ipcWorker1 = eider.newWorker("ping", new DummySerializer(), pingService);
+        final Worker ipcWorker2 = eider.newWorker("pong", new DummySerializer(), pongService);
 
-        substrate.launchOnIndividualThreads(ipcWorker1, ipcWorker2);
+        eider.twoWayIpc(ipcWorker1, ipcWorker2, "ping-pong");
 
-        Thread.sleep(3000);
+        eider.launchOnIndividualThreads(ipcWorker1, ipcWorker2);
 
-        substrate.close();
+        Thread.sleep(500);
+
+        int pingCount = pingService.getCount();
+        int pongCount = pongService.getCount();
+
+        System.out.println("pings received:" + pingCount);
+        System.out.println("pongs received:" + pongCount);
+
+        assertNotEquals(0, pingCount);
+        assertNotEquals(0, pongCount);
+        assertWithinOne(pingCount, pongCount);
+
+        eider.close();
+    }
+
+    private void assertWithinOne(int pingCount, int pongCount)
+    {
+        int abs = Math.abs(pingCount - pongCount);
+        assertTrue(abs >= 0 && abs <= 1);
     }
 }

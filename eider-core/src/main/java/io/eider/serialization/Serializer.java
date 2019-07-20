@@ -16,9 +16,9 @@
 
 package io.eider.serialization;
 
-public interface SubstrateSerializer
+public interface Serializer
 {
-    SerializationResponse serialize(SubstrateMessage input);
+    SerializationResponse serialize(EiderMessage input);
 
-    SubstrateMessage deserialize(byte[] input, int messageType);
+    EiderMessage deserialize(byte[] input, int messageType);
 }

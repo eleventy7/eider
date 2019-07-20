@@ -28,33 +28,33 @@ import org.slf4j.LoggerFactory;
 
 import io.aeron.Publication;
 import io.aeron.Subscription;
+import io.eider.common.Eider;
 import io.eider.common.SendStatus;
 import io.eider.common.SubscriptionContainer;
-import io.eider.common.Substrate;
+import io.eider.serialization.EiderMessage;
 import io.eider.serialization.SerializationResponse;
-import io.eider.serialization.SubstrateMessage;
-import io.eider.serialization.SubstrateSerializer;
+import io.eider.serialization.Serializer;
 
-public final class SubstrateWorker implements Agent
+public final class Worker implements Agent
 {
-    private static final Logger log = LoggerFactory.getLogger(SubstrateWorker.class);
+    private static final Logger log = LoggerFactory.getLogger(Worker.class);
     private final String name;
-    private final SubstrateSerializer serializer;
-    private final SubstrateService service;
+    private final Serializer serializer;
+    private final Service service;
     private final List<SubscriptionContainer> subscriptionList = new ArrayList<>();
     private final Object2ObjectHashMap<String, Object2ObjectHashMap<String, Publication>> publications =
         new Object2ObjectHashMap<>();
-    private final SubstrateFragmentHandler handler;
-    private final Substrate substrate;
+    private final EiderFragmentHandler handler;
+    private final Eider eider;
 
-    public SubstrateWorker(String name, SubstrateSerializer serializer, SubstrateService service, Substrate substrate)
+    public Worker(String name, Serializer serializer, Service service, Eider eider)
     {
         this.name = name;
         this.serializer = serializer;
         this.service = service;
         this.service.setWorker(this);
-        handler = new SubstrateFragmentHandler(service, serializer, substrate);
-        this.substrate = substrate;
+        handler = new EiderFragmentHandler(service, serializer, eider);
+        this.eider = eider;
     }
 
     @Override
@@ -94,23 +94,19 @@ public final class SubstrateWorker implements Agent
         return name;
     }
 
-    public SubstrateService getService()
+    public Service getService()
     {
         return service;
     }
 
     public void addSubscription(Subscription subscription, String name)
     {
-        log.info("{} has subs for conduit {} over {} and stream {}", this.getName(), name, subscription.channel(),
-            subscription.streamId());
+
         subscriptionList.add(new SubscriptionContainer(subscription, name));
     }
 
     public void addPublication(final Publication publication, final String destination, final String conduit)
     {
-        log.info("{} adding conduit {} to {} over {} stream {}", this.getName(), conduit, destination,
-            publication.channel(),
-            publication.streamId());
         if (publications.containsKey(conduit))
         {
             publications.get(conduit).put(destination, publication);
@@ -123,7 +119,7 @@ public final class SubstrateWorker implements Agent
         }
     }
 
-    SendStatus send(final String conduit, final String destination, final SubstrateMessage message)
+    SendStatus send(final String conduit, final String destination, final EiderMessage message)
     {
         Publication publication = publications.get(conduit).get(destination);
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();

@@ -16,6 +16,6 @@
 
 package io.eider.serialization;
 
-public interface SubstrateMessage
+public interface EiderMessage
 {
 }

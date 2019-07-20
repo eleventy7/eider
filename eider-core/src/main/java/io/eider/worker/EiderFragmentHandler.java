@@ -20,29 +20,29 @@ import org.agrona.DirectBuffer;
 
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
-import io.eider.common.Substrate;
-import io.eider.serialization.SubstrateMessage;
-import io.eider.serialization.SubstrateSerializer;
+import io.eider.common.Eider;
+import io.eider.serialization.EiderMessage;
+import io.eider.serialization.Serializer;
 
-public class SubstrateFragmentHandler implements FragmentHandler
+class EiderFragmentHandler implements FragmentHandler
 {
-    private final SubstrateService service;
-    private final SubstrateSerializer serializer;
-    private final Substrate substrate;
+    private final Service service;
+    private final Serializer serializer;
+    private final Eider eider;
     private String from;
 
-    public SubstrateFragmentHandler(final SubstrateService service, final SubstrateSerializer serializer,
-                                    final Substrate substrate)
+    EiderFragmentHandler(final Service service, final Serializer serializer,
+                         final Eider eider)
     {
         this.service = service;
         this.serializer = serializer;
-        this.substrate = substrate;
+        this.eider = eider;
     }
 
     @Override
     public void onFragment(final DirectBuffer buffer, final int offset, final int length, final Header header)
     {
-        final SubstrateMessage deserialize = serializer.deserialize("ping".getBytes(), 1);
+        final EiderMessage deserialize = serializer.deserialize("ping".getBytes(), 1);
         service.onMessage(deserialize, 1, from);
     }
 

@@ -32,25 +32,25 @@ import io.aeron.Subscription;
 import io.aeron.archive.ArchivingMediaDriver;
 import io.aeron.driver.MediaDriver;
 import io.aeron.driver.ThreadingMode;
-import io.eider.serialization.SubstrateSerializer;
-import io.eider.worker.SubstrateService;
-import io.eider.worker.SubstrateWorker;
+import io.eider.serialization.Serializer;
+import io.eider.worker.Service;
+import io.eider.worker.Worker;
 
-public class Substrate implements AutoCloseable
+public class Eider implements AutoCloseable
 {
-    private static final Logger log = LoggerFactory.getLogger(Substrate.class);
+    private static final Logger log = LoggerFactory.getLogger(Eider.class);
     private static final String IPC = "aeron:ipc";
-    private final SubstrateBuilder builder;
+    private final Builder builder;
 
     private ArchivingMediaDriver archivingMediaDriver;
     private MediaDriver mediaDriver;
     private Aeron aeron;
     private int streamId = 0;
 
-    private List<SubstrateWorker> workers;
+    private List<Worker> workers;
     private List<AgentRunner> agentRunners = new ArrayList<>();
 
-    private Substrate(SubstrateBuilder builder)
+    private Eider(Builder builder)
     {
         this.builder = builder;
         log.info("Constructing Media Driver...");
@@ -60,7 +60,7 @@ public class Substrate implements AutoCloseable
         log.info("Substrate ready...");
     }
 
-    private void buildAeron(final SubstrateBuilder builder)
+    private void buildAeron(final Builder builder)
     {
         Aeron.Context context = new Aeron.Context();
         context.aeronDirectoryName(mediaDriver.aeronDirectoryName())
@@ -69,7 +69,7 @@ public class Substrate implements AutoCloseable
         aeron = Aeron.connect(context);
     }
 
-    private void buildMediaDriver(final SubstrateBuilder builder)
+    private void buildMediaDriver(final Builder builder)
     {
         MediaDriver.Context context = new MediaDriver.Context();
         context.threadingMode(ThreadingMode.SHARED)
@@ -80,18 +80,20 @@ public class Substrate implements AutoCloseable
         mediaDriver = MediaDriver.launchEmbedded(context);
     }
 
-    public SubstrateWorker newWorker(String name, SubstrateSerializer serializer, SubstrateService service)
+    public Worker newWorker(String name, Serializer serializer, Service service)
     {
-        return new SubstrateWorker(name, serializer, service, this);
+        return new Worker(name, serializer, service, this);
     }
 
-    public void twoWayIpc(SubstrateWorker worker1, SubstrateWorker worker2, String conduit)
+    public void twoWayIpc(Worker worker1, Worker worker2, String conduit)
     {
+        if (!builder.enableIpc)
+        {
+            throw new EiderException("Cannot use IPC if enableIpc=false");
+        }
+
         int oneToTwoStreamId = nextStreamId();
         int twoToOneStreamId = nextStreamId();
-
-        log.info("{} writing to {} using Aeron stream {}", worker1.getName(), worker2.getName(), oneToTwoStreamId);
-        log.info("{} writing to {} using Aeron stream {}", worker2.getName(), worker1.getName(), twoToOneStreamId);
 
         Publication oneToTwo = aeron.addPublication(IPC, oneToTwoStreamId);
         Publication twoToOne = aeron.addPublication(IPC, twoToOneStreamId);
@@ -102,19 +104,43 @@ public class Substrate implements AutoCloseable
         Subscription twoToOneSubs = aeron.addSubscription(IPC, twoToOneStreamId);
         worker1.addSubscription(twoToOneSubs, conduit);
         worker2.addSubscription(oneToTwoSubs, conduit);
+
+        describe(oneToTwo, conduit, worker1);
+        describe(oneToTwoSubs, conduit, worker2);
+        describe(twoToOneSubs, conduit, worker1);
+        describe(twoToOne, conduit, worker2);
     }
 
-    private void ipcListener(SubstrateWorker worker, String reference)
+    private void ipcListener(Worker worker, String reference)
     {
 
     }
 
-    private void ipcWriter(SubstrateWorker worker, String reference)
+    private void ipcWriter(Worker worker, String reference)
     {
 
     }
 
-    public void launchOnThread(SubstrateWorker worker)
+    private void describe(Subscription subscription, String conduit, Worker worker)
+    {
+        if (builder.describeConfig)
+        {
+            log.info("New listerner for worker [{}] on conduit [{}] over [{}] and stream [{}]", worker.getName(),
+                conduit, subscription.channel(), subscription.streamId());
+        }
+    }
+
+    private void describe(Publication publication, String conduit, Worker worker)
+    {
+        if (builder.describeConfig)
+        {
+            log.info("Send destination added for worker [{}] on conduit [{}] over [{}] and stream [{}]",
+                worker.getName(),
+                conduit, publication.channel(), publication.streamId());
+        }
+    }
+
+    public void launchOnThread(Worker worker)
     {
         AgentRunner runner = new AgentRunner(builder.idleStrategy, this::errorHandler, null, worker);
         agentRunners.add(runner);
@@ -126,27 +152,27 @@ public class Substrate implements AutoCloseable
         log.error(throwable.getMessage(), throwable);
     }
 
-    public void udpWriter(SubstrateWorker worker, String reference, String remoteHost, int port, int stream)
+    public void udpWriter(Worker worker, String reference, String remoteHost, int port, int stream)
     {
 
     }
 
-    public void udpListener(SubstrateWorker worker, String reference, int port, int stream)
+    public void udpListener(Worker worker, String reference, int port, int stream)
     {
 
     }
 
-    public void archiveWriter(SubstrateWorker worker, String reference, String alias)
+    public void archiveWriter(Worker worker, String reference, String alias)
     {
 
     }
 
-    public void archiveReader(SubstrateWorker worker, String reference, String alias)
+    public void archiveReader(Worker worker, String reference, String alias)
     {
 
     }
 
-    public void launchOnSharedThread(SubstrateWorker... workers)
+    public void launchOnSharedThread(Worker... workers)
     {
         CompositeAgent agent = new CompositeAgent(workers);
         AgentRunner runner = new AgentRunner(builder.idleStrategy, this::errorHandler, null, agent);
@@ -155,9 +181,9 @@ public class Substrate implements AutoCloseable
 
     }
 
-    public void launchOnIndividualThreads(SubstrateWorker... workers)
+    public void launchOnIndividualThreads(Worker... workers)
     {
-        for (SubstrateWorker worker : workers)
+        for (Worker worker : workers)
         {
             launchOnThread(worker);
         }
@@ -194,44 +220,57 @@ public class Substrate implements AutoCloseable
         return ++streamId;
     }
 
-    public static class SubstrateBuilder
+    public static class Builder
     {
         int archiverPort = 0;
         String hostAddress = null;
         boolean requiresArchivingMediaDriver = false;
         boolean testingMode = false;
         IdleStrategy idleStrategy = new SleepingMillisIdleStrategy(10);
+        boolean enableIpc = false;
+        boolean describeConfig = false;
 
-        public SubstrateBuilder archiverPort(int archiverPort)
+        public Builder archiverPort(int archiverPort)
         {
             requiresArchivingMediaDriver = true;
             this.archiverPort = archiverPort;
             return this;
         }
 
-        public SubstrateBuilder hostAddress(String hostAddress)
+        public Builder hostAddress(String hostAddress)
         {
             this.hostAddress = hostAddress;
             return this;
         }
 
 
-        public SubstrateBuilder testingMode(boolean testingMode)
+        public Builder testingMode(boolean testingMode)
         {
             this.testingMode = testingMode;
             return this;
         }
 
-        public Substrate build()
+        public Eider build()
         {
-            return new Substrate(this);
+            return new Eider(this);
         }
 
-        public SubstrateBuilder idleStratgy(IdleStrategy idleStrategy)
+        public Builder idleStratgy(IdleStrategy idleStrategy)
         {
             this.idleStrategy = idleStrategy;
             return this;
         }
 
+        public Builder enableIpc()
+        {
+            enableIpc = true;
+            return this;
+        }
+
+        public Builder describeConfig()
+        {
+            describeConfig = true;
+            return this;
+        }
     }
 }
