@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.eider.common;
+package io.eider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +31,7 @@ import io.aeron.Publication;
 import io.aeron.Subscription;
 import io.aeron.driver.MediaDriver;
 import io.aeron.driver.ThreadingMode;
+import io.eider.common.EiderException;
 import io.eider.serialization.Serializer;
 import io.eider.worker.Service;
 import io.eider.worker.Worker;
@@ -43,13 +44,14 @@ public class Eider implements AutoCloseable
 
     private MediaDriver mediaDriver;
     private Aeron aeron;
-    private int streamId = 0;
+    private int streamId;
 
     private List<AgentRunner> agentRunners = new ArrayList<>();
 
     private Eider(Builder builder)
     {
         this.builder = builder;
+        this.streamId = builder.streamIdsStartAt;
         log.info("Constructing Media Driver...");
         buildMediaDriver(builder);
         log.info("Constructing Aeron...");
@@ -216,6 +218,7 @@ public class Eider implements AutoCloseable
         IdleStrategy idleStrategy = new SleepingMillisIdleStrategy(10);
         boolean enableIpc = false;
         boolean describeConfig = false;
+        int streamIdsStartAt = 0;
 
         public Builder archiverPort(int archiverPort)
         {
@@ -245,6 +248,12 @@ public class Eider implements AutoCloseable
         public Builder idleStratgy(IdleStrategy idleStrategy)
         {
             this.idleStrategy = idleStrategy;
+            return this;
+        }
+
+        public Builder streamIdsStartAt(int streamIdsStartAt)
+        {
+            this.streamIdsStartAt = streamIdsStartAt;
             return this;
         }
 

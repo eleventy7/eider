@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import io.eider.common.Eider;
+import io.eider.Eider;
 import io.eider.worker.Worker;
 
 public class PingPongTest
@@ -44,14 +44,10 @@ public class PingPongTest
 
         eider.launchOnIndividualThreads(ipcWorker1, ipcWorker2);
 
-        Thread.sleep(500);
+        Thread.sleep(1000);
 
         int pingCount = pingService.getCount();
         int pongCount = pongService.getCount();
-
-        System.out.println("pings received:" + pingCount);
-        System.out.println("pongs received:" + pongCount);
-
         assertNotEquals(0, pingCount);
         assertNotEquals(0, pongCount);
         assertWithinOne(pingCount, pongCount);
