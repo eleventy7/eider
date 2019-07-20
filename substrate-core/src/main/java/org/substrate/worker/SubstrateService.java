@@ -14,35 +14,34 @@
  * limitations under the License.
  */
 
-package org.substrate;
+package org.substrate.worker;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.substrate.common.SendStatus;
-import org.substrate.worker.SubstrateService;
+import org.substrate.common.Substrate;
 import org.substrate.serialization.SubstrateMessage;
 
-public class PongService extends SubstrateService
+public abstract class SubstrateService
 {
-    private static final Logger log = LoggerFactory.getLogger(PongService.class);
+    private Substrate substrate;
 
-    @Override
-    public void onStart()
+    protected SendStatus send(String conduit, String destination, SubstrateMessage message)
     {
-        SendStatus status = send("ping-pong", "pong", new PingMessage());
-        log.info("send status for start = {}", status);
+        return SendStatus.OK;
     }
 
-    @Override
-    public void closing()
+    public abstract void onStart();
+
+    public abstract void closing();
+
+    public int dutyCycle()
     {
-        log.info("shutting down");
+        return 0;
     }
 
-    @Override
-    public void onMessage(final SubstrateMessage message, final String source)
-    {
-        log.info("got a message!");
+    public abstract void onMessage(SubstrateMessage message, String source);
 
+    void setSubstrate(final Substrate substrate)
+    {
+        this.substrate = substrate;
     }
 }

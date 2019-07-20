@@ -16,28 +16,8 @@
 
 package org.substrate;
 
-import org.substrate.worker.SubstrateService;
 import org.substrate.serialization.SubstrateMessage;
 
-public class PingService extends SubstrateService
+public class PingMessage implements SubstrateMessage
 {
-    @Override
-    public void onStart()
-    {
-
-    }
-
-    @Override
-    public void closing()
-    {
-
-    }
-
-    @Override
-    public void onMessage(final SubstrateMessage message, final String source)
-    {
-
-    }
-
-
 }

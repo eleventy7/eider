@@ -18,7 +18,7 @@ package org.substrate.serialization;
 
 import org.agrona.DirectBuffer;
 import org.substrate.common.Substrate;
-import org.substrate.common.SubstrateService;
+import org.substrate.worker.SubstrateService;
 
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;

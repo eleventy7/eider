@@ -27,7 +27,6 @@ public class PingPongTest
     {
         final Substrate substrate = new Substrate.SubstrateBuilder()
             .serializer(new DummySerializer())
-            .testingMode(true)
             .build();
 
         final SubstrateWorker ipcWorker1 = substrate.newWorker("ping", new PingService());
@@ -40,5 +39,7 @@ public class PingPongTest
         Thread.sleep(10000);
 
         Assertions.assertNotEquals(0, substrate.counters("ping-pong").messageCount);
+
+        substrate.close();
     }
 }

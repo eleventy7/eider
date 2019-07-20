@@ -16,18 +16,9 @@
 
 package org.substrate.common;
 
-import org.substrate.serialization.SubstrateMessage;
-
-public interface SubstrateService
+public enum SendStatus
 {
-    void onStart();
-
-    void closing();
-
-    public default int dutyCycle()
-    {
-        return 0;
-    }
-
-    void onMessage(SubstrateMessage message, String reference);
+    OK,
+    BACK_PRESSURE,
+    NOT_CONNECTED
 }

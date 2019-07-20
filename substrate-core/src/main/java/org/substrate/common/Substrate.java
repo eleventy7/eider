@@ -26,6 +26,7 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.substrate.serialization.SubstrateSerializer;
+import org.substrate.worker.SubstrateService;
 import org.substrate.worker.SubstrateWorker;
 
 import io.aeron.Aeron;
@@ -68,7 +69,7 @@ public class Substrate implements AutoCloseable
         return null;
     }
 
-    public void twoWayIpc(SubstrateWorker worker1, SubstrateWorker worker2, String reference)
+    public void twoWayIpc(SubstrateWorker worker1, SubstrateWorker worker2, String conduit)
     {
 
     }
@@ -155,7 +156,7 @@ public class Substrate implements AutoCloseable
         }
     }
 
-    public SubstrateCounters counters(final String reference)
+    public SubstrateCounters counters(final String conduit)
     {
         return null;
     }
