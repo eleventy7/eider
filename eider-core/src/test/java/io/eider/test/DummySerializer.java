@@ -14,41 +14,24 @@
  * limitations under the License.
  */
 
-package io.eider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.eider.test;
 
 import io.eider.serialization.EiderMessage;
-import io.eider.worker.Service;
+import io.eider.serialization.SerializationResponse;
+import io.eider.serialization.Serializer;
 
-public class PongService extends Service
+public class DummySerializer implements Serializer
 {
-    private static final Logger log = LoggerFactory.getLogger(PongService.class);
-    private int count;
 
     @Override
-    public void onStart()
+    public SerializationResponse serialize(final EiderMessage input)
     {
-        log.info("Starting");
+        return new SerializationResponse(1, "ping".getBytes());
     }
 
     @Override
-    public void closing()
+    public EiderMessage deserialize(final byte[] input, final int messageType)
     {
-        log.info("Closing");
-    }
-
-    @Override
-    public void onMessage(final EiderMessage message, int messageType, final String source)
-    {
-        log.info("pong");
-        count++;
-        send("ping-pong", "ping", new PingMessage());
-    }
-
-    public int getCount()
-    {
-        return count;
+        return new PingMessage();
     }
 }

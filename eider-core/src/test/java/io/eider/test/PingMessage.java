@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.eider;
+package io.eider.test;
 
 import io.eider.serialization.EiderMessage;
 

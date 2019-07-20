@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.eider;
+package io.eider.test;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
