@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import io.aeron.Aeron;
 import io.aeron.Publication;
 import io.aeron.Subscription;
-import io.aeron.archive.ArchivingMediaDriver;
 import io.aeron.driver.MediaDriver;
 import io.aeron.driver.ThreadingMode;
 import io.eider.serialization.Serializer;
@@ -42,12 +41,10 @@ public class Eider implements AutoCloseable
     private static final String IPC = "aeron:ipc";
     private final Builder builder;
 
-    private ArchivingMediaDriver archivingMediaDriver;
     private MediaDriver mediaDriver;
     private Aeron aeron;
     private int streamId = 0;
 
-    private List<Worker> workers;
     private List<AgentRunner> agentRunners = new ArrayList<>();
 
     private Eider(Builder builder)
@@ -82,7 +79,7 @@ public class Eider implements AutoCloseable
 
     public Worker newWorker(String name, Serializer serializer, Service service)
     {
-        return new Worker(name, serializer, service, this);
+        return new Worker(name, serializer, service);
     }
 
     public void twoWayIpc(Worker worker1, Worker worker2, String conduit)
@@ -107,8 +104,8 @@ public class Eider implements AutoCloseable
 
         describe(oneToTwo, conduit, worker1);
         describe(oneToTwoSubs, conduit, worker2);
-        describe(twoToOneSubs, conduit, worker1);
         describe(twoToOne, conduit, worker2);
+        describe(twoToOneSubs, conduit, worker1);
     }
 
     private void ipcListener(Worker worker, String reference)
@@ -194,11 +191,6 @@ public class Eider implements AutoCloseable
     {
         agentRunners.forEach(AgentRunner::close);
 
-        if (archivingMediaDriver != null)
-        {
-            archivingMediaDriver.close();
-        }
-
         if (mediaDriver != null)
         {
             mediaDriver.close();
@@ -208,11 +200,6 @@ public class Eider implements AutoCloseable
         {
             aeron.close();
         }
-    }
-
-    public SubstrateCounters counters(final String conduit)
-    {
-        return null;
     }
 
     private int nextStreamId()

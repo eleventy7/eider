@@ -20,7 +20,6 @@ import org.agrona.DirectBuffer;
 
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
-import io.eider.common.Eider;
 import io.eider.serialization.EiderMessage;
 import io.eider.serialization.Serializer;
 
@@ -28,15 +27,12 @@ class EiderFragmentHandler implements FragmentHandler
 {
     private final Service service;
     private final Serializer serializer;
-    private final Eider eider;
     private String from;
 
-    EiderFragmentHandler(final Service service, final Serializer serializer,
-                         final Eider eider)
+    EiderFragmentHandler(final Service service, final Serializer serializer)
     {
         this.service = service;
         this.serializer = serializer;
-        this.eider = eider;
     }
 
     @Override

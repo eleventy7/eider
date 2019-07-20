@@ -21,15 +21,16 @@ import io.eider.serialization.EiderMessage;
 
 public abstract class Service
 {
-    protected Worker worker;
+    private static final int NOTHING_TO_DO = 0;
+    private Worker worker;
 
     public abstract void onStart();
 
     public abstract void closing();
 
-    public int dutyCycle()
+    int dutyCycle()
     {
-        return 0;
+        return NOTHING_TO_DO;
     }
 
     public abstract void onMessage(EiderMessage message, int messageType, String source);

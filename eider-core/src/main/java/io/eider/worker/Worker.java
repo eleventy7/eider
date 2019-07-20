@@ -23,12 +23,9 @@ import java.util.List;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.Agent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.aeron.Publication;
 import io.aeron.Subscription;
-import io.eider.common.Eider;
 import io.eider.common.SendStatus;
 import io.eider.common.SubscriptionContainer;
 import io.eider.serialization.EiderMessage;
@@ -37,7 +34,6 @@ import io.eider.serialization.Serializer;
 
 public final class Worker implements Agent
 {
-    private static final Logger log = LoggerFactory.getLogger(Worker.class);
     private final String name;
     private final Serializer serializer;
     private final Service service;
@@ -45,16 +41,14 @@ public final class Worker implements Agent
     private final Object2ObjectHashMap<String, Object2ObjectHashMap<String, Publication>> publications =
         new Object2ObjectHashMap<>();
     private final EiderFragmentHandler handler;
-    private final Eider eider;
 
-    public Worker(String name, Serializer serializer, Service service, Eider eider)
+    public Worker(String name, Serializer serializer, Service service)
     {
         this.name = name;
         this.serializer = serializer;
         this.service = service;
         this.service.setWorker(this);
-        handler = new EiderFragmentHandler(service, serializer, eider);
-        this.eider = eider;
+        handler = new EiderFragmentHandler(service, serializer);
     }
 
     @Override
@@ -92,11 +86,6 @@ public final class Worker implements Agent
     public String getName()
     {
         return name;
-    }
-
-    public Service getService()
-    {
-        return service;
     }
 
     public void addSubscription(Subscription subscription, String name)
