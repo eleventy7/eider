@@ -18,6 +18,22 @@ package io.eider.serialization;
 
 public class SerializationResponse
 {
-    int type;
-    byte[] data;
+    private int type;
+    private byte[] data;
+
+    public SerializationResponse(final int type, final byte[] data)
+    {
+        this.type = type;
+        this.data = data;
+    }
+
+    public int getType()
+    {
+        return type;
+    }
+
+    public byte[] getData()
+    {
+        return data;
+    }
 }

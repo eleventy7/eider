@@ -16,30 +16,27 @@
 
 package io.eider;
 
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import io.eider.common.Substrate;
 import io.eider.worker.SubstrateWorker;
 
 public class PingPongTest
 {
-
+    @Test
     public void canPingPong() throws InterruptedException
     {
         final Substrate substrate = new Substrate.SubstrateBuilder()
-            .serializer(new DummySerializer())
             .build();
 
-        final SubstrateWorker ipcWorker1 = substrate.newWorker("ping", new PingService());
-        final SubstrateWorker ipcWorker2 = substrate.newWorker("pong", new PongService());
+        final SubstrateWorker ipcWorker1 = substrate.newWorker("ping", new DummySerializer(), new PingService());
+        final SubstrateWorker ipcWorker2 = substrate.newWorker("pong", new DummySerializer(), new PongService());
 
         substrate.twoWayIpc(ipcWorker1, ipcWorker2, "ping-pong");
 
-        substrate.launchOnSharedThread(ipcWorker1, ipcWorker2);
+        substrate.launchOnIndividualThreads(ipcWorker1, ipcWorker2);
 
         Thread.sleep(10000);
-
-        Assertions.assertNotEquals(0, substrate.counters("ping-pong").messageCount);
 
         substrate.close();
     }

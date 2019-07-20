@@ -16,28 +16,36 @@
 
 package io.eider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.eider.common.SendStatus;
 import io.eider.serialization.SubstrateMessage;
 import io.eider.worker.SubstrateService;
 
 public class PingService extends SubstrateService
 {
+    private static final Logger log = LoggerFactory.getLogger(PingService.class);
+
     @Override
     public void onStart()
     {
-
+        log.info("Starting");
+        SendStatus status = send("ping-pong", "pong", new PingMessage());
+        log.info("send status for start = {}", status);
     }
 
     @Override
     public void closing()
     {
-
+        log.info("Closing");
     }
 
     @Override
-    public void onMessage(final SubstrateMessage message, final String source)
+    public void onMessage(final SubstrateMessage message, int messageType, final String source)
     {
+        SendStatus status = send("ping-pong", "pong", new PingMessage());
+        log.info("send status = {}", status);
 
     }
-
-
 }

@@ -14,31 +14,40 @@
  * limitations under the License.
  */
 
-package io.eider.serialization;
+package io.eider.worker;
 
 import org.agrona.DirectBuffer;
 
 import io.aeron.logbuffer.FragmentHandler;
 import io.aeron.logbuffer.Header;
 import io.eider.common.Substrate;
-import io.eider.worker.SubstrateService;
+import io.eider.serialization.SubstrateMessage;
+import io.eider.serialization.SubstrateSerializer;
 
 public class SubstrateFragmentHandler implements FragmentHandler
 {
     private final SubstrateService service;
+    private final SubstrateSerializer serializer;
     private final Substrate substrate;
+    private String from;
 
-    public SubstrateFragmentHandler(final SubstrateService service, final Substrate substrate)
+    public SubstrateFragmentHandler(final SubstrateService service, final SubstrateSerializer serializer,
+                                    final Substrate substrate)
     {
         this.service = service;
+        this.serializer = serializer;
         this.substrate = substrate;
     }
 
     @Override
     public void onFragment(final DirectBuffer buffer, final int offset, final int length, final Header header)
     {
-        //get header
-        //deserialize
-        //call service.onMessage
+        final SubstrateMessage deserialize = serializer.deserialize("ping".getBytes(), 1);
+        service.onMessage(deserialize, 1, from);
+    }
+
+    void setFrom(String from)
+    {
+        this.from = from;
     }
 }

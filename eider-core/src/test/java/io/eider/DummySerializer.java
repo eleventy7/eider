@@ -26,12 +26,12 @@ public class DummySerializer implements SubstrateSerializer
     @Override
     public SerializationResponse serialize(final SubstrateMessage input)
     {
-        return null;
+        return new SerializationResponse(1, "ping".getBytes());
     }
 
     @Override
     public SubstrateMessage deserialize(final byte[] input, final int messageType)
     {
-        return null;
+        return new PingMessage();
     }
 }

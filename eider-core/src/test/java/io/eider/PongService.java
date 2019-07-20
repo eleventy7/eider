@@ -30,20 +30,20 @@ public class PongService extends SubstrateService
     @Override
     public void onStart()
     {
-        SendStatus status = send("ping-pong", "ping", new PingMessage());
-        log.info("send status for start = {}", status);
+        log.info("Starting");
+
     }
 
     @Override
     public void closing()
     {
-        log.info("shutting down");
+        log.info("Closing");
     }
 
     @Override
-    public void onMessage(final SubstrateMessage message, final String source)
+    public void onMessage(final SubstrateMessage message, int messageType, final String source)
     {
-        log.info("got a message!");
-
+        SendStatus status = send("ping-pong", "ping", new PingMessage());
+        log.info("send status = {}", status);
     }
 }

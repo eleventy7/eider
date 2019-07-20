@@ -20,5 +20,26 @@ public enum SendStatus
 {
     OK,
     BACK_PRESSURE,
-    NOT_CONNECTED
+    NOT_CONNECTED,
+    UNKNOWN;
+
+    public static SendStatus fromOffer(final long offer)
+    {
+        if (offer > 0L)
+        {
+            return OK;
+        }
+        else if (offer == -2 || offer == -3)
+        {
+            return BACK_PRESSURE;
+        }
+        else if (offer == -1)
+        {
+            return NOT_CONNECTED;
+        }
+        else
+        {
+            return UNKNOWN;
+        }
+    }
 }

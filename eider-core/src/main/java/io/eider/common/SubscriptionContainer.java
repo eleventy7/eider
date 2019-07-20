@@ -14,33 +14,28 @@
  * limitations under the License.
  */
 
-package io.eider.worker;
+package io.eider.common;
 
-import io.eider.common.SendStatus;
-import io.eider.serialization.SubstrateMessage;
+import io.aeron.Subscription;
 
-public abstract class SubstrateService
+public class SubscriptionContainer
 {
-    protected SubstrateWorker worker;
+    private final Subscription subscription;
+    private final String name;
 
-    public abstract void onStart();
-
-    public abstract void closing();
-
-    public int dutyCycle()
+    public SubscriptionContainer(final Subscription subscription, final String name)
     {
-        return 0;
+        this.subscription = subscription;
+        this.name = name;
     }
 
-    public abstract void onMessage(SubstrateMessage message, int messageType, String source);
-
-    void setWorker(final SubstrateWorker worker)
+    public Subscription getSubscription()
     {
-        this.worker = worker;
+        return subscription;
     }
 
-    protected SendStatus send(String conduit, String destination, SubstrateMessage message)
+    public String getName()
     {
-        return worker.send(conduit, destination, message);
+        return name;
     }
 }
