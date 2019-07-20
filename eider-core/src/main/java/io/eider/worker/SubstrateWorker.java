@@ -72,8 +72,6 @@ public final class SubstrateWorker implements Agent
         {
             SubscriptionContainer container = subscriptionList.get(i);
             handler.setFrom(container.getName());
-            log.info("polling {}: {} : {}", container.getName(), container.getSubscription().channel(),
-                container.getSubscription().streamId());
             workCount += container.getSubscription().poll(handler, 10);
         }
         return workCount + service.dutyCycle();
@@ -128,10 +126,6 @@ public final class SubstrateWorker implements Agent
     SendStatus send(final String conduit, final String destination, final SubstrateMessage message)
     {
         Publication publication = publications.get(conduit).get(destination);
-
-        log.info("{} sending over conduit {} to {} over {} stream {}", this.getName(), conduit, destination,
-            publication.channel(), publication.streamId());
-
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
         SerializationResponse serialize = serializer.serialize(message);
         buffer.putInt(0, serialize.getType(), ByteOrder.LITTLE_ENDIAN);

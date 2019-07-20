@@ -36,7 +36,7 @@ public class PingPongTest
 
         substrate.launchOnIndividualThreads(ipcWorker1, ipcWorker2);
 
-        Thread.sleep(10000);
+        Thread.sleep(3000);
 
         substrate.close();
     }

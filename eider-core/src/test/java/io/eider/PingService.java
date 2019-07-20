@@ -44,8 +44,7 @@ public class PingService extends SubstrateService
     @Override
     public void onMessage(final SubstrateMessage message, int messageType, final String source)
     {
-        SendStatus status = send("ping-pong", "pong", new PingMessage());
-        log.info("send status = {}", status);
-
+        log.info("ping");
+        send("ping-pong", "pong", new PingMessage());
     }
 }
