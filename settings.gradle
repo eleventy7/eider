@@ -16,4 +16,5 @@
 
 rootProject.name = 'eider'
 
+include 'eider-protocol'
 include 'eider-core'

@@ -16,6 +16,13 @@
 
 package io.eider.serialization;
 
+import io.eider.protocol.IpcHeaderEncoder;
+
 public class HeaderHelper
 {
+    byte[] writeIpcHeader(String from, int messageType)
+    {
+        IpcHeaderEncoder foo;
+        return null;
+    }
 }

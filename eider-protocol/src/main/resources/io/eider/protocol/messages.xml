@@ -21,6 +21,10 @@
             <type name="length" primitiveType="uint16"/>
             <type name="varData" primitiveType="char" length="0"/>
         </composite>
+        <composite name="varStringEncoding">
+            <type name="length" primitiveType="uint32" maxValue="1073741824"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8"/>
+        </composite>
     </types>
     <types>
         <type name="Sequence" primitiveType="int64"/>
@@ -30,7 +34,7 @@
 
     <sbe:message name="IpcHeader" id="1" description="Header for internal IPC communications">
         <field name="messageType" id="1" type="MessageType"/>
-        <field name="sender" id="2" type="AsciiString"/>
+        <field name="sender" id="2" type="varStringEncoding"/>
     </sbe:message>
 
 </sbe:messageSchema>

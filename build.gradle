@@ -108,25 +108,8 @@ allprojects {
     }
 }
 
-project('eider-core') {
-    apply plugin: 'java-library'
-    apply plugin: 'checkstyle'
-    apply plugin: 'com.github.spotbugs'
-
-    dependencies {
-        compileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.12'
-    }
-
-    spotbugs {
-        excludeFilter = file("$rootDir/config/spotbugs_excludes.xml")
-    }
-
-    tasks.withType(com.github.spotbugs.SpotBugsTask) {
-        reports {
-            xml.enabled = false
-            html.enabled = true
-        }
-    }
+project(':eider-protocol') {
+    apply plugin: 'com.github.johnrengelman.shadow'
 
     def generatedDir = file("${buildDir}/generated-src")
     sourceSets {
@@ -159,7 +142,36 @@ project('eider-core') {
         ]
     }
 
+    jar {
+        from(sourceSets.generated.output) {
+            include '**/*.class'
+        }
+    }
+
     jar.dependsOn compileGeneratedJava
+}
+
+project('eider-core') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+    apply plugin: 'com.github.spotbugs'
+
+    dependencies {
+        compileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.12'
+        compile project(path: ':eider-protocol')
+    }
+
+    spotbugs {
+        excludeFilter = file("$rootDir/config/spotbugs_excludes.xml")
+    }
+
+    tasks.withType(com.github.spotbugs.SpotBugsTask) {
+        reports {
+            xml.enabled = false
+            html.enabled = true
+        }
+    }
+
     jar.enabled = true
 
     jar {
@@ -169,9 +181,6 @@ project('eider-core') {
                 'Implementation-Vendor': 'Shaun Laurens',
                 'Automatic-Module-Name': 'io.eider.eidercore'
         )
-        from(sourceSets.generated.output) {
-            include '**/*.class'
-        }
     }
 
     task sourcesJar(type: Jar) {
