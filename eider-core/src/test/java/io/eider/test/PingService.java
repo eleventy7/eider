@@ -31,21 +31,23 @@ public class PingService extends Service
     public void onStart()
     {
         log.info("Starting");
+        count = 0;
         send("ping-pong", "pong", new PingMessage());
     }
 
     @Override
-    public void closing()
+    public void onClose()
     {
+        log.info("count: {}", count);
         log.info("Closing");
     }
 
     @Override
     public void onMessage(final EiderMessage message, int messageType, final String source)
     {
-        log.info("ping");
         count++;
-        send("ping-pong", "pong", new PingMessage());
+        log.info(source);
+        send("ping-pong", source, new PingMessage());
     }
 
     public int getCount()

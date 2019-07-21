@@ -27,7 +27,7 @@ class EiderFragmentHandler implements FragmentHandler
 {
     private final Service service;
     private final Serializer serializer;
-    private String from;
+    private String conduit;
 
     EiderFragmentHandler(final Service service, final Serializer serializer)
     {
@@ -39,11 +39,11 @@ class EiderFragmentHandler implements FragmentHandler
     public void onFragment(final DirectBuffer buffer, final int offset, final int length, final Header header)
     {
         final EiderMessage deserialize = serializer.deserialize("ping".getBytes(), 1);
-        service.onMessage(deserialize, 1, from);
+        service.onMessage(deserialize, 1, conduit);
     }
 
-    void setFrom(String from)
+    void setConduit(String conduit)
     {
-        this.from = from;
+        this.conduit = conduit;
     }
 }

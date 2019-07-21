@@ -65,7 +65,7 @@ public final class Worker implements Agent
         for (int i = 0; i < subscriptionList.size(); i++)
         {
             SubscriptionContainer container = subscriptionList.get(i);
-            handler.setFrom(container.getName());
+            handler.setConduit(container.getConduit());
             workCount += container.getSubscription().poll(handler, 10);
         }
         return workCount + service.dutyCycle();
@@ -74,7 +74,7 @@ public final class Worker implements Agent
     @Override
     public void onClose()
     {
-        service.closing();
+        service.onClose();
     }
 
     @Override
@@ -88,10 +88,9 @@ public final class Worker implements Agent
         return name;
     }
 
-    public void addSubscription(Subscription subscription, String name)
+    public void addSubscription(Subscription subscription, String conduit)
     {
-
-        subscriptionList.add(new SubscriptionContainer(subscription, name));
+        subscriptionList.add(new SubscriptionContainer(subscription, conduit));
     }
 
     public void addPublication(final Publication publication, final String destination, final String conduit)

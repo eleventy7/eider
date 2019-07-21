@@ -21,12 +21,12 @@ import io.aeron.Subscription;
 public class SubscriptionContainer
 {
     private final Subscription subscription;
-    private final String name;
+    private final String conduit;
 
-    public SubscriptionContainer(final Subscription subscription, final String name)
+    public SubscriptionContainer(final Subscription subscription, final String conduit)
     {
         this.subscription = subscription;
-        this.name = name;
+        this.conduit = conduit;
     }
 
     public Subscription getSubscription()
@@ -34,8 +34,8 @@ public class SubscriptionContainer
         return subscription;
     }
 
-    public String getName()
+    public String getConduit()
     {
-        return name;
+        return conduit;
     }
 }

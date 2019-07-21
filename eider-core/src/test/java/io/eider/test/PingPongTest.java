@@ -19,6 +19,7 @@ package io.eider.test;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.junit.jupiter.api.Test;
 
 import io.eider.Eider;
@@ -26,12 +27,14 @@ import io.eider.worker.Worker;
 
 public class PingPongTest
 {
+
     @Test
     public void canPingPong() throws InterruptedException
     {
         final Eider eider = new Eider.Builder()
             .enableIpc()
             .describeConfig()
+            .idleStratgy(new BusySpinIdleStrategy())
             .build();
 
         final PingService pingService = new PingService();
@@ -39,6 +42,9 @@ public class PingPongTest
 
         final Worker ipcWorker1 = eider.newWorker("ping", new DummySerializer(), pingService);
         final Worker ipcWorker2 = eider.newWorker("pong", new DummySerializer(), pongService);
+
+        pingService.getCount();
+        pongService.getCount();
 
         eider.twoWayIpc(ipcWorker1, ipcWorker2, "ping-pong");
 

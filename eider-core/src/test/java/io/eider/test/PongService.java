@@ -34,7 +34,7 @@ public class PongService extends Service
     }
 
     @Override
-    public void closing()
+    public void onClose()
     {
         log.info("Closing");
     }
@@ -42,13 +42,14 @@ public class PongService extends Service
     @Override
     public void onMessage(final EiderMessage message, int messageType, final String source)
     {
-        log.info("pong");
         count++;
-        send("ping-pong", "ping", new PingMessage());
+        log.info(source);
+        send("ping-pong", source, new PingMessage());
     }
 
     public int getCount()
     {
+        log.info("count: {}", count);
         return count;
     }
 }

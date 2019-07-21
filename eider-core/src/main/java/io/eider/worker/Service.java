@@ -26,7 +26,7 @@ public abstract class Service
 
     public abstract void onStart();
 
-    public abstract void closing();
+    public abstract void onClose();
 
     int dutyCycle()
     {
