@@ -16,13 +16,34 @@
 
 package io.eider.serialization;
 
+import java.nio.ByteBuffer;
+
+import org.agrona.concurrent.UnsafeBuffer;
+
 import io.eider.protocol.IpcHeaderEncoder;
+import io.eider.protocol.MessageHeaderEncoder;
 
 public class HeaderHelper
 {
-    byte[] writeIpcHeader(String from, int messageType)
+    final IpcHeaderEncoder header = new IpcHeaderEncoder();
+    final MessageHeaderEncoder messageHeader = new MessageHeaderEncoder();
+
+    private int encode(final IpcHeaderEncoder header, final UnsafeBuffer directBuffer,
+                       final MessageHeaderEncoder messageHeaderEncoder,
+                       short messageType, String sender)
     {
-        IpcHeaderEncoder foo;
-        return null;
+        header.wrapAndApplyHeader(directBuffer, 0, messageHeaderEncoder);
+        header.messageType(messageType);
+        header.putSender(sender.getBytes(), 0, sender.length());
+        return MessageHeaderEncoder.ENCODED_LENGTH + header.encodedLength();
+    }
+
+    public byte[] writeIpcHeader(String from, short messageType)
+    {
+        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
+        int length = encode(header, directBuffer, messageHeader, messageType, from);
+        byteBuffer.limit(length);
+        return byteBuffer.array();
     }
 }

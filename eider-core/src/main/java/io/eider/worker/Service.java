@@ -42,6 +42,6 @@ public abstract class Service
 
     protected SendStatus send(String conduit, String destination, EiderMessage message)
     {
-        return worker.send(conduit, destination, message);
+        return worker.send(conduit, destination, (short)1, message);
     }
 }

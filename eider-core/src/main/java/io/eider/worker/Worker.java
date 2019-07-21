@@ -16,7 +16,6 @@
 
 package io.eider.worker;
 
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +28,7 @@ import io.aeron.Subscription;
 import io.eider.common.SendStatus;
 import io.eider.common.SubscriptionContainer;
 import io.eider.serialization.EiderMessage;
+import io.eider.serialization.HeaderHelper;
 import io.eider.serialization.SerializationResponse;
 import io.eider.serialization.Serializer;
 
@@ -41,6 +41,7 @@ public final class Worker implements Agent
     private final Object2ObjectHashMap<String, Object2ObjectHashMap<String, Publication>> publications =
         new Object2ObjectHashMap<>();
     private final EiderFragmentHandler handler;
+    private final HeaderHelper headerHelper = new HeaderHelper();
 
     public Worker(String name, Serializer serializer, Service service)
     {
@@ -107,14 +108,16 @@ public final class Worker implements Agent
         }
     }
 
-    SendStatus send(final String conduit, final String destination, final EiderMessage message)
+    SendStatus send(final String conduit, final String destination, short messageType, final EiderMessage message)
     {
-        Publication publication = publications.get(conduit).get(destination);
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
         SerializationResponse serialize = serializer.serialize(message);
-        buffer.putInt(0, serialize.getType(), ByteOrder.LITTLE_ENDIAN);
-        buffer.putBytes(4, serialize.getData(), 0, serialize.getData().length);
+        byte[] header = headerHelper.writeIpcHeader(this.name, messageType);
+        buffer.putInt(0, header.length);
+        buffer.putBytes(2, header, 0, header.length);
+        buffer.putBytes(2 + header.length, serialize.getData(), 0, serialize.getData().length);
 
+        Publication publication = publications.get(conduit).get(destination);
         return SendStatus.fromOffer(publication.offer(buffer, 0, 4 + serialize.getData().length));
     }
 
