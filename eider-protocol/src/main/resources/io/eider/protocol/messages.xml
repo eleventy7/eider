@@ -37,4 +37,21 @@
         <data name="sender" id="2" type="Utf8String"/>
     </sbe:message>
 
+    <sbe:message name="UdpHeader" id="2" description="Header for internal UDP communications">
+        <field name="messageType" id="1" type="MessageType"/>
+        <field name="senderStream" id="2" type="int32"/>
+        <field name="sequence" id="3" type="Sequence"/>
+        <data name="sender" id="4" type="Utf8String"/>
+        <data name="senderChannel" id="5" type="Utf8String"/>
+    </sbe:message>
+
+    <sbe:message name="ClientRegistration" id="3" description="Client Registration">
+        <field name="responseStream" id="1" type="int32"/>
+        <data name="responseChannel" id="2" type="Utf8String"/>
+    </sbe:message>
+
+    <sbe:message name="ClientRegistrationResponse" id="4" description="Client Registration">
+        <field name="sessionId" id="1" type="int32"/>
+    </sbe:message>
+
 </sbe:messageSchema>
