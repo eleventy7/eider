@@ -49,7 +49,7 @@ public class PingService extends Service
     @Override
     public void onMessage(final EiderMessage message, int messageType, final String conduit, final String sender)
     {
-        count++;z
+        count++;
         send(conduit, sender, 1, new PingMessage());
     }
 
