@@ -28,6 +28,8 @@ public abstract class Service
 
     public abstract void onClose();
 
+    public abstract void onDisconnected();
+
     int dutyCycle()
     {
         return NOTHING_TO_DO;

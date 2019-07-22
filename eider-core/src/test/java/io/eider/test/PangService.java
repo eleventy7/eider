@@ -40,6 +40,12 @@ public class PangService extends Service
     }
 
     @Override
+    public void onDisconnected()
+    {
+
+    }
+
+    @Override
     public void onMessage(final EiderMessage message, int messageType, final String conduit, final String sender)
     {
         count++;

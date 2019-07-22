@@ -41,9 +41,15 @@ public class PingService extends Service
     }
 
     @Override
+    public void onDisconnected()
+    {
+
+    }
+
+    @Override
     public void onMessage(final EiderMessage message, int messageType, final String conduit, final String sender)
     {
-        count++;
+        count++;z
         send(conduit, sender, 1, new PingMessage());
     }
 
