@@ -39,6 +39,7 @@ public class PingPongTest
         final PingService pingService = new PingService();
         final PongService pongService = new PongService();
 
+        //comms are ping <-> pong
         final Worker ipcWorker1 = eider.newWorker("ping", new DummySerializer(), pingService);
         final Worker ipcWorker2 = eider.newWorker("pong", new DummySerializer(), pongService);
 
@@ -51,9 +52,4 @@ public class PingPongTest
         eider.close();
     }
 
-    private void assertWithinOne(int pingCount, int pongCount)
-    {
-        int abs = Math.abs(pingCount - pongCount);
-        assertTrue(abs >= 0 && abs <= 1);
-    }
 }

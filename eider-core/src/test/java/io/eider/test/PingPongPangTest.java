@@ -44,6 +44,7 @@ public class PingPongPangTest
         final Worker ipcWorker2 = eider.newWorker("pong", new DummySerializer(), pongService);
         final Worker ipcWorker3 = eider.newWorker("pang", new DummySerializer(), pangService);
 
+        //comms are pang <-> ping <-> pong (ping speaks to pong and pang, pang and pong each only speak to ping)
         eider.twoWayIpc(ipcWorker1, ipcWorker2, "ping-pong");
         eider.twoWayIpc(ipcWorker1, ipcWorker3, "ping-pang");
 
@@ -54,9 +55,4 @@ public class PingPongPangTest
         eider.close();
     }
 
-    private void assertWithinOne(int pingCount, int pongCount)
-    {
-        int abs = Math.abs(pingCount - pongCount);
-        assertTrue(abs >= 0 && abs <= 1);
-    }
 }
