@@ -22,7 +22,10 @@ import static io.eider.serialization.Constants.HEADER_OFFSET;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.Agent;
@@ -48,6 +51,7 @@ public final class Worker implements Agent
     private final List<SubscriptionContainer> subscriptionList = new ArrayList<>();
     private final Object2ObjectHashMap<String, Object2ObjectHashMap<String, Publication>> publications =
         new Object2ObjectHashMap<>();
+    private final HashMap<String, Set<String>> conduitRoutes = new HashMap<>();
     private final EiderFragmentHandler handler;
     private final HeaderHelper headerHelper = new HeaderHelper();
 
@@ -114,6 +118,17 @@ public final class Worker implements Agent
             conduitMap.put(destination, publication);
             publications.put(conduit, conduitMap);
         }
+
+        if (conduitRoutes.containsKey(conduit))
+        {
+            conduitRoutes.get(conduit).add(destination);
+        }
+        else
+        {
+            HashSet<String> routes = new HashSet<>();
+            routes.add(destination);
+            conduitRoutes.put(conduit, routes);
+        }
     }
 
     SendStatus send(final String conduit, final String destination, int messageType, final EiderMessage message)
@@ -121,14 +136,14 @@ public final class Worker implements Agent
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer buffer = new UnsafeBuffer(byteBuffer);
 
-        byte[] header = headerHelper.writeIpcHeader(this.name, messageType);
+        final byte[] header = headerHelper.writeIpcHeader(this.name, messageType);
         buffer.putInt(HEADER_LENGTH_OFFSET, header.length, DEFAULT_BYTE_ORDER);
         buffer.putBytes(HEADER_OFFSET, header, 0, header.length);
 
-        SerializationResponse serialize = serializer.serialize(message);
+        final SerializationResponse serialize = serializer.serialize(message);
         buffer.putBytes(4 + header.length, serialize.getData(), 0, serialize.getData().length);
 
-        Publication publication = publications.get(conduit).get(destination);
+        final Publication publication = publications.get(conduit).get(destination);
         return SendStatus.fromOffer(publication.offer(buffer, 0, 4 + header.length + serialize.getData().length));
     }
 
@@ -140,6 +155,12 @@ public final class Worker implements Agent
 
     SendStatus broadcast(final int messageType, final EiderMessage message)
     {
+        conduitRoutes.forEach((k, v) -> sendToConduit(k, v, messageType, message));
         return SendStatus.UNKNOWN;
+    }
+
+    private void sendToConduit(String conduit, Set<String> destinations, int messageType, EiderMessage message)
+    {
+        destinations.forEach(s -> send(conduit, s, messageType, message));
     }
 }

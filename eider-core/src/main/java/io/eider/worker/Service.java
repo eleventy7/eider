@@ -44,4 +44,9 @@ public abstract class Service
     {
         return worker.send(conduit, destination, messageType, message);
     }
+
+    protected SendStatus broadcast(int messageType, EiderMessage message)
+    {
+        return worker.broadcast(messageType, message);
+    }
 }

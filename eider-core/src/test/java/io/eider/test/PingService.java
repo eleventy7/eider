@@ -24,24 +24,26 @@ import io.eider.worker.Service;
 
 public class PingService extends Service
 {
+    private int count = 0;
     private static final Logger log = LoggerFactory.getLogger(PingService.class);
 
     @Override
     public void onStart()
     {
-        log.info("Starting");
-        send("ping-pong", "pong", 1, new PingMessage());
+        log.info("Starting, count={}", count);
+        broadcast(1, new PingMessage());
     }
 
     @Override
     public void onClose()
     {
-        log.info("Closing");
+        log.info("Closing, count={}", count);
     }
 
     @Override
     public void onMessage(final EiderMessage message, int messageType, final String conduit, final String sender)
     {
+        count++;
         send(conduit, sender, 1, new PingMessage());
     }
 

@@ -22,10 +22,10 @@ import org.slf4j.LoggerFactory;
 import io.eider.serialization.EiderMessage;
 import io.eider.worker.Service;
 
-public class PongService extends Service
+public class PangService extends Service
 {
     private int count = 0;
-    private static final Logger log = LoggerFactory.getLogger(PongService.class);
+    private static final Logger log = LoggerFactory.getLogger(PangService.class);
 
     @Override
     public void onStart()
@@ -40,7 +40,7 @@ public class PongService extends Service
     }
 
     @Override
-    public void onMessage(final EiderMessage message, int messageType,  final String conduit, final String sender)
+    public void onMessage(final EiderMessage message, int messageType, final String conduit, final String sender)
     {
         count++;
         send(conduit, sender, 1, new PingMessage());
