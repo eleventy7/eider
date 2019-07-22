@@ -28,7 +28,7 @@
     </types>
     <types>
         <type name="Sequence" primitiveType="int64"/>
-        <type name="MessageType" primitiveType="int16"/>
+        <type name="MessageType" primitiveType="int32"/>
         <type name="Timestamp" primitiveType="int64"/>
     </types>
 

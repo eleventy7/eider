@@ -25,7 +25,6 @@ import io.eider.worker.Service;
 public class PongService extends Service
 {
     private static final Logger log = LoggerFactory.getLogger(PongService.class);
-    private int count;
 
     @Override
     public void onStart()
@@ -40,16 +39,9 @@ public class PongService extends Service
     }
 
     @Override
-    public void onMessage(final EiderMessage message, int messageType, final String source)
+    public void onMessage(final EiderMessage message, int messageType,  final String conduit, final String sender)
     {
-        count++;
-        log.info(source);
-        send("ping-pong", source, new PingMessage());
+        send(conduit, sender, 1, new PingMessage());
     }
 
-    public int getCount()
-    {
-        log.info("count: {}", count);
-        return count;
-    }
 }

@@ -18,32 +18,65 @@ package io.eider.serialization;
 
 import java.nio.ByteBuffer;
 
+import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import io.eider.protocol.IpcHeaderDecoder;
 import io.eider.protocol.IpcHeaderEncoder;
+import io.eider.protocol.MessageHeaderDecoder;
 import io.eider.protocol.MessageHeaderEncoder;
 
 public class HeaderHelper
 {
-    final IpcHeaderEncoder header = new IpcHeaderEncoder();
-    final MessageHeaderEncoder messageHeader = new MessageHeaderEncoder();
+    private static final Logger log = LoggerFactory.getLogger(HeaderHelper.class);
+    private final IpcHeaderEncoder ipcHeaderEncoder = new IpcHeaderEncoder();
+    private final IpcHeaderDecoder ipcHeaderDecoder = new IpcHeaderDecoder();
+    private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
+    private final MessageHeaderDecoder headerDecoder = new MessageHeaderDecoder();
 
     private int encode(final IpcHeaderEncoder header, final UnsafeBuffer directBuffer,
-                       final MessageHeaderEncoder messageHeaderEncoder,
-                       short messageType, String sender)
+                       int messageType, String sender)
     {
-        header.wrapAndApplyHeader(directBuffer, 0, messageHeaderEncoder);
-        header.messageType(messageType);
-        header.putSender(sender.getBytes(), 0, sender.length());
+        header.wrapAndApplyHeader(directBuffer, 0, headerEncoder)
+            .messageType(messageType)
+            .putSender(sender.getBytes(), 0, sender.length());
         return MessageHeaderEncoder.ENCODED_LENGTH + header.encodedLength();
     }
 
-    public byte[] writeIpcHeader(String from, short messageType)
+    public byte[] writeIpcHeader(String from, int messageType)
     {
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
-        int length = encode(header, directBuffer, messageHeader, messageType, from);
+        int length = encode(ipcHeaderEncoder, directBuffer, messageType, from);
         byteBuffer.limit(length);
-        return byteBuffer.array();
+        byte[] arr = new byte[length];
+        byteBuffer.get(arr, 0, length);
+        return arr;
+    }
+
+    public IpcHeaderData readIpcHeader(byte[] input)
+    {
+        DirectBuffer directBuffer = new UnsafeBuffer();
+        directBuffer.wrap(input);
+
+        int bufferOffset = 0;
+        headerDecoder.wrap(directBuffer, bufferOffset);
+
+        // Lookup the applicable flyweight to decode this type of message based on templateId and version.
+        final int templateId = headerDecoder.templateId();
+        if (templateId != IpcHeaderDecoder.TEMPLATE_ID)
+        {
+            throw new IllegalStateException("Template ids do not match");
+        }
+
+        final int actingBlockLength = headerDecoder.blockLength();
+        final int actingVersion = headerDecoder.version();
+
+        bufferOffset += headerDecoder.encodedLength();
+        ipcHeaderDecoder.wrap(directBuffer, bufferOffset, actingBlockLength, actingVersion);
+
+        return new IpcHeaderData(ipcHeaderDecoder.messageType(), ipcHeaderDecoder.sender());
     }
 }

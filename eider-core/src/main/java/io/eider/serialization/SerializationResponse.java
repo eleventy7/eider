@@ -16,6 +16,8 @@
 
 package io.eider.serialization;
 
+import java.util.Arrays;
+
 public class SerializationResponse
 {
     private int type;
@@ -35,5 +37,17 @@ public class SerializationResponse
     public byte[] getData()
     {
         return data;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "SerializationResponse{"
+            +
+            "type=" + type
+            +
+            ", data=" + Arrays.toString(data)
+            +
+            '}';
     }
 }

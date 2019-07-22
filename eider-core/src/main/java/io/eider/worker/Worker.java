@@ -16,12 +16,19 @@
 
 package io.eider.worker;
 
+import static io.eider.serialization.Constants.DEFAULT_BYTE_ORDER;
+import static io.eider.serialization.Constants.HEADER_LENGTH_OFFSET;
+import static io.eider.serialization.Constants.HEADER_OFFSET;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agrona.ExpandableArrayBuffer;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.aeron.Publication;
 import io.aeron.Subscription;
@@ -34,6 +41,7 @@ import io.eider.serialization.Serializer;
 
 public final class Worker implements Agent
 {
+    private static final Logger log = LoggerFactory.getLogger(Worker.class);
     private final String name;
     private final Serializer serializer;
     private final Service service;
@@ -108,17 +116,30 @@ public final class Worker implements Agent
         }
     }
 
-    SendStatus send(final String conduit, final String destination, short messageType, final EiderMessage message)
+    SendStatus send(final String conduit, final String destination, int messageType, final EiderMessage message)
     {
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
-        SerializationResponse serialize = serializer.serialize(message);
+        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+        final UnsafeBuffer buffer = new UnsafeBuffer(byteBuffer);
+
         byte[] header = headerHelper.writeIpcHeader(this.name, messageType);
-        buffer.putInt(0, header.length);
-        buffer.putBytes(2, header, 0, header.length);
-        buffer.putBytes(2 + header.length, serialize.getData(), 0, serialize.getData().length);
+        buffer.putInt(HEADER_LENGTH_OFFSET, header.length, DEFAULT_BYTE_ORDER);
+        buffer.putBytes(HEADER_OFFSET, header, 0, header.length);
+
+        SerializationResponse serialize = serializer.serialize(message);
+        buffer.putBytes(4 + header.length, serialize.getData(), 0, serialize.getData().length);
 
         Publication publication = publications.get(conduit).get(destination);
-        return SendStatus.fromOffer(publication.offer(buffer, 0, 4 + serialize.getData().length));
+        return SendStatus.fromOffer(publication.offer(buffer, 0, 4 + header.length + serialize.getData().length));
     }
 
+    SendStatus reply(final int messageType, final EiderMessage message)
+    {
+        //
+        return SendStatus.UNKNOWN;
+    }
+
+    SendStatus broadcast(final int messageType, final EiderMessage message)
+    {
+        return SendStatus.UNKNOWN;
+    }
 }

@@ -33,15 +33,15 @@ public abstract class Service
         return NOTHING_TO_DO;
     }
 
-    public abstract void onMessage(EiderMessage message, int messageType, String source);
+    public abstract void onMessage(EiderMessage message, int messageType, String conduit, String from);
 
     void setWorker(final Worker worker)
     {
         this.worker = worker;
     }
 
-    protected SendStatus send(String conduit, String destination, EiderMessage message)
+    protected SendStatus send(String conduit, String destination, int messageType, EiderMessage message)
     {
-        return worker.send(conduit, destination, (short)1, message);
+        return worker.send(conduit, destination, messageType, message);
     }
 }
