@@ -33,7 +33,6 @@ public class PingPongPangTest
         final Eider eider = new Eider.Builder()
             .enableIpc()
             .describeConfig()
-            .idleStratgy(new SleepingMillisIdleStrategy(1))
             .build();
 
         final PingService pingService = new PingService();
