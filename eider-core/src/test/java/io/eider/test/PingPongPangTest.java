@@ -16,9 +16,6 @@
 
 package io.eider.test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.junit.jupiter.api.Test;
 
 import io.eider.Eider;
