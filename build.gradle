@@ -19,7 +19,6 @@ plugins {
     id 'maven'
     id 'idea'
     id 'checkstyle'
-    id 'com.github.spotbugs' version '2.0.0'
     id 'com.github.johnrengelman.shadow' version '5.1.0' apply false
 }
 
@@ -154,22 +153,10 @@ project(':eider-protocol') {
 project('eider-core') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
-    apply plugin: 'com.github.spotbugs'
 
     dependencies {
         compileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.12'
         compile project(path: ':eider-protocol')
-    }
-
-    spotbugs {
-        excludeFilter = file("$rootDir/config/spotbugs_excludes.xml")
-    }
-
-    tasks.withType(com.github.spotbugs.SpotBugsTask) {
-        reports {
-            xml.enabled = false
-            html.enabled = true
-        }
     }
 
     jar.enabled = true
