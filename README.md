@@ -1,6 +1,6 @@
 # Eider
 
-Opinionated Aeron API
+Opinionated Aeron Framework
 
 ## Goals
 
