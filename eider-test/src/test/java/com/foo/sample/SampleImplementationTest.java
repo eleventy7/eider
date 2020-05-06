@@ -16,7 +16,25 @@
  *
  */
 
-rootProject.name = 'eider'
+package com.foo.sample;
 
-include 'eider-processor'
-include 'eider-test'
+import com.foo.sample.gen.SampleImplementationEider;
+import org.agrona.ExpandableArrayBuffer;
+import org.junit.jupiter.api.Test;
+
+public class SampleImplementationTest
+{
+    @Test
+    public void canSerialize()
+    {
+        final SampleImplementation a = new SampleImplementation();
+        a.foo = 23;
+        a.foo2 = 42;
+
+        final SampleImplementationEider eider = new SampleImplementationEider();
+
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(100);
+        //intelliJ is broken (2020.1)
+        eider.write(buffer, 0);
+    }
+}

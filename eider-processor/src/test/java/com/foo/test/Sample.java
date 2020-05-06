@@ -16,7 +16,13 @@
  *
  */
 
-rootProject.name = 'eider'
+package com.foo.test;
 
-include 'eider-processor'
-include 'eider-test'
+import io.eider.annotation.EiderObject;
+
+@EiderObject(eiderId = 2)
+public class Sample
+{
+    private int fieldA;
+    private long fieldB;
+}

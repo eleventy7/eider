@@ -16,7 +16,13 @@
  *
  */
 
-rootProject.name = 'eider'
+package com.foo.sample;
 
-include 'eider-processor'
-include 'eider-test'
+import io.eider.annotation.EiderObject;
+
+@EiderObject
+public class SampleImplementation2
+{
+    private int dfj;
+    private int asd;
+}
