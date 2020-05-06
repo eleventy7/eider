@@ -36,5 +36,7 @@ public class SampleImplementationTest
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(100);
         //intelliJ is broken (2020.1)
         eider.write(buffer, 0);
+        eider.read(buffer, 0);
+        eider.EIDER_SPEC_ID;
     }
 }
