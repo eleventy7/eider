@@ -21,12 +21,14 @@ plugins {
     id 'idea'
     id 'checkstyle'
     id 'maven-publish'
+    id 'net.minecrell.licenser' version '0.4.1'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
-defaultTasks 'clean', 'build', 'test'
+defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
 
 def eiderGroup = 'io.eider'
-def eiderVersion = '0.1-SNAPSHOT'
+def eiderVersion = file('version.txt').text.trim()
 def javaVersion = JavaVersion.VERSION_11
 
 allprojects {
@@ -104,6 +106,12 @@ project('eider-processor') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
 
+    license {
+        header = new File(rootDir, 'config/header.txt')
+        include '**/*.java'
+        sourceSets = [project.sourceSets.main]
+    }
+
     dependencies {
         implementation "org.agrona:agrona:1.4.1"
         implementation 'com.squareup:javapoet:1.12.1'
@@ -125,6 +133,12 @@ project('eider-test') {
 
     sourceSets {
         generated.java.srcDir generatedDir
+    }
+
+    license {
+        header = new File(rootDir, 'config/header.txt')
+        include '**/*.java'
+        sourceSets = [project.sourceSets.main]
     }
 
     compileGeneratedJava {
@@ -160,7 +174,7 @@ model {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifactId = 'aeron-cookbook'
+            artifactId = 'eider'
             from components.java
             versionMapping {
                 usage('java-api') {
@@ -171,9 +185,9 @@ publishing {
                 }
             }
             pom {
-                name = 'Aeron Cookbook'
+                name = 'Eider'
                 description = 'Dependency Tracking Only'
-                url = 'http://www.aeroncookbook.com'
+                url = 'http://eider.io'
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
@@ -184,6 +198,7 @@ publishing {
         }
     }
 }
+
 
 wrapper {
     gradleVersion = '6.4'
