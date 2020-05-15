@@ -29,7 +29,7 @@ defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
 
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
-def javaVersion = JavaVersion.VERSION_11
+def javaVersion = JavaVersion.VERSION_14
 
 allprojects {
     apply plugin: 'java'
