@@ -1,0 +1,207 @@
+/*
+ * Copyright 2019-2020 Shaun Laurens.
+ *
+ * https://shaunlaurens.com, https://eider.io
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'checkstyle'
+    id 'maven-publish'
+    id 'net.minecrell.licenser' version '0.4.1'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
+defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
+
+def eiderGroup = 'io.eider'
+def eiderVersion = file('version.txt').text.trim()
+def javaVersion = JavaVersion.VERSION_14
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'checkstyle'
+
+    group eiderGroup
+    version eiderVersion
+
+    compileJava {
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.lang.reflect=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.net=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'jdk.unsupported/sun.misc=ALL-UNNAMED'])
+        options.encoding = 'UTF-8'
+        options.deprecation = true
+    }
+
+    compileTestJava {
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.lang.reflect=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/java.net=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED'])
+        options.compilerArgs.addAll(['--add-exports', 'jdk.unsupported/sun.misc=ALL-UNNAMED'])
+        options.encoding = 'UTF-8'
+        options.deprecation = true
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation group: 'org.agrona', name: 'agrona', version: '1.4.1'
+        implementation group: 'io.aeron', name: 'aeron-all', version: '1.27.0'
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.32'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
+    }
+
+    tasks.withType(Checkstyle) {
+        checkstyle {
+            configFile = "${rootDir}/config/checks.xml" as File
+            configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
+            toolVersion = '8.32'
+            ignoreFailures = false
+            showViolations = true
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+        jvmArgs('--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED')
+        jvmArgs('--add-opens', 'java.base/sun.nio.ch=ALL-UNNAMED')
+
+        testLogging {
+            showStandardStreams = true
+            exceptionFormat = 'full'
+        }
+    }
+
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+}
+
+project('eider-processor') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+
+    license {
+        header = new File(rootDir, 'config/header.txt')
+        include '**/*.java'
+        sourceSets = [project.sourceSets.main]
+    }
+
+    dependencies {
+        implementation "org.agrona:agrona:1.4.1"
+        implementation 'com.squareup:javapoet:1.12.1'
+        implementation "org.openjdk.jmh:jmh-core:1.23"
+        implementation "org.hdrhistogram:HdrHistogram:2.1.12"
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.32'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
+    }
+}
+
+project('eider-test') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+
+    def generatedDir = file("${buildDir}/generated")
+
+    sourceSets {
+        generated.java.srcDir generatedDir
+    }
+
+    license {
+        header = new File(rootDir, 'config/header.txt')
+        sourceSets = [project.sourceSets.main]
+    }
+
+    compileGeneratedJava {
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+        options.deprecation = true
+        classpath += sourceSets.main.runtimeClasspath
+    }
+
+    dependencies {
+        annotationProcessor project(':eider-processor')
+        implementation project(path: ':eider-processor')
+        implementation "org.agrona:agrona:1.4.1"
+        implementation "org.openjdk.jmh:jmh-core:1.23"
+        implementation "org.hdrhistogram:HdrHistogram:2.1.12"
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.32'
+        testImplementation project(path: ':eider-processor')
+        testImplementation sourceSets.generated.output
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
+    }
+}
+
+
+model {
+    tasks.generatePomFileForMavenJavaPublication {
+        destination = file("$project.projectDir/pom.xml")
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'eider'
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = 'Eider'
+                description = 'Dependency Tracking Only'
+                url = 'http://eider.io'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+wrapper {
+    gradleVersion = '6.4'
+    distributionType = 'ALL'
+}
