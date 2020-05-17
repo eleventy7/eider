@@ -1,6 +1,6 @@
 # Eider
 
-![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg)
+![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java)
 
 Work in progress multi-target annotation based flyweight generator.
 
