@@ -4,20 +4,22 @@
 
 Work in progress multi-target annotation based flyweight generator.
 
-Given an specification object, Eider generates a flyweight that can be used to read and write to a buffer. The original specification object is not used at runtime, only for defining the layout of the buffer. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
+Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
-Initial implementation uses Agrona Mutable Direct Buffers for read and write. Random access writes and reads are supported, although sequential reads/writes will provide higher performance. 
+Initial implementation uses Agrona Mutable Direct Buffers for read and write. Values are read from and written to the buffer directly. Random access writes and reads are supported, although sequential reads/writes will provide higher performance. 
 
-Initial release has some severe type restrictions:
+Initial release has limited type support:
 
 - boolean
 - int
 - long
-- fixed length strings
+- fixed length ASCII strings
 
 Planned for future releases:
 
-- variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
+- single variable length string or byte[] field
+- byte[], BigDecimal, char, short types support
+- mulitple variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
 - JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations 
 - repeating groups and sub-objects
 - Nullable objects with customizable null representations 
@@ -33,7 +35,7 @@ Features not planned for future releases:
 
 ### Sample
 
-The following specification defines an object with an identifier, timestamp, enabled flag and a 9 character CUSIP string. The eiderId here is the message type identifier, and is written to the buffer at a fixed position. If no predefined value is given, one is automatically assigned and made available as a static field on the generated object. The eider Id can be peeked to simplify building demuxers. 
+The following specification defines an object with an identifier, timestamp, enabled flag and a 9 character CUSIP string. The eiderId here is the message type identifier, and is written to the buffer at a fixed position regardless of message specification. If no predefined value is given, one is automatically assigned and made available as a static field on the generated object. The eider Id can be used to simplify building demuxers. 
 
 ```java
 @EiderSpec(eiderId = 42)
