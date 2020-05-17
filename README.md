@@ -2,7 +2,7 @@
 
 Work in progress multi-target annotation based flyweight generator.
 
-Given an specification object, Eider generates a flyweight that can be used to read and write to a buffer. The original specification object is not used at runtime, only for defining the layout of the buffer.
+Given an specification object, Eider generates a flyweight that can be used to read and write to a buffer. The original specification object is not used at runtime, only for defining the layout of the buffer. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
 Initial implementation uses Agrona Mutable Direct Buffers for read and write. Random access writes and reads are supported, although sequential reads/writes will provide higher performance. 
 
@@ -23,9 +23,15 @@ Planned for future releases:
 - allocation free header validation
 - segmented reader/writer (i.e. a single object which contains multiple Eider objects read/written into a single buffer)
 
+Features not planned for future releases:
+
+- versioning or backwards/forwards compatibility
+- support for anything but JVM
+- migration
+
 ### Sample
 
-The following specification defines an object with an identifier, timestamp, enabled flag and a 9 character CUSIP string.
+The following specification defines an object with an identifier, timestamp, enabled flag and a 9 character CUSIP string. The eiderId here is the message type identifier, and is written to the buffer at a fixed position. If no predefined value is given, one is automatically assigned and made available as a static field on the generated object. The eider Id can be peeked to simplify building demuxers. 
 
 ```java
 @EiderSpec(eiderId = 42)
