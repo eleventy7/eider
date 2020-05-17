@@ -1,5 +1,7 @@
 # Eider
 
+![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg)
+
 Work in progress multi-target annotation based flyweight generator.
 
 Given an specification object, Eider generates a flyweight that can be used to read and write to a buffer. The original specification object is not used at runtime, only for defining the layout of the buffer. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
