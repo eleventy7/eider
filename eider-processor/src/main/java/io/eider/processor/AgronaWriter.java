@@ -192,6 +192,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(
             MethodSpec.methodBuilder("writeHeader")
+                .addJavadoc("Writes the header data to the buffer.")
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("buffer.putInt(initialOffset + HEADER_OFFSET"
                     +
@@ -207,14 +208,15 @@ public class AgronaWriter implements EiderCodeWriter
         results.add(
             MethodSpec.methodBuilder("validateHeader")
                 .addModifiers(Modifier.PUBLIC)
+                .addJavadoc("Validates the length and eiderSpecId in the header "
+                    + "against the expected values. False if invalid.")
                 .returns(boolean.class)
                 .addStatement("final int eiderSpecId = buffer.getInt(initialOffset + HEADER_OFFSET"
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .addStatement("final int bufferLength = buffer.getInt(initialOffset + LENGTH_OFFSET"
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .addStatement("if (eiderSpecId != EIDER_SPEC_ID) return false")
-                .addStatement("if (bufferLength != BUFFER_LENGTH) return false")
-                .addStatement("return true")
+                .addStatement("return bufferLength == BUFFER_LENGTH")
                 .build()
         );
 
@@ -231,7 +233,8 @@ public class AgronaWriter implements EiderCodeWriter
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("write" + upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
-            .addParameter(getInputType(property.getType()));
+            .addJavadoc("Writes the " + property.getName() + " to the buffer.")
+            .addParameter(getInputType(property));
 
         if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
@@ -243,10 +246,10 @@ public class AgronaWriter implements EiderCodeWriter
         return builder.build();
     }
 
-    private ParameterSpec getInputType(EiderPropertyType type)
+    private ParameterSpec getInputType(PreprocessedEiderProperty property)
     {
-        return ParameterSpec.builder(fromType(type), "value")
-            .addJavadoc("Value to write to buffer")
+        return ParameterSpec.builder(fromType(property.getType()), "value")
+            .addJavadoc("Value for the " + property.getName() + " to write to buffer")
             .build();
     }
 
@@ -297,6 +300,7 @@ public class AgronaWriter implements EiderCodeWriter
     {
         return MethodSpec.methodBuilder("read" + upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
+            .addJavadoc("Reads the " + property.getName() + " as stored in the buffer.")
             .returns(fromType(property.getType()))
             .addStatement(bufferRead(processingEnv, property))
             .build();
