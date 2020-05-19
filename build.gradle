@@ -1,8 +1,6 @@
 /*
  * Copyright 2019-2020 Shaun Laurens.
  *
- * https://shaunlaurens.com, https://eider.io
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -142,11 +140,25 @@ project('eider-test') {
         sourceSets = [project.sourceSets.main]
     }
 
+    compileJava {
+        String relativePath = "build/generated/src/main/java"
+        sourceSets.main.java { srcDir relativePath }
+        File generatedSourceDir = project.file("build/generated/src/main/java")
+        println "Creating and configuring generated source directory $generatedSourceDir"
+        project.mkdir(generatedSourceDir)
+        options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
+        outputs.dir(generatedSourceDir)
+
+    }
+
     compileGeneratedJava {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
         options.deprecation = true
         classpath += sourceSets.main.runtimeClasspath
+        source = sourceSets.main.allJava.matching {
+            exclude '**/generated/**/*'
+        }
     }
 
     dependencies {

@@ -233,7 +233,7 @@ public class AgronaWriter implements EiderCodeWriter
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("write" + upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
-            .addJavadoc("Writes the " + property.getName() + " to the buffer.")
+            .addJavadoc("Writes " + property.getName() + " to the buffer.")
             .addParameter(getInputType(property));
 
         if (property.getType() == EiderPropertyType.FIXED_STRING)
@@ -300,7 +300,7 @@ public class AgronaWriter implements EiderCodeWriter
     {
         return MethodSpec.methodBuilder("read" + upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
-            .addJavadoc("Reads the " + property.getName() + " as stored in the buffer.")
+            .addJavadoc("Reads " + property.getName() + " as stored in the buffer.")
             .returns(fromType(property.getType()))
             .addStatement(bufferRead(processingEnv, property))
             .build();
@@ -331,7 +331,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             return "return buffer.getByte(initialOffset + " + getOffsetName(property.getName())
                 +
-                ") == (byte)1 ? true : false";
+                ") == (byte)1";
         }
         return "// unsupported type " + property.getType().name();
     }
