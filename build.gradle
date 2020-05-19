@@ -148,7 +148,6 @@ project('eider-test') {
         project.mkdir(generatedSourceDir)
         options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
         outputs.dir(generatedSourceDir)
-
     }
 
     compileGeneratedJava {
@@ -156,9 +155,6 @@ project('eider-test') {
         targetCompatibility = javaVersion
         options.deprecation = true
         classpath += sourceSets.main.runtimeClasspath
-        source = sourceSets.main.allJava.matching {
-            exclude '**/generated/**/*'
-        }
     }
 
     dependencies {
@@ -176,7 +172,6 @@ project('eider-test') {
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
 }
-
 
 model {
     tasks.generatePomFileForMavenJavaPublication {
