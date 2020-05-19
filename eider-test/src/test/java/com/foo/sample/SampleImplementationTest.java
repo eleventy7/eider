@@ -35,8 +35,7 @@ public class SampleImplementationTest
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(100);
-        //intelliJ is broken (2020.1)
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SampleImplementationEider.BUFFER_LENGTH);
 
         eiderW.setWriteBuffer(buffer, 0);
         eiderW.writeHeader();
