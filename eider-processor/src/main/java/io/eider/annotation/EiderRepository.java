@@ -26,5 +26,4 @@ import java.lang.annotation.Target;
 public @interface EiderRepository
 {
     String name() default "";
-    boolean indexes() default false;
 }

@@ -28,4 +28,6 @@ public @interface EiderAttribute
     int order() default -1;
     int maxLength() default -1;
     long nullValue() default Long.MIN_VALUE;
+    boolean unique() default false;
+    boolean indexed() default false;
 }

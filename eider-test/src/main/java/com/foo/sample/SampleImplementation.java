@@ -20,13 +20,14 @@ import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 
-@EiderRepository(indexes = true)
+@EiderRepository
 @EiderSpec(eiderId = 42, name = "EiderObjectA", transactional = true)
 public class SampleImplementation
 {
+    @EiderAttribute(unique = true)
     private int id;
     private long timestamp;
     private boolean enabled;
-    @EiderAttribute(maxLength = 9)
+    @EiderAttribute(maxLength = 9, indexed = true)
     private String cusip;
 }

@@ -29,6 +29,7 @@ public class PreprocessedEiderObject
     public PreprocessedEiderObject(final String name, final String classNameInput,
                                    final int sequence, final String packageNameGen,
                                    final boolean fixedLength,
+                                   final boolean buildRepository, final String repositoryName,
                                    final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;

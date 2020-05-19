@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
 import io.eider.annotation.EiderAttribute;
+import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 
 @SupportedAnnotationTypes( {
@@ -133,7 +134,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         }
 
         final int objectEiderId;
-
         if (annotation.eiderId() == -1)
         {
             objectEiderId = sequence;
@@ -153,11 +153,34 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             name = classNameGen;
         }
 
+        EiderRepository repository = typeElement.getAnnotation(EiderRepository.class);
+        final boolean enableRepository;
+        final String repositoryName;
+        if (repository == null)
+        {
+            enableRepository = false;
+            repositoryName = "";
+        }
+        else
+        {
+            enableRepository = true;
+            if (repository.name().isEmpty())
+            {
+                repositoryName = name + "Repository";
+            }
+            else
+            {
+                repositoryName = repository.name();
+            }
+        }
+
         final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,
             classNameInput,
             objectEiderId,
             packageNameGen,
             annotation.fixedLength(),
+            enableRepository,
+            repositoryName,
             preprocessedEiderProperties);
 
         objects.add(obj);
