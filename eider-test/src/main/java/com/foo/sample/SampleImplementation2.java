@@ -18,7 +18,7 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(fixedLength = true, eiderId = 34)
+@EiderSpec(fixedLength = true, eiderId = 34, name = "EiderObjectB")
 public class SampleImplementation2
 {
     private int id;

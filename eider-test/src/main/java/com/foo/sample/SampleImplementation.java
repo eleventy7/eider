@@ -17,9 +17,11 @@
 package com.foo.sample;
 
 import io.eider.annotation.EiderAttribute;
+import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(eiderId = 42)
+@EiderRepository(indexes = true)
+@EiderSpec(eiderId = 42, name = "EiderObjectA", transactional = true)
 public class SampleImplementation
 {
     private int id;

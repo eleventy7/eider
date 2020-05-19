@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package io.eider.processor;
+package io.eider.annotation;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface EiderCodeWriter
+@Target( {ElementType.TYPE})
+@Retention(RetentionPolicy.CLASS)
+public @interface EiderRepository
 {
-    void generate(ProcessingEnvironment pe, List<PreprocessedEiderObject> forObjects);
+    String name() default "";
+    boolean indexes() default false;
 }

@@ -16,7 +16,7 @@
 
 package com.foo.sample;
 
-import com.foo.sample.gen.SampleImplementationEider;
+import com.foo.sample.gen.EiderObjectA;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.concurrent.EpochClock;
@@ -30,12 +30,12 @@ public class SampleImplementationTest
     @Test
     public void canSerialize()
     {
-        final SampleImplementationEider eiderR = new SampleImplementationEider();
-        final SampleImplementationEider eiderW = new SampleImplementationEider();
+        final EiderObjectA eiderR = new EiderObjectA();
+        final EiderObjectA eiderW = new EiderObjectA();
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SampleImplementationEider.BUFFER_LENGTH);
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
 
         eiderW.setWriteBuffer(buffer, 0);
         eiderW.writeHeader();

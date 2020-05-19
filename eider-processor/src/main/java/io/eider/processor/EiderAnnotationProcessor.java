@@ -62,7 +62,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             return false;
         }
 
-        List<PreprosssedEiderObject> objects = new ArrayList<>();
+        List<PreprocessedEiderObject> objects = new ArrayList<>();
 
         for (Element el : roundEnv.getElementsAnnotatedWith(EiderSpec.class))
         {
@@ -88,7 +88,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
     }
 
     private void preprocessObject(ProcessingEnvironment processingEnv, TypeElement typeElement,
-                                  final List<PreprosssedEiderObject> objects)
+                                  final List<PreprocessedEiderObject> objects)
     {
         final String classNameInput = typeElement.getSimpleName().toString();
         final String classNameGen = classNameInput + "Eider";
@@ -143,7 +143,17 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             objectEiderId = annotation.eiderId();
         }
 
-        final PreprosssedEiderObject obj = new PreprosssedEiderObject(classNameGen,
+        final String name;
+        if (!annotation.name().isEmpty())
+        {
+            name = annotation.name();
+        }
+        else
+        {
+            name = classNameGen;
+        }
+
+        final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,
             classNameInput,
             objectEiderId,
             packageNameGen,

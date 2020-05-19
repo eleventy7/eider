@@ -18,7 +18,7 @@ package io.eider.processor;
 
 import java.util.List;
 
-public class PreprosssedEiderObject
+public class PreprocessedEiderObject
 {
     private final String name;
     private final String classNameInput;
@@ -26,10 +26,10 @@ public class PreprosssedEiderObject
     private final String packageNameGen;
     private final List<PreprocessedEiderProperty> propertyList;
 
-    public PreprosssedEiderObject(final String name, final String classNameInput,
-                                  final int sequence, final String packageNameGen,
-                                  final boolean fixedLength,
-                                  final List<PreprocessedEiderProperty> propertyList)
+    public PreprocessedEiderObject(final String name, final String classNameInput,
+                                   final int sequence, final String packageNameGen,
+                                   final boolean fixedLength,
+                                   final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
         this.classNameInput = classNameInput;
