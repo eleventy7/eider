@@ -68,14 +68,15 @@ final int initialOffset = 0;
 
 ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SampleImplementationEider.BUFFER_LENGTH);
 
-write.setWriteBuffer(buffer, initialOffset);
+write.setUnderlyingBuffer(buffer, initialOffset);
+read.setUnderlyingBuffer(buffer, initialOffset);
+
 write.writeHeader();
 write.writeCusip("037833100");
 write.writeEnabled(true);
 write.writeId(213);
 write.writeTimestamp(now);
 
-read.setReadBuffer(buffer, initialOffset);
 Assertions.assertTrue(read.validateHeader());
 Assertions.assertEquals("037833100", read.readCusip());
 Assertions.assertTrue(read.readEnabled());
