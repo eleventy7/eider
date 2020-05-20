@@ -114,8 +114,12 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                 if (attribute != null)
                 {
                     annotations.put(Constants.MAXLENGTH, Integer.toString(attribute.maxLength()));
-                    annotations.put(Constants.NULL_VALUE, Long.toString(attribute.nullValue()));
+                    annotations.put(Constants.NULL_VALUE_LONG, Long.toString(attribute.nullValueLong()));
+                    annotations.put(Constants.NULL_VALUE_STRING, attribute.nullValueString());
+                    annotations.put(Constants.NULL_VALUE_INT, Integer.toString(attribute.nullValueInt()));
                     annotations.put(Constants.ATTRIBUTE_ORDER, Integer.toString(attribute.order()));
+                    annotations.put(Constants.UNIQUE, Boolean.toString(attribute.indexed()));
+                    annotations.put(Constants.INDEXED, Boolean.toString(attribute.unique()));
 
                     if (attribute.maxLength() != -1)
                     {

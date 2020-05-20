@@ -27,7 +27,9 @@ public @interface EiderAttribute
 {
     int order() default -1;
     int maxLength() default -1;
-    long nullValue() default Long.MIN_VALUE;
+    String nullValueString() default "";
+    long nullValueLong() default Long.MIN_VALUE;
+    int nullValueInt() default Integer.MIN_VALUE;
     boolean unique() default false;
     boolean indexed() default false;
 }
