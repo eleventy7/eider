@@ -120,6 +120,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     annotations.put(Constants.ATTRIBUTE_ORDER, Integer.toString(attribute.order()));
                     annotations.put(Constants.UNIQUE, Boolean.toString(attribute.indexed()));
                     annotations.put(Constants.INDEXED, Boolean.toString(attribute.unique()));
+                    annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
 
                     if (attribute.maxLength() != -1)
                     {
@@ -185,6 +186,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             annotation.fixedLength(),
             enableRepository,
             repositoryName,
+            annotation.transactional(),
             preprocessedEiderProperties);
 
         objects.add(obj);

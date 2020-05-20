@@ -9,4 +9,5 @@ public class Constants
     public static final String ATTRIBUTE_ORDER = "attribute.order";
     public static final String UNIQUE = "unique";
     public static final String INDEXED = "indexed";
+    public static final String KEY = "key";
 }

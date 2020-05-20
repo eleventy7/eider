@@ -27,8 +27,11 @@ import org.junit.jupiter.api.Test;
 
 public class SampleImplementationTest
 {
+
+    public static final String CUSIP = "037833100";
+
     @Test
-    public void canSerialize()
+    public void canReadWrite()
     {
         final EiderObjectA eiderR = new EiderObjectA();
         final EiderObjectA eiderW = new EiderObjectA();
@@ -39,16 +42,45 @@ public class SampleImplementationTest
 
         eiderW.setWriteBuffer(buffer, 0);
         eiderW.writeHeader();
-        eiderW.writeCusip("037833100");
+        eiderW.writeCusip(CUSIP);
         eiderW.writeEnabled(true);
         eiderW.writeId(213);
         eiderW.writeTimestamp(now);
 
         eiderR.setReadBuffer(buffer, 0);
         Assertions.assertTrue(eiderR.validateHeader());
-        Assertions.assertEquals("037833100", eiderR.readCusip());
+        Assertions.assertEquals(CUSIP, eiderR.readCusip());
         Assertions.assertTrue(eiderR.readEnabled());
         Assertions.assertEquals(now, eiderR.readTimestamp());
         Assertions.assertEquals(213, eiderR.readId());
+    }
+
+    @Test
+    public void canRollback()
+    {
+        final EiderObjectA eiderR = new EiderObjectA();
+        final EiderObjectA eiderW = new EiderObjectA();
+        final EpochClock clock = new SystemEpochClock();
+        final long now = clock.time();
+
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
+        eiderR.setReadBuffer(buffer, 0);
+
+        eiderW.setWriteBuffer(buffer, 0);
+        eiderW.writeHeader();
+        eiderW.writeCusip(CUSIP);
+        eiderW.writeEnabled(true);
+        eiderW.writeId(213);
+        eiderW.writeTimestamp(now);
+
+        Assertions.assertEquals(CUSIP, eiderR.readCusip());
+
+        eiderW.beginTransaction();
+        eiderW.writeCusip("zzzzzzzzz");
+        //by default dirty reads are supported
+        Assertions.assertEquals("zzzzzzzzz", eiderR.readCusip());
+        eiderW.rollback();
+
+        Assertions.assertEquals(CUSIP, eiderR.readCusip());
     }
 }

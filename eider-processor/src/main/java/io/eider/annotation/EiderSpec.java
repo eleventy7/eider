@@ -28,6 +28,6 @@ public @interface EiderSpec
     int eiderId() default -1;
     boolean fixedLength() default true;
     boolean transactional() default false;
-    boolean favorCommits() default true;
+    boolean transactionalDirtyReads() default true;
     String name() default "";
 }

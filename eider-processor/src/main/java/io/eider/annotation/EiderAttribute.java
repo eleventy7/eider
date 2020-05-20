@@ -30,6 +30,7 @@ public @interface EiderAttribute
     String nullValueString() default "";
     long nullValueLong() default Long.MIN_VALUE;
     int nullValueInt() default Integer.MIN_VALUE;
+    boolean key() default false;
     boolean unique() default false;
     boolean indexed() default false;
 }
