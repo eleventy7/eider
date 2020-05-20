@@ -8,30 +8,38 @@ Given a specification object, Eider generates a flyweight that can be used to re
 
 Initial implementation uses Agrona Mutable Direct Buffers for read and write. Values are read from and written to the buffer directly. Random access writes and reads are supported, although sequential reads/writes will provide higher performance. 
 
-Initial release has limited type support:
+Current features:
 
-- boolean
-- int
-- long
-- fixed length ASCII strings
+- Type support
+    - boolean
+    - int
+    - long
+    - fixed length ASCII strings
+- Generate flyweights that support fixed length objects
+- Optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. This feature is intended to support repositories within an Aeron Cluster hosted replicated state machine. Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
 
-Planned for future releases:
+Planned for near future:
 
+- transactional fixed size repositories
+- schema validation
+- simple operation helpers within flyweights (increment, decrement, etc)
+- segmented reader/writer (i.e. a single object which contains multiple Eider objects read/written into a single buffer)
+
+Features for future versions:
+
+- JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations
 - single variable length string or byte[] field
 - byte[], BigDecimal, char, short types support
 - mulitple variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
-- JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations 
 - repeating groups and sub-objects
 - Nullable objects with customizable null representations 
-- schema validation
-- allocation free header validation
-- segmented reader/writer (i.e. a single object which contains multiple Eider objects read/written into a single buffer)
 
 Features not planned for future releases:
 
 - versioning or backwards/forwards compatibility
 - support for anything but JVM
-- migration
+- thread safety
+- migrations
 
 ### Sample
 
