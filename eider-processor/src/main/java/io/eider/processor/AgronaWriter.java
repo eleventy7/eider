@@ -16,18 +16,6 @@
 
 package io.eider.processor;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -36,6 +24,18 @@ import com.squareup.javapoet.TypeSpec;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.io.Writer;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class AgronaWriter implements EiderCodeWriter
 {
@@ -59,8 +59,7 @@ public class AgronaWriter implements EiderCodeWriter
             .addField(buildEiderIdField(processingEnv, object.getSequence()))
             .addFields(offsetsForFields(processingEnv, object.getPropertyList()))
             .addFields(internalFields(processingEnv, object))
-            .addMethod(buildRead(processingEnv))
-            .addMethod(buildWrite(processingEnv))
+            .addMethod(buildBuffer(processingEnv, object))
             .addMethod(buildEiderId(processingEnv))
             .addMethods(forInternalFields(processingEnv, object.getPropertyList()));
 
@@ -462,40 +461,28 @@ public class AgronaWriter implements EiderCodeWriter
 
     }
 
-    private MethodSpec buildRead(ProcessingEnvironment processingEnv)
+    private MethodSpec buildBuffer(ProcessingEnvironment processingEnv, PreprocessedEiderObject object)
     {
-        return MethodSpec.methodBuilder("setReadBuffer")
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
             .returns(void.class)
-            .addJavadoc("Reads from the provided {@link org.agrona.MutableDirectBuffer} from the given offset.\n"
+            .addJavadoc("Uses the provided {@link org.agrona.MutableDirectBuffer} from the given offset.\n"
                 +
-                "@param buffer - buffer to read from.\n"
+                "@param buffer - buffer to read from and write to.\n"
                 +
-                "@param offset - offset to begin reading from in the buffer.\n")
+                "@param offset - offset to begin reading from/writing to in the buffer.\n")
             .addParameter(MutableDirectBuffer.class, "buffer")
             .addParameter(int.class, "offset")
             .addStatement("this.initialOffset = offset")
-            .addStatement("this.buffer = buffer")
-            .addStatement(bufferLimitCheck())
-            .build();
-    }
+            .addStatement("this.buffer = buffer");
 
-    private MethodSpec buildWrite(ProcessingEnvironment processingEnv)
-    {
-        return MethodSpec.methodBuilder("setWriteBuffer")
-            .addModifiers(Modifier.PUBLIC)
-            .returns(void.class)
-            .addJavadoc("Writes to the provided {@link org.agrona.MutableDirectBuffer} from the given offset.\n"
-                +
-                "@param buffer - buffer to write to.\n"
-                +
-                "@param offset - offset to begin writing from in the buffer.\n")
-            .addParameter(MutableDirectBuffer.class, "buffer")
-            .addParameter(int.class, "offset")
-            .addStatement("this.initialOffset = offset")
-            .addStatement("this.buffer = buffer")
-            .addStatement(bufferLimitCheck())
-            .build();
+        if (object.isTransactional())
+        {
+            builder.addStatement("transactionCopyBufferSet = false");
+        }
+
+        builder.addStatement(bufferLimitCheck());
+        return builder.build();
     }
 
     private void writeNote(ProcessingEnvironment pe, String note)

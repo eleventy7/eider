@@ -40,14 +40,15 @@ public class SampleImplementationTest
 
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
 
-        eiderW.setWriteBuffer(buffer, 0);
+        eiderW.setUnderlyingBuffer(buffer, 0);
+        eiderR.setUnderlyingBuffer(buffer, 0);
+
         eiderW.writeHeader();
         eiderW.writeCusip(CUSIP);
         eiderW.writeEnabled(true);
         eiderW.writeId(213);
         eiderW.writeTimestamp(now);
 
-        eiderR.setReadBuffer(buffer, 0);
         Assertions.assertTrue(eiderR.validateHeader());
         Assertions.assertEquals(CUSIP, eiderR.readCusip());
         Assertions.assertTrue(eiderR.readEnabled());
@@ -64,9 +65,10 @@ public class SampleImplementationTest
         final long now = clock.time();
 
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
-        eiderR.setReadBuffer(buffer, 0);
 
-        eiderW.setWriteBuffer(buffer, 0);
+        eiderR.setUnderlyingBuffer(buffer, 0);
+        eiderW.setUnderlyingBuffer(buffer, 0);
+
         eiderW.writeHeader();
         eiderW.writeCusip(CUSIP);
         eiderW.writeEnabled(true);
