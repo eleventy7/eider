@@ -96,6 +96,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final String packageName = typeElement.getQualifiedName().toString();
         final String packageNameGen = packageName.replace(classNameInput, "gen");
         sequence += 1;
+        int keyFieldCount = 0;
         writeNote(processingEnv, "Eider is preprocessing " + packageName + " - item: " + sequence);
 
         EiderSpec annotation = typeElement.getAnnotation(EiderSpec.class);
@@ -121,11 +122,25 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     annotations.put(Constants.UNIQUE, Boolean.toString(attribute.indexed()));
                     annotations.put(Constants.INDEXED, Boolean.toString(attribute.unique()));
                     annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
+                    annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(attribute.sequence()));
+
+                    if (attribute.key())
+                    {
+                        if (keyFieldCount != 0)
+                        {
+                            throw new RuntimeException("Only a single key field allowed");
+                        }
+                        keyFieldCount += 1;
+                    }
 
                     if (attribute.maxLength() != -1)
                     {
                         isFixed = true;
                     }
+                }
+                else
+                {
+                    applyDefaultAnnotations(annotations);
                 }
 
                 final String attrName = element.getSimpleName().toString();
@@ -190,6 +205,19 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             preprocessedEiderProperties);
 
         objects.add(obj);
+    }
+
+    private void applyDefaultAnnotations(Map<String, String> annotations)
+    {
+        annotations.put(Constants.MAXLENGTH, Integer.toString(Integer.MIN_VALUE));
+        annotations.put(Constants.NULL_VALUE_LONG, Long.toString(Long.MIN_VALUE));
+        annotations.put(Constants.NULL_VALUE_STRING, "");
+        annotations.put(Constants.NULL_VALUE_INT, Integer.toString(Integer.MIN_VALUE));
+        annotations.put(Constants.ATTRIBUTE_ORDER, Integer.toString(Integer.MIN_VALUE));
+        annotations.put(Constants.UNIQUE, Boolean.toString(false));
+        annotations.put(Constants.INDEXED, Boolean.toString(false));
+        annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(false));
+        annotations.put(Constants.KEY, Boolean.toString(false));
     }
 
     private EiderPropertyType defineType(String typeStr, boolean isFixed)

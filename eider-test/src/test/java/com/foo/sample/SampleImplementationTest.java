@@ -17,6 +17,8 @@
 package com.foo.sample;
 
 import com.foo.sample.gen.EiderObjectA;
+import com.foo.sample.gen.EiderObjectARepository;
+import com.foo.sample.gen.SequenceGenerator;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.concurrent.EpochClock;
@@ -84,5 +86,48 @@ public class SampleImplementationTest
         eiderW.rollback();
 
         Assertions.assertEquals(CUSIP, eiderR.readCusip());
+    }
+
+    @Test
+    public void sequencesWork()
+    {
+        final SequenceGenerator generator = new SequenceGenerator();
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
+        generator.setUnderlyingBuffer(buffer, 0);
+
+        generator.writeCurrentId(1);
+
+        int idid = generator.nextCurrentIdSequence();
+
+        Assertions.assertEquals(2, idid);
+    }
+
+
+    @Test
+    public void canUseRepository()
+    {
+        final EiderObjectARepository repository = EiderObjectARepository.createWithCapacity(2);
+
+        final SequenceGenerator generator = new SequenceGenerator();
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
+        generator.setUnderlyingBuffer(buffer, 0);
+
+        EiderObjectA flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        EiderObjectA flyRead = repository.getByKey(1);
+        Assertions.assertEquals("CUSIP0001", flyRead.readCusip());
+        flyRead = repository.getByKey(2);
+        Assertions.assertEquals("CUSIP0002", flyRead.readCusip());
+
+        flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        Assertions.assertNull(flyWrite);
+
     }
 }

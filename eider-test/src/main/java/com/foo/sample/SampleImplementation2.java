@@ -16,11 +16,12 @@
 
 package com.foo.sample;
 
+import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(fixedLength = true, eiderId = 34, name = "EiderObjectB")
+@EiderSpec(eiderId = 34, name = "SequenceGenerator")
 public class SampleImplementation2
 {
-    private int id;
-    private long timestamp;
+    @EiderAttribute(sequence = true)
+    private int currentId;
 }

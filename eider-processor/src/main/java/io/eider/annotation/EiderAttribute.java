@@ -25,8 +25,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface EiderAttribute
 {
-    int order() default -1;
-    int maxLength() default -1;
+    int order() default Integer.MIN_VALUE;
+    int maxLength() default Integer.MIN_VALUE;
+    boolean sequence() default false;
     String nullValueString() default "";
     long nullValueLong() default Long.MIN_VALUE;
     int nullValueInt() default Integer.MIN_VALUE;

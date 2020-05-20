@@ -24,7 +24,7 @@ import io.eider.annotation.EiderSpec;
 @EiderSpec(eiderId = 42, name = "EiderObjectA", transactional = true)
 public class SampleImplementation
 {
-    @EiderAttribute(unique = true)
+    @EiderAttribute(unique = true, key = true)
     private int id;
     private long timestamp;
     private boolean enabled;
