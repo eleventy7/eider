@@ -133,8 +133,8 @@ Warnings:
 ### Sequences
 
 ```java
-@EiderSpec
-public class SequenceGenerator
+@EiderSpec(name = "SequenceGenerator")
+public class SequenceGeneratorSpec
 {
     @EiderAttribute(sequence = true)
     private int tradeId;
@@ -202,7 +202,7 @@ The intent behind the PJC variant is to investigate Aeron Cluster using persiste
 
 ### Requirements
 
-- Java 14 (to enable work on the JEP 370 variant)
+- Java 11
 - Gradle 6.4.1
 
 ### Why Eider?

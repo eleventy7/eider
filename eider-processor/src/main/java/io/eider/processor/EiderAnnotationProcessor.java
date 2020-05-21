@@ -52,7 +52,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
     {
         super.init(processingEnv);
         writer = WriterFactory.getWriter(EiderGeneratorType.AGRONA);
-        writeNote(processingEnv, "Eider is ready");
+        writeNote(processingEnv, "Eider is enabled");
     }
 
     @Override
@@ -83,7 +83,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         }
 
         writer.generate(processingEnv, objects);
-        writeNote(processingEnv, "Eider has finished");
 
         return true;
     }
@@ -97,7 +96,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final String packageNameGen = packageName.replace(classNameInput, "gen");
         sequence += 1;
         int keyFieldCount = 0;
-        writeNote(processingEnv, "Eider is preprocessing " + packageName + " - item: " + sequence);
 
         EiderSpec annotation = typeElement.getAnnotation(EiderSpec.class);
 
