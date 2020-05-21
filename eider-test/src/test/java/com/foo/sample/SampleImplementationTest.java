@@ -16,6 +16,7 @@
 
 package com.foo.sample;
 
+import com.foo.sample.gen.EiderHelper;
 import com.foo.sample.gen.EiderObjectA;
 import com.foo.sample.gen.EiderObjectARepository;
 import com.foo.sample.gen.SequenceGenerator;
@@ -51,11 +52,14 @@ public class SampleImplementationTest
         eiderW.writeId(213);
         eiderW.writeTimestamp(now);
 
+
         Assertions.assertTrue(eiderR.validateHeader());
         Assertions.assertEquals(CUSIP, eiderR.readCusip());
         Assertions.assertTrue(eiderR.readEnabled());
         Assertions.assertEquals(now, eiderR.readTimestamp());
         Assertions.assertEquals(213, eiderR.readId());
+
+        Assertions.assertEquals(EiderObjectA.EIDER_SPEC_ID, EiderHelper.getEiderSpecId(0, buffer));
     }
 
     @Test
