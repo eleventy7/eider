@@ -28,8 +28,7 @@ defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
 def javaVersion = JavaVersion.VERSION_14
-def githubProperties = new Properties()
-githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
 
 allprojects {
     apply plugin: 'java'
@@ -139,8 +138,8 @@ project('eider-processor') {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/eleventy7/eider")
                 credentials {
-                    username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
-                    password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+                    username = System.getenv("GPR_USER")
+                    password = System.getenv("GPR_API_KEY")
                 }
             }
         }
@@ -154,7 +153,6 @@ project('eider-processor') {
             }
         }
     }
-
 }
 
 project('eider-test') {
