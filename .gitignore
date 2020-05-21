@@ -34,3 +34,5 @@ build/
 *.iws
 /eider-test/out/
 /eider-processor/out/
+
+github.properties

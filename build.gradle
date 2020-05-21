@@ -28,6 +28,8 @@ defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
 def javaVersion = JavaVersion.VERSION_14
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
 
 allprojects {
     apply plugin: 'java'
@@ -105,11 +107,18 @@ allprojects {
 project('eider-processor') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
+    apply plugin: "maven-publish"
 
     license {
         header = new File(rootDir, 'config/header.txt')
         include '**/*.java'
         sourceSets = [project.sourceSets.main]
+    }
+
+    shadowJar {
+        baseName = 'eider'
+        classifier = eiderGroup
+        archiveVersion = eiderVersion
     }
 
     dependencies {
@@ -123,6 +132,29 @@ project('eider-processor') {
         checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.32'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/eleventy7/eider")
+                credentials {
+                    username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+                    password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+                }
+            }
+        }
+
+        publications {
+            ghp(MavenPublication) {
+                groupId project.group
+                artifactId project.name
+                version project.version
+                from components.java
+            }
+        }
+    }
+
 }
 
 project('eider-test') {
@@ -173,42 +205,7 @@ project('eider-test') {
     }
 }
 
-model {
-    tasks.generatePomFileForMavenJavaPublication {
-        destination = file("$project.projectDir/pom.xml")
-    }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = 'eider'
-            from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name = 'Eider'
-                description = 'Dependency Tracking Only'
-                url = 'http://eider.io'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 wrapper {
-    gradleVersion = '6.4'
+    gradleVersion = '6.4.1'
     distributionType = 'ALL'
 }
