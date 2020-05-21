@@ -118,9 +118,11 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PRIVATE)
                 .addStatement("flyweight = new " + object.getName() + "()")
                 .addStatement("maxCapacity = capacity")
-                .addStatement("internalBuffer = new ExpandableDirectByteBuffer(capacity * "
+                .addStatement("repositoryBufferLength = capacity * "
                     +
-                    object.getName() + ".BUFFER_LENGTH)")
+                    object.getName() + ".BUFFER_LENGTH")
+                .addStatement("internalBuffer = new ExpandableDirectByteBuffer(repositoryBufferLength)")
+                .addStatement("internalBuffer.setMemory(0, repositoryBufferLength, (byte)0)")
                 .addStatement("offsetByKey = new Int2IntHashMap(Integer.MIN_VALUE)")
                 .build()
         );
@@ -168,6 +170,24 @@ public class AgronaWriter implements EiderCodeWriter
                 .addParameter(int.class, "id")
                 .returns(boolean.class)
                 .addStatement("return offsetByKey.containsKey(id)")
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("getCurrentCount")
+                .addJavadoc("Returns the number of elements currently in the repository.")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(int.class)
+                .addStatement("return currentCount")
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("getCapacity")
+                .addJavadoc("Returns the maximum number of elements that can be stored in the repository.")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(int.class)
+                .addStatement("return maxCapacity")
                 .build()
         );
 
@@ -228,6 +248,13 @@ public class AgronaWriter implements EiderCodeWriter
         results.add(FieldSpec
             .builder(int.class, "maxCapacity")
             .addJavadoc("The maximum count of elements in the buffer")
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.FINAL)
+            .build());
+
+        results.add(FieldSpec
+            .builder(int.class, "repositoryBufferLength")
+            .addJavadoc("The length of the internal buffer")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
@@ -343,8 +370,7 @@ public class AgronaWriter implements EiderCodeWriter
             MethodSpec.methodBuilder("commit")
                 .addJavadoc("Prevents rollback being called within a new call to beginTransaction.")
                 .addModifiers(Modifier.PUBLIC)
-                .addStatement("buffer.getBytes(0, transactionCopy, 0, BUFFER_LENGTH)")
-                .addStatement("transactionCopyBufferSet = true")
+                .addStatement("transactionCopyBufferSet = false")
                 .build()
         );
 
