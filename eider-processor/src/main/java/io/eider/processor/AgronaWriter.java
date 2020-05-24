@@ -99,6 +99,7 @@ public class AgronaWriter implements EiderCodeWriter
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(composite.getName())
             .addFields(buildCompositeFields(pe, composite, state, globalState))
+            .addMethods(buildCompositeMethods(pe, composite, state, globalState))
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
         TypeSpec generated = builder.build();
 
@@ -124,6 +125,21 @@ public class AgronaWriter implements EiderCodeWriter
         }
     }
 
+    private Iterable<MethodSpec> buildCompositeMethods(ProcessingEnvironment pe, PreprocessedEiderComposite composite, AgronaWriterState state, AgronaWriterGlobalState globalState)
+    {
+        List<MethodSpec> results = new ArrayList<>();
+
+        results.add(
+            MethodSpec.constructorBuilder()
+                .addJavadoc("constructor")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("internalBuffer = new MutableDirectBuffer(BUFFER_LENGTH)")
+                .build()
+        );
+
+        return results;
+    }
+
     private Iterable<FieldSpec> buildCompositeFields(ProcessingEnvironment pe,
                                                      PreprocessedEiderComposite composite,
                                                      AgronaWriterState state,
@@ -142,7 +158,15 @@ public class AgronaWriter implements EiderCodeWriter
             .addJavadoc("The length of this composite object")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.STATIC)
             .initializer(Integer.toString(bufferTotalLength))
+            .build());
+
+        fields.add(FieldSpec
+            .builder(int.class, "internalBuffer")
+            .addJavadoc("The internal buffer to hold this composite object")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
             .build());
 
         return fields;
