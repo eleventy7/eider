@@ -2,11 +2,11 @@
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java)
 
-Annotation based flyweight generator. This is not currently used in production.
+Experimental annotation based flyweight generator. This is not currently used in production.
 
 Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
-Initial implementation uses Agrona Mutable Direct Buffers for read and write. Values are read from and written to the buffer directly - they do not hold any field values internally - and as a result, cannot be used or held like regular objects. Random access writes and reads are supported, although sequential reads/writes will provide higher performance. 
+Initial implementation uses Agrona Mutable Direct Buffers for read and write. Values are read from and written to the buffer directly - they do not hold any field values internally - and as a result, cannot be used or held like regular objects. Random access writes and reads are supported. 
 
 Current features:
 
@@ -17,30 +17,31 @@ Current features:
     - fixed length ASCII strings
 - generate flyweights that support fixed length objects
 - flyweight backed sequence generator
-- fixed size repositories
-- optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. This feature is intended to support repositories within an Aeron Cluster hosted replicated state machine. Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
+- optional fixed size repositories with a pre-defined capactity
+    - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
+    - `getByKey`, `containsKey` and `Iterator<>` functionality
+- optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
+    - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
+- composite reader/writer
+    - provides a single, keyed object which contains multiple Eider objects read/written into a single buffer
+    - optional repository support
 
-Planned for near future:
-
-- segmented reader/writer (i.e. a single object which contains multiple Eider objects read/written into a single buffer)
-
-Features that might make it into future versions:
+Features that may be added to future versions:
 
 - transaction support in the repositories
-- schema validation
 - JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations
-- single variable length string or byte[] field
-- byte[], BigDecimal, char, short types support
-- mulitple variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
-- repeating groups and sub-objects
-- Nullable objects with customizable null representations 
 
 Features not planned for future releases:
 
+- byte[], BigDecimal, char, short or other type support
 - versioning or backwards/forwards compatibility
 - support for anything but JVM
 - thread safety
+- schema validation
 - migrations
+- mulitple variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
+- repeating groups and sub-objects
+- Nullable objects with customizable null representations 
 
 ### Flyweight Sample
 
@@ -154,8 +155,6 @@ generator.writeTradeId(1);
 //get next tradeId
 int nextTrade = generator.nextTradeIdSequence();
 ```
-
-
 ### Repository Sample
 
 Repositories do not yet support transactions.
@@ -198,8 +197,6 @@ Warnings:
 
 It's primarily being used for another project with messages sent over Aeron and Aeron Cluster byte buffers, plus data held within a Replicated State Machine running within Aeron Cluster. 
  
-The intent behind the PJC variant is to investigate Aeron Cluster using persistent memory for the state machine internal data as well as snapshotting to persistent memory.
-
 ### Requirements
 
 - Java 11

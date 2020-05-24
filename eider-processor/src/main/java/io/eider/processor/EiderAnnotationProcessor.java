@@ -102,7 +102,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             preprocessCompositeObject(processingEnv, element, objects, composites);
         }
 
-        writer.generate(processingEnv, objects);
+        writer.generate(processingEnv, objects, composites);
 
         return true;
     }

@@ -16,12 +16,15 @@
 
 package io.eider.processor;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface EiderCodeWriter
+public class AgronaWriterGlobalState
 {
-    void generate(ProcessingEnvironment pe,
-                  List<PreprocessedEiderObject> forObjects,
-                  List<PreprocessedEiderComposite> composites);
+    private Map<String, Integer> bufferLengths = new HashMap<>();
+
+    public Map<String, Integer> getBufferLengths()
+    {
+        return bufferLengths;
+    }
 }
