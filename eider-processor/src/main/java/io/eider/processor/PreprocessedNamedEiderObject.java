@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package io.eider.annotation;
+package io.eider.processor;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target( {ElementType.TYPE})
-@Retention(RetentionPolicy.CLASS)
-public @interface EiderSegmented
+public class PreprocessedNamedEiderObject
 {
-    String name() default "";
+    private final String name;
+    private final PreprocessedEiderObject object;
+
+    public PreprocessedNamedEiderObject(final String name, final PreprocessedEiderObject object)
+    {
+        this.name = name;
+        this.object = object;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public PreprocessedEiderObject getObject()
+    {
+        return object;
+    }
 }

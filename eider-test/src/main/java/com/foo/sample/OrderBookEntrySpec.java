@@ -18,9 +18,9 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderRepository;
-import io.eider.annotation.EiderSegmented;
+import io.eider.annotation.EiderComposite;
 
-@EiderSegmented(name = "OrderBookEntry")
+@EiderComposite(name = "OrderBookEntry", eiderId = 688)
 @EiderRepository
 public class OrderBookEntrySpec
 {

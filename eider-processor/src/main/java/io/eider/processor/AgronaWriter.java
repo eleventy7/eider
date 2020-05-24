@@ -132,7 +132,7 @@ public class AgronaWriter implements EiderCodeWriter
         return results;
     }
 
-    private void generateRepository(final ProcessingEnvironment processingEnv, final PreprocessedEiderObject object,
+    private void generateRepository(final ProcessingEnvironment pe, final PreprocessedEiderObject object,
                                     final AgronaWriterState state)
     {
         String keyField = getKeyField(object);
@@ -144,9 +144,9 @@ public class AgronaWriter implements EiderCodeWriter
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-            .addMethods(buildRepositoryMethods(processingEnv, object, state))
-            .addFields(buildRepositoryFields(processingEnv, object, state))
-            .addTypes(buildRepositoryIterators(processingEnv, object, state));
+            .addMethods(buildRepositoryMethods(pe, object, state))
+            .addFields(buildRepositoryFields(pe, object, state))
+            .addTypes(buildRepositoryIterators(pe, object, state));
 
         TypeSpec generated = builder.build();
 
@@ -160,7 +160,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         try
         { // write the file
-            JavaFileObject source = processingEnv.getFiler()
+            JavaFileObject source = pe.getFiler()
                 .createSourceFile(object.getPackageNameGen() + "." + object.getRepositoryName());
             Writer writer = source.openWriter();
             javaFile.writeTo(writer);
@@ -177,20 +177,6 @@ public class AgronaWriter implements EiderCodeWriter
                                                         PreprocessedEiderObject object, AgronaWriterState state)
     {
         List<TypeSpec> results = new ArrayList<>();
-        /*
-        * ClassName hoverboard = ClassName.get("com.mattel", "Hoverboard");
-            ClassName list = ClassName.get("java.util", "List");
-            ClassName arrayList = ClassName.get("java.util", "ArrayList");
-            TypeName listOfHoverboards = ParameterizedTypeName.get(list, hoverboard);
-
-            MethodSpec beyond = MethodSpec.methodBuilder("beyond")
-                .returns(listOfHoverboards)
-                .addStatement("$T result = new $T<>()", listOfHoverboards, arrayList)
-                .addStatement("result.add(new $T())", hoverboard)
-                .addStatement("result.add(new $T())", hoverboard)
-                .addStatement("result.add(new $T())", hoverboard)
-                .addStatement("return result")
-                .build();*/
 
         final ClassName iterator = ClassName.get("java.util", "Iterator");
         final ClassName genObj = ClassName.get("", object.getName());
@@ -254,7 +240,7 @@ public class AgronaWriter implements EiderCodeWriter
             .build();
     }
 
-    private Iterable<MethodSpec> buildRepositoryMethods(ProcessingEnvironment processingEnv,
+    private Iterable<MethodSpec> buildRepositoryMethods(ProcessingEnvironment pe,
                                                         PreprocessedEiderObject object,
                                                         AgronaWriterState state)
     {
@@ -280,7 +266,6 @@ public class AgronaWriter implements EiderCodeWriter
                 .addStatement("unfilteredIterator = new UnfilteredIterator()")
                 .build()
         );
-
 
         results.add(
             MethodSpec.methodBuilder("createWithCapacity")
@@ -374,14 +359,6 @@ public class AgronaWriter implements EiderCodeWriter
                 .addStatement("return unfilteredIterator")
                 .build()
         );
-
-        for (final PreprocessedEiderProperty prop : object.getPropertyList())
-        {
-            if (prop.getAnnotations().get(Constants.REPOSITORY_FILTER).equalsIgnoreCase(TRUE))
-            {
-                results.add(buildRepositoryFilterMethod(processingEnv, prop, object));
-            }
-        }
 
         return results;
     }

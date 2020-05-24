@@ -27,7 +27,6 @@ public class EiderObjectSpec
     @EiderAttribute(unique = true, key = true)
     private int id;
     private long timestamp;
-    @EiderAttribute(repositoryFilter = true)
     private boolean enabled;
     @EiderAttribute(maxLength = 9, indexed = true)
     private String cusip;

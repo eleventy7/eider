@@ -21,17 +21,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target( {ElementType.FIELD})
+@Target( {ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
-public @interface EiderAttribute
+public @interface EiderComposite
 {
-    int order() default Integer.MIN_VALUE;
-    int maxLength() default Integer.MIN_VALUE;
-    boolean sequence() default false;
-    String nullValueString() default "";
-    long nullValueLong() default Long.MIN_VALUE;
-    int nullValueInt() default Integer.MIN_VALUE;
-    boolean key() default false;
-    boolean unique() default false;
-    boolean indexed() default false;
+    int eiderId() default -1;
+    String name() default "";
 }
