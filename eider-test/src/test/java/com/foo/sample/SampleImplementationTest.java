@@ -17,8 +17,8 @@
 package com.foo.sample;
 
 import com.foo.sample.gen.EiderHelper;
-import com.foo.sample.gen.EiderObjectA;
-import com.foo.sample.gen.EiderObjectARepository;
+import com.foo.sample.gen.EiderObject;
+import com.foo.sample.gen.EiderObjectRepository;
 import com.foo.sample.gen.SequenceGenerator;
 
 import org.agrona.ExpandableArrayBuffer;
@@ -36,12 +36,12 @@ public class SampleImplementationTest
     @Test
     public void canReadWrite()
     {
-        final EiderObjectA eiderR = new EiderObjectA();
-        final EiderObjectA eiderW = new EiderObjectA();
+        final EiderObject eiderR = new EiderObject();
+        final EiderObject eiderW = new EiderObject();
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
 
         eiderW.setUnderlyingBuffer(buffer, 0);
         eiderR.setUnderlyingBuffer(buffer, 0);
@@ -59,18 +59,18 @@ public class SampleImplementationTest
         Assertions.assertEquals(now, eiderR.readTimestamp());
         Assertions.assertEquals(213, eiderR.readId());
 
-        Assertions.assertEquals(EiderObjectA.EIDER_SPEC_ID, EiderHelper.getEiderSpecId(0, buffer));
+        Assertions.assertEquals(EiderObject.EIDER_SPEC_ID, EiderHelper.getEiderSpecId(0, buffer));
     }
 
     @Test
     public void canRollback()
     {
-        final EiderObjectA eiderR = new EiderObjectA();
-        final EiderObjectA eiderW = new EiderObjectA();
+        final EiderObject eiderR = new EiderObject();
+        final EiderObject eiderW = new EiderObject();
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObjectA.BUFFER_LENGTH);
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
 
         eiderR.setUnderlyingBuffer(buffer, 0);
         eiderW.setUnderlyingBuffer(buffer, 0);
@@ -99,9 +99,9 @@ public class SampleImplementationTest
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
         generator.setUnderlyingBuffer(buffer, 0);
 
-        generator.writeCurrentId(1);
+        generator.writeOrderId(1);
 
-        int idid = generator.nextCurrentIdSequence();
+        int idid = generator.nextOrderIdSequence();
 
         Assertions.assertEquals(2, idid);
     }
@@ -110,27 +110,27 @@ public class SampleImplementationTest
     @Test
     public void canUseRepository()
     {
-        final EiderObjectARepository repository = EiderObjectARepository.createWithCapacity(2);
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
         final SequenceGenerator generator = new SequenceGenerator();
         ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
         generator.setUnderlyingBuffer(buffer, 0);
 
-        EiderObjectA flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         flyWrite.writeCusip("CUSIP0001");
         flyWrite.writeEnabled(true);
         flyWrite.writeTimestamp(0);
-        flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         flyWrite.writeCusip("CUSIP0002");
         flyWrite.writeEnabled(false);
         flyWrite.writeTimestamp(1);
 
-        EiderObjectA flyRead = repository.getByKey(1);
+        EiderObject flyRead = repository.getByKey(1);
         Assertions.assertEquals("CUSIP0001", flyRead.readCusip());
         flyRead = repository.getByKey(2);
         Assertions.assertEquals("CUSIP0002", flyRead.readCusip());
 
-        flyWrite = repository.createWithKey(generator.nextCurrentIdSequence());
+        flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         Assertions.assertNull(flyWrite);
 
     }

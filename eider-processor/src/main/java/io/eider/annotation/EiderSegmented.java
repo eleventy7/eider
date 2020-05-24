@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.foo.sample;
+package io.eider.annotation;
 
-import io.eider.annotation.EiderAttribute;
-import io.eider.annotation.EiderRepository;
-import io.eider.annotation.EiderSpec;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@EiderRepository
-@EiderSpec(eiderId = 42, name = "EiderObjectA", transactional = true)
-public class SampleImplementation
+@Target( {ElementType.TYPE})
+@Retention(RetentionPolicy.CLASS)
+public @interface EiderSegmented
 {
-    @EiderAttribute(unique = true, key = true)
-    private int id;
-    private long timestamp;
-    private boolean enabled;
-    @EiderAttribute(maxLength = 9, indexed = true)
-    private String cusip;
+    String name() default "";
 }

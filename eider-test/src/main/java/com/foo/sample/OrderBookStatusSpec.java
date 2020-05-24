@@ -16,12 +16,12 @@
 
 package com.foo.sample;
 
-import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(eiderId = 34, name = "SequenceGenerator")
-public class SampleImplementation2
+@EiderSpec(name = "OrderBookStatus")
+public class OrderBookStatusSpec
 {
-    @EiderAttribute(sequence = true)
-    private int currentId;
+    private boolean filled;
+    private long acceptedTimestamp;
+    private long filledTimestamp;
 }

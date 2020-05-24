@@ -16,22 +16,6 @@
 
 package io.eider.processor;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeSpec;
-
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.ExpandableDirectByteBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Int2IntHashMap;
-
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.time.LocalDateTime;
@@ -39,6 +23,24 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.ExpandableDirectByteBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Int2IntHashMap;
 
 public class AgronaWriter implements EiderCodeWriter
 {
@@ -143,7 +145,8 @@ public class AgronaWriter implements EiderCodeWriter
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addMethods(buildRepositoryMethods(processingEnv, object, state))
-            .addFields(buildRepositoryFields(processingEnv, object, state));
+            .addFields(buildRepositoryFields(processingEnv, object, state))
+            .addTypes(buildRepositoryIterators(processingEnv, object, state));
 
         TypeSpec generated = builder.build();
 
@@ -170,6 +173,87 @@ public class AgronaWriter implements EiderCodeWriter
         }
     }
 
+    private Iterable<TypeSpec> buildRepositoryIterators(ProcessingEnvironment processingEnv,
+                                                        PreprocessedEiderObject object, AgronaWriterState state)
+    {
+        List<TypeSpec> results = new ArrayList<>();
+        /*
+        * ClassName hoverboard = ClassName.get("com.mattel", "Hoverboard");
+            ClassName list = ClassName.get("java.util", "List");
+            ClassName arrayList = ClassName.get("java.util", "ArrayList");
+            TypeName listOfHoverboards = ParameterizedTypeName.get(list, hoverboard);
+
+            MethodSpec beyond = MethodSpec.methodBuilder("beyond")
+                .returns(listOfHoverboards)
+                .addStatement("$T result = new $T<>()", listOfHoverboards, arrayList)
+                .addStatement("result.add(new $T())", hoverboard)
+                .addStatement("result.add(new $T())", hoverboard)
+                .addStatement("result.add(new $T())", hoverboard)
+                .addStatement("return result")
+                .build();*/
+
+        final ClassName iterator = ClassName.get("java.util", "Iterator");
+        final ClassName genObj = ClassName.get("", object.getName());
+        final TypeName iteratorGen = ParameterizedTypeName.get(iterator, genObj);
+
+        TypeSpec allItems = TypeSpec.classBuilder("UnfilteredIterator")
+            .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+            .addSuperinterface(iteratorGen)
+            .addField(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()),
+                "iteratorFlyweight", Modifier.PRIVATE).initializer("new " + object.getName() + "()").build())
+            .addField(FieldSpec.builder(int.class, "currentOffset", Modifier.PRIVATE).initializer("0").build())
+            .addMethod(buildAllIteratorHasNext(object))
+            .addMethod(buildAllIteratorNext(object))
+            .addMethod(buildAllIteratorReset(object))
+            .build();
+
+        results.add(allItems);
+
+        return results;
+    }
+
+    private MethodSpec buildAllIteratorReset(PreprocessedEiderObject object)
+    {
+        return MethodSpec.methodBuilder("reset")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(ClassName.get("", "UnfilteredIterator"))
+            .addStatement("currentOffset = 0")
+            .addStatement("return this")
+            .build();
+    }
+
+    private MethodSpec buildAllIteratorNext(PreprocessedEiderObject object)
+    {
+        return MethodSpec.methodBuilder("next")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
+            .beginControlFlow("if (hasNext())")
+            .beginControlFlow("if (currentOffset > maxUsedOffset)")
+            .addStatement("throw new java.util.NoSuchElementException()")
+            .endControlFlow()
+            .addStatement("iteratorFlyweight.setUnderlyingBuffer(internalBuffer, currentOffset)")
+            .addStatement("currentOffset = currentOffset + " + object.getName() + ".BUFFER_LENGTH + 1")
+            .addStatement("return iteratorFlyweight")
+            .endControlFlow()
+            .addStatement("throw new java.util.NoSuchElementException()")
+            .build();
+    }
+
+    private MethodSpec buildAllIteratorHasNext(PreprocessedEiderObject object)
+    {
+        return MethodSpec.methodBuilder("hasNext")
+            .addAnnotation(Override.class)
+            .addModifiers(Modifier.PUBLIC)
+            .returns(boolean.class)
+            .addStatement("return currentCount != 0 && (currentOffset + "
+                +
+                object.getName()
+                +
+                ".BUFFER_LENGTH + 1 <=maxUsedOffset)")
+            .build();
+    }
+
     private Iterable<MethodSpec> buildRepositoryMethods(ProcessingEnvironment processingEnv,
                                                         PreprocessedEiderObject object,
                                                         AgronaWriterState state)
@@ -193,6 +277,7 @@ public class AgronaWriter implements EiderCodeWriter
                 .addStatement("internalBuffer = new ExpandableDirectByteBuffer(repositoryBufferLength)")
                 .addStatement("internalBuffer.setMemory(0, repositoryBufferLength, (byte)0)")
                 .addStatement("offsetByKey = new Int2IntHashMap(Integer.MIN_VALUE)")
+                .addStatement("unfilteredIterator = new UnfilteredIterator()")
                 .build()
         );
 
@@ -209,7 +294,7 @@ public class AgronaWriter implements EiderCodeWriter
         );
 
         results.add(
-            MethodSpec.methodBuilder("createWithKey")
+            MethodSpec.methodBuilder("appendWithKey")
                 .addJavadoc("Appends an element in the buffer with the provided key. Key cannot be changed. ")
                 .addJavadoc("Returns null if new element could not be created or if the key already exists.")
                 .addModifiers(Modifier.PUBLIC)
@@ -277,7 +362,39 @@ public class AgronaWriter implements EiderCodeWriter
                 .build()
         );
 
+        final ClassName iterator = ClassName.get("java.util", "Iterator");
+        final ClassName genObj = ClassName.get("", object.getName());
+        final TypeName iteratorGen = ParameterizedTypeName.get(iterator, genObj);
+
+        results.add(
+            MethodSpec.methodBuilder("allItems")
+                .addJavadoc("Returns iterator which returns all items. ")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(iteratorGen)
+                .addStatement("return unfilteredIterator")
+                .build()
+        );
+
+        for (final PreprocessedEiderProperty prop : object.getPropertyList())
+        {
+            if (prop.getAnnotations().get(Constants.REPOSITORY_FILTER).equalsIgnoreCase(TRUE))
+            {
+                results.add(buildRepositoryFilterMethod(processingEnv, prop, object));
+            }
+        }
+
         return results;
+    }
+
+    private MethodSpec buildRepositoryFilterMethod(ProcessingEnvironment processingEnv, PreprocessedEiderProperty prop,
+                                                   PreprocessedEiderObject object)
+    {
+        return MethodSpec.methodBuilder("tempFilter")
+            .addJavadoc("todo.")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(boolean.class)
+            .addStatement("return false")
+            .build();
     }
 
     private Iterable<FieldSpec> buildRepositoryFields(ProcessingEnvironment processingEnv,
@@ -317,6 +434,13 @@ public class AgronaWriter implements EiderCodeWriter
         results.add(FieldSpec
             .builder(int.class, "maxCapacity")
             .addJavadoc("The maximum count of elements in the buffer")
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.FINAL)
+            .build());
+
+        results.add(FieldSpec
+            .builder(ClassName.get("", "UnfilteredIterator"), "unfilteredIterator")
+            .addJavadoc("The iterator for unfiltered items")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());

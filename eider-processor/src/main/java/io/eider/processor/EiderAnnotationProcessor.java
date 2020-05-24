@@ -121,6 +121,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     annotations.put(Constants.INDEXED, Boolean.toString(attribute.unique()));
                     annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
                     annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(attribute.sequence()));
+                    annotations.put(Constants.REPOSITORY_FILTER, Boolean.toString(attribute.repositoryFilter()));
 
                     if (attribute.key())
                     {
@@ -216,6 +217,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         annotations.put(Constants.INDEXED, Boolean.toString(false));
         annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(false));
         annotations.put(Constants.KEY, Boolean.toString(false));
+        annotations.put(Constants.REPOSITORY_FILTER, Boolean.toString(false));
     }
 
     private EiderPropertyType defineType(String typeStr, boolean isFixed)

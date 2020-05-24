@@ -34,4 +34,5 @@ public @interface EiderAttribute
     boolean key() default false;
     boolean unique() default false;
     boolean indexed() default false;
+    boolean repositoryFilter() default false;
 }

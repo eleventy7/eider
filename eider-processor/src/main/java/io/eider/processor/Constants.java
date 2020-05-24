@@ -11,4 +11,5 @@ public class Constants
     public static final String INDEXED = "indexed";
     public static final String KEY = "key";
     public static final String SEQUENCE_GENERATOR = "sequence";
+    public static final String REPOSITORY_FILTER = "repo.filter";
 }
