@@ -193,6 +193,70 @@ Warnings:
 
 - You will not be able to alter the key of a flyweight returned by the repository using `createWithKey` or `getByKey`.
 
+### Composite Sample
+
+Composite objects allow you to construct a buffer containing 2..n `EiderSpec` objects. 
+
+Given the following objects:
+
+```java
+@EiderSpec(name = "OrderStatus")
+public class OrderStatusSpec
+{
+    private boolean filled;
+    private long acceptedTimestamp;
+    private long filledTimestamp;
+}
+
+@EiderSpec(name = "Order")
+public class OrderSpec
+{
+    @EiderAttribute(maxLength = 14)
+    private String clOrdId;
+    @EiderAttribute(maxLength = 1)
+    private String side;
+    private long price;
+    private long quantity;
+    @EiderAttribute(maxLength = 9)
+    private String instrument;
+}
+```
+We can construct a composite by:
+
+```java
+@EiderComposite(name = "OrderBookEntry", eiderId = 688)
+@EiderRepository
+public class OrderBookEntrySpec
+{
+    @EiderAttribute(key = true)
+    long id;
+    OrderSpec order;
+    OrderStatusSpec status;
+}
+```
+
+This will produce a composite object that can use an internal or external buffer. For example:
+
+```java
+ExpandableDirectByteBuffer buffer = new ExpandableDirectByteBuffer(OrderBookEntry.BUFFER_LENGTH);
+
+OrderBookEntry entry = new OrderBookEntry(buffer, 0);
+entry.getOrder().writeClOrdId("Order123");
+entry.getOrder().writePrice(12300L);
+entry.getOrder().writeQuantity(1_000_000L);
+entry.getStatus().writeAcceptedTimestamp(500L);
+entry.getStatus().writeFilledTimestamp(800L);
+
+Assertions.assertEquals("Order123", entry.getOrder().readClOrdId());
+Assertions.assertEquals(12300L, entry.getOrder().readPrice());
+Assertions.assertEquals(1_000_000L, entry.getOrder().readQuantity());
+Assertions.assertEquals(500L, entry.getStatus().readAcceptedTimestamp());
+Assertions.assertEquals(800L, entry.getStatus().readFilledTimestamp());
+
+int eiderSpecId = EiderHelper.getEiderSpecId(0, buffer);
+Assertions.assertEquals(688, eiderSpecId);
+```
+
 ### Where is this useful?
 
 It's primarily being used for another project with messages sent over Aeron and Aeron Cluster byte buffers, plus data held within a Replicated State Machine running within Aeron Cluster. 
