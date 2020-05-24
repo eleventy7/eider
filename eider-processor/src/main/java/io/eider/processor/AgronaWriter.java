@@ -37,7 +37,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-import org.agrona.ExpandableArrayBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
@@ -45,9 +44,10 @@ import org.agrona.collections.Int2IntHashMap;
 public class AgronaWriter implements EiderCodeWriter
 {
 
-    public static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = "java.nio.ByteOrder.LITTLE_ENDIAN)";
-    public static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1 = ", java.nio.ByteOrder.LITTLE_ENDIAN)";
-    public static final String TRUE = "true";
+    private static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = "java.nio.ByteOrder.LITTLE_ENDIAN)";
+    private static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1 = ", java.nio.ByteOrder.LITTLE_ENDIAN)";
+    private static final String TRUE = "true";
+    private static final String OFFSET = "offset";
 
     @Override
     public void generate(final ProcessingEnvironment pe,
@@ -125,17 +125,126 @@ public class AgronaWriter implements EiderCodeWriter
         }
     }
 
-    private Iterable<MethodSpec> buildCompositeMethods(ProcessingEnvironment pe, PreprocessedEiderComposite composite, AgronaWriterState state, AgronaWriterGlobalState globalState)
+    private Iterable<MethodSpec> buildCompositeMethods(ProcessingEnvironment pe, PreprocessedEiderComposite composite,
+                                                       AgronaWriterState state, AgronaWriterGlobalState globalState)
     {
         List<MethodSpec> results = new ArrayList<>();
 
-        results.add(
-            MethodSpec.constructorBuilder()
-                .addJavadoc("constructor")
+        MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
+            .addJavadoc("constructor")
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("initialOffset = 0")
+            .addStatement("internalBuffer = new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
+            .addStatement("internalBuffer.setMemory(0, BUFFER_LENGTH, (byte)0)")
+            .addStatement("internalBuffer.putInt(EIDER_ID_OFFSET, EIDER_ID)")
+            .addStatement("internalBuffer.putInt(LENGTH_OFFSET, BUFFER_LENGTH)");
+
+        for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
+        {
+            constructor.addStatement(
+                compositeItem.getName().toUpperCase()
+                    +
+                    "_FLYWEIGHT.setUnderlyingBuffer("
+                    +
+                    "internalBuffer, "
+                    +
+                    compositeItem.getName().toUpperCase()
+                    +
+                    "_OFFSET"
+                    +
+                    ")"
+            );
+            constructor.addStatement(
+                compositeItem.getName().toUpperCase()
+                    +
+                    "_FLYWEIGHT.writeHeader()"
+            );
+        }
+
+        results.add(constructor.build());
+
+        MethodSpec.Builder constructorExistingBuffer = MethodSpec.constructorBuilder()
+            .addJavadoc("constructor")
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(ExpandableDirectByteBuffer.class, "bufferToUse")
+            .addParameter(int.class, OFFSET)
+            .addStatement("bufferToUse.checkLimit(offset + BUFFER_LENGTH)")
+            .addStatement("initialOffset = offset")
+            .addStatement("internalBuffer = bufferToUse")
+            .addStatement("internalBuffer.putInt(offset + EIDER_ID_OFFSET, EIDER_ID)")
+            .addStatement("internalBuffer.putInt(offset + LENGTH_OFFSET, BUFFER_LENGTH)");
+
+        for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
+        {
+            constructorExistingBuffer.addStatement(
+                compositeItem.getName().toUpperCase()
+                    +
+                    "_FLYWEIGHT.setUnderlyingBuffer("
+                    +
+                    "internalBuffer, "
+                    +
+                    compositeItem.getName().toUpperCase()
+                    +
+                    "_OFFSET + initialOffset"
+                    +
+                    ")"
+            );
+            constructorExistingBuffer.addStatement(
+                compositeItem.getName().toUpperCase()
+                    +
+                    "_FLYWEIGHT.writeHeader()"
+            );
+        }
+
+        results.add(constructorExistingBuffer.build());
+
+
+        for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
+        {
+            results.add(
+                MethodSpec.methodBuilder("copy" + upperFirst(compositeItem.getName()) + "FromBuffer")
+                    .addJavadoc("Appends an instance of this " + compositeItem.getName() + " to the buffer ")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(ExpandableDirectByteBuffer.class, "sourceBuffer")
+                    .addParameter(int.class, OFFSET)
+                    .addStatement("internalBuffer.putBytes("
+                        +
+                        compositeItem.getName().toUpperCase()
+                        +
+                        "_OFFSET + initialOffset, sourceBuffer, offset, "
+                        +
+                        compositeItem.getObject().getName()
+                        +
+                        ".BUFFER_LENGTH)")
+                    .build()
+            );
+
+            String flyWeight = compositeItem.getName().toUpperCase() + "_FLYWEIGHT";
+
+            MethodSpec.Builder source = MethodSpec.methodBuilder("put" + upperFirst(compositeItem.getName()))
+                .addJavadoc("Copies the contents from source to this " + compositeItem.getName() + " buffer")
                 .addModifiers(Modifier.PUBLIC)
-                .addStatement("internalBuffer = new MutableDirectBuffer(BUFFER_LENGTH)")
-                .build()
-        );
+                .addParameter(ClassName.get("", upperFirst(compositeItem.getObject().getName())), "source");
+
+            List<PreprocessedEiderProperty> propertyList = compositeItem.getObject().getPropertyList();
+
+            for (final PreprocessedEiderProperty property : propertyList)
+            {
+                final String prop = upperFirst(property.getName());
+                source.addStatement(flyWeight + ".write" + prop + "(source.read" + prop + "())");
+            }
+
+            results.add(source.build());
+
+            results.add(
+                MethodSpec.methodBuilder("get" + upperFirst(compositeItem.getName()))
+                    .addJavadoc("Returns the flyweight")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(ClassName.get("", upperFirst(compositeItem.getObject().getName())))
+                    .addStatement("return " + compositeItem.getName().toUpperCase() + "_FLYWEIGHT")
+                    .build()
+            );
+        }
 
         return results;
     }
@@ -145,10 +254,19 @@ public class AgronaWriter implements EiderCodeWriter
                                                      AgronaWriterState state,
                                                      AgronaWriterGlobalState globalState)
     {
-        int bufferTotalLength = Long.BYTES;
+        int bufferTotalLength = Integer.BYTES * 2;
+        if (composite.getKeyType() == EiderPropertyType.INT)
+        {
+            bufferTotalLength += Integer.BYTES;
+        }
+        else
+        {
+            bufferTotalLength += Long.BYTES;
+        }
+
         for (final PreprocessedNamedEiderObject obj : composite.getObjectList())
         {
-            bufferTotalLength += globalState.getBufferLengths().get(obj.getObject().getName()).intValue();
+            bufferTotalLength += globalState.getBufferLengths().get(obj.getObject().getName());
         }
 
         List<FieldSpec> fields = new ArrayList<>();
@@ -157,13 +275,98 @@ public class AgronaWriter implements EiderCodeWriter
             .builder(int.class, "BUFFER_LENGTH")
             .addJavadoc("The length of this composite object")
             .addModifiers(Modifier.FINAL)
-            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
             .initializer(Integer.toString(bufferTotalLength))
             .build());
 
         fields.add(FieldSpec
-            .builder(int.class, "internalBuffer")
+            .builder(int.class, "initialOffset")
+            .addJavadoc("The initial offset in the buffer")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        fields.add(FieldSpec
+            .builder(int.class, "EIDER_ID")
+            .addJavadoc("The eider ID of this composite object")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.STATIC)
+            .initializer(Integer.toString(composite.getSequence()))
+            .build());
+
+        fields.add(FieldSpec
+            .builder(int.class, "EIDER_ID_OFFSET")
+            .addJavadoc("The offset of the EIDER ID")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.STATIC)
+            .initializer(Integer.toString(0))
+            .build());
+
+        fields.add(FieldSpec
+            .builder(int.class, "LENGTH_OFFSET")
+            .addJavadoc("The offset of the length of this composite object in the buffer")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.STATIC)
+            .initializer(Integer.toString(Integer.BYTES))
+            .build());
+
+        int currentPos = Integer.BYTES * 2;
+
+        if (composite.getKeyType() == EiderPropertyType.INT)
+        {
+            fields.add(FieldSpec
+                .builder(int.class, "KEY_FIELD_OFFSET")
+                .addJavadoc("The offset of the integer key of this composite object in the buffer")
+                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
+                .initializer(Integer.toString(currentPos))
+                .build());
+            currentPos += Integer.BYTES;
+        }
+        else
+        {
+            fields.add(FieldSpec
+                .builder(int.class, "KEY_FIELD_OFFSET")
+                .addJavadoc("The offset of the long key of this composite object in the buffer")
+                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
+                .initializer(Integer.toString(currentPos))
+                .build());
+            currentPos += Long.BYTES;
+        }
+
+        for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
+        {
+            fields.add(FieldSpec
+                .builder(int.class, compositeItem.getName().toUpperCase() + "_OFFSET")
+                .addJavadoc("The offset of the " + compositeItem.getName() + " within the composite buffer")
+                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
+                .initializer(Integer.toString(currentPos))
+                .build());
+
+            fields.add(FieldSpec
+                .builder(ClassName.get("", compositeItem.getObject().getName()),
+                    compositeItem.getName().toUpperCase() + "_FLYWEIGHT")
+                .addJavadoc("The flyweight for the " + compositeItem.getName() + " within this buffer")
+                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
+                .initializer("new " + compositeItem.getObject().getName() + "()")
+                .build());
+
+            currentPos = currentPos + globalState.getBufferLengths().get(compositeItem.getObject().getName());
+        }
+
+        fields.add(FieldSpec
+            .builder(ExpandableDirectByteBuffer.class, "internalBuffer")
             .addJavadoc("The internal buffer to hold this composite object")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
@@ -224,7 +427,7 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(int.class)
-                .addParameter(int.class, "offset")
+                .addParameter(int.class, OFFSET)
                 .addParameter(MutableDirectBuffer.class, "buffer")
                 .addStatement("return buffer.getInt(offset" + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
@@ -700,9 +903,9 @@ public class AgronaWriter implements EiderCodeWriter
                 .build());
 
             results.add(FieldSpec
-                .builder(ExpandableArrayBuffer.class, "transactionCopy")
+                .builder(ExpandableDirectByteBuffer.class, "transactionCopy")
                 .addJavadoc("The MutableDirectBuffer used internally for rollbacks")
-                .initializer("new ExpandableArrayBuffer(BUFFER_LENGTH)")
+                .initializer("new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
         }
@@ -1045,7 +1248,7 @@ public class AgronaWriter implements EiderCodeWriter
                 +
                 "@param offset - offset to begin reading from/writing to in the buffer.\n")
             .addParameter(MutableDirectBuffer.class, "buffer")
-            .addParameter(int.class, "offset")
+            .addParameter(int.class, OFFSET)
             .addStatement("this.initialOffset = offset")
             .addStatement("this.buffer = buffer");
 
