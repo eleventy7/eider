@@ -198,6 +198,61 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(constructorExistingBuffer.build());
 
+        if (composite.getKeyType().equals(EiderPropertyType.INT))
+        {
+            MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
+                .addModifiers(Modifier.PUBLIC)
+                .addJavadoc("Reads the key value from the buffer")
+                .returns(int.class)
+                .addStatement("return internalBuffer.getInt(initialOffset + KEY_FIELD_OFFSET)")
+                .build();
+
+            MethodSpec keyWriter = MethodSpec.methodBuilder("write" + upperFirst(composite.getKeyName()))
+                .addModifiers(Modifier.PUBLIC)
+                .addJavadoc("Returns true if the provided key was written, false if not")
+                .addParameter(int.class, "key")
+                .returns(boolean.class)
+                .beginControlFlow("if (!keyLocked)")
+                .addStatement("internalBuffer.putInt(initialOffset + KEY_FIELD_OFFSET, key)")
+                .addStatement("return true")
+                .endControlFlow()
+                .addStatement("return false")
+                .build();
+
+            results.add(keyReader);
+            results.add(keyWriter);
+        }
+        else
+        {
+            MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
+                .addModifiers(Modifier.PUBLIC)
+                .addJavadoc("Reads the key value from the buffer")
+                .returns(long.class)
+                .addStatement("return internalBuffer.getLong(initialOffset + KEY_FIELD_OFFSET)")
+                .build();
+
+            MethodSpec keyWriter = MethodSpec.methodBuilder("write" + upperFirst(composite.getKeyName()))
+                .addModifiers(Modifier.PUBLIC)
+                .addJavadoc("Returns true if the provided key was written, false if not")
+                .addParameter(long.class, "key")
+                .returns(boolean.class)
+                .beginControlFlow("if (!keyLocked)")
+                .addStatement("internalBuffer.putLong(initialOffset + KEY_FIELD_OFFSET, key)")
+                .addStatement("return true")
+                .endControlFlow()
+                .addStatement("return false")
+                .build();
+
+            results.add(keyReader);
+            results.add(keyWriter);
+        }
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("lockKey" + upperFirst(composite.getKeyName()))
+            .addModifiers(Modifier.PUBLIC)
+            .addJavadoc("Prevents any further updates to the key field.")
+            .addStatement("keyLocked = true");
+        results.add(builder.build());
+
 
         for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
         {
@@ -294,6 +349,13 @@ public class AgronaWriter implements EiderCodeWriter
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
             .initializer(Integer.toString(composite.getSequence()))
+            .build());
+
+        fields.add(FieldSpec
+            .builder(boolean.class, "keyLocked")
+            .addJavadoc("Indicates if the key is locked or not")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("false")
             .build());
 
         fields.add(FieldSpec
