@@ -284,6 +284,7 @@ It's primarily being used for another project with messages sent over Aeron and 
 
 - Java 11
 - Gradle 6.4.1
+- Agrona 1.5.0
 
 ### Why Eider?
 
