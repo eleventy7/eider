@@ -216,13 +216,11 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             {
                 repositoryName = repository.name();
             }
-            writeNote(pe, "EiderCompositeRepository: " + repositoryName);
         }
 
         int eiderId = annotation.eiderId() == -1 ? sequence : annotation.eiderId();
         final PreprocessedEiderComposite composite = new PreprocessedEiderComposite(className, classNameInput,
             eiderId, packageNameGen, enableRepository, repositoryName, keyName, keyType, objectsIncluded);
-        writeNote(pe, "EiderComposite: " + className);
         composites.add(composite);
     }
 
@@ -328,7 +326,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             name = classNameGen;
         }
 
-        writeNote(processingEnv, "EiderSpec: " + name);
 
         EiderRepository repository = typeElement.getAnnotation(EiderRepository.class);
         final boolean enableRepository;
@@ -349,7 +346,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             {
                 repositoryName = repository.name();
             }
-            writeNote(processingEnv, "EiderObjectRepository: " + repositoryName);
         }
 
         final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,

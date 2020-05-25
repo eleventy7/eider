@@ -4,10 +4,14 @@ import com.foo.sample.gen.EiderHelper;
 import com.foo.sample.gen.Order;
 import com.foo.sample.gen.OrderBookEntry;
 
+import com.foo.sample.gen.OrderBookEntryRepository;
+
 import org.agrona.ExpandableDirectByteBuffer;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompositeTests
 {
@@ -112,5 +116,52 @@ public class CompositeTests
         assertEquals(1_000_000L, entry.getOrder().readQuantity());
         assertEquals(500L, entry.getStatus().readAcceptedTimestamp());
         assertEquals(800L, entry.getStatus().readFilledTimestamp());
+    }
+
+    @Test
+    public void repositoryWorks()
+    {
+        OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacity(10);
+        OrderBookEntry entry = repository.appendWithKey(1);
+        entry.getStatus().writeFilledTimestamp(100L);
+        entry.getStatus().writeAcceptedTimestamp(200L);
+        entry.getStatus().writeFilled(true);
+        entry.getOrder().writeInstrument(INSTRUMENT);
+        entry.getOrder().writeClOrdId(ORDER_123);
+
+        boolean containsIt = repository.containsKey(1);
+        assertTrue(containsIt);
+
+        OrderBookEntry read = repository.getByKey(1);
+        assertEquals(100L, read.getStatus().readFilledTimestamp());
+        assertEquals(200L, read.getStatus().readAcceptedTimestamp());
+        assertTrue(read.getStatus().readFilled());
+        assertEquals(INSTRUMENT, read.getOrder().readInstrument());
+        assertEquals(ORDER_123, read.getOrder().readClOrdId());
+    }
+
+    @Test
+    public void repositoryIterationWorks()
+    {
+        OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacity(10);
+        repository.appendWithKey(0);
+        repository.appendWithKey(1);
+        repository.appendWithKey(2);
+        repository.appendWithKey(3);
+        repository.appendWithKey(4);
+        repository.appendWithKey(5);
+        repository.appendWithKey(6);
+        repository.appendWithKey(7);
+        repository.appendWithKey(8);
+        repository.appendWithKey(9);
+
+        int key = 0;
+        while (repository.allItems().hasNext())
+        {
+            OrderBookEntry item = repository.allItems().next();
+            Assertions.assertEquals(key, item.readId());
+            key++;
+        }
+        Assertions.assertEquals(10, key);
     }
 }
