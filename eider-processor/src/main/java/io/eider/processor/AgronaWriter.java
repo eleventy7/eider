@@ -802,13 +802,13 @@ public class AgronaWriter implements EiderCodeWriter
         );
 
         results.add(
-            MethodSpec.methodBuilder("getEiderSpecId")
+            MethodSpec.methodBuilder("getEiderId")
                 .addJavadoc("Reads the Eider Spec Id from the buffer at the offset provided")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(int.class)
-                .addParameter(int.class, OFFSET)
                 .addParameter(MutableDirectBuffer.class, BUFFER)
+                .addParameter(int.class, OFFSET)
                 .addStatement("return buffer.getInt(offset" + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
         );

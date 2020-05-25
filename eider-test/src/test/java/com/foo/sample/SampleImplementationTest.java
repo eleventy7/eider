@@ -59,7 +59,7 @@ public class SampleImplementationTest
         Assertions.assertEquals(now, eiderR.readTimestamp());
         Assertions.assertEquals(213, eiderR.readId());
 
-        Assertions.assertEquals(EiderObject.EIDER_ID, EiderHelper.getEiderSpecId(0, buffer));
+        Assertions.assertEquals(EiderObject.EIDER_ID, EiderHelper.getEiderId(buffer, 0));
     }
 
     @Test

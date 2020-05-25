@@ -66,7 +66,7 @@ public class CompositeTests
         assertEquals(500L, entry.getStatus().readAcceptedTimestamp());
         assertEquals(800L, entry.getStatus().readFilledTimestamp());
 
-        int eiderSpecId = EiderHelper.getEiderSpecId(0, buffer);
+        int eiderSpecId = EiderHelper.getEiderId(buffer, 0);
         assertEquals(688, eiderSpecId);
     }
 
