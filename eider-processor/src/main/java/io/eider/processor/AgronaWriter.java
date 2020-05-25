@@ -131,7 +131,7 @@ public class AgronaWriter implements EiderCodeWriter
         List<MethodSpec> results = new ArrayList<>();
 
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
-            .addJavadoc("constructor")
+            .addJavadoc("Constructor that allocates an internal buffer")
             .addModifiers(Modifier.PUBLIC)
             .addStatement("initialOffset = 0")
             .addStatement("internalBuffer = new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
@@ -164,7 +164,7 @@ public class AgronaWriter implements EiderCodeWriter
         results.add(constructor.build());
 
         MethodSpec.Builder constructorExistingBuffer = MethodSpec.constructorBuilder()
-            .addJavadoc("constructor")
+            .addJavadoc("Constructor that does not allocate, it sits atop an external buffer")
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ExpandableDirectByteBuffer.class, "bufferToUse")
             .addParameter(int.class, OFFSET)
@@ -203,7 +203,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             results.add(
                 MethodSpec.methodBuilder("copy" + upperFirst(compositeItem.getName()) + "FromBuffer")
-                    .addJavadoc("Appends an instance of this " + compositeItem.getName() + " to the buffer ")
+                    .addJavadoc("Copies " + compositeItem.getName() + " from the source to the buffer ")
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(ExpandableDirectByteBuffer.class, "sourceBuffer")
                     .addParameter(int.class, OFFSET)
@@ -238,7 +238,7 @@ public class AgronaWriter implements EiderCodeWriter
 
             results.add(
                 MethodSpec.methodBuilder("get" + upperFirst(compositeItem.getName()))
-                    .addJavadoc("Returns the flyweight")
+                    .addJavadoc("Returns the " + upperFirst(compositeItem.getObject().getName()) + " flyweight")
                     .addModifiers(Modifier.PUBLIC)
                     .returns(ClassName.get("", upperFirst(compositeItem.getObject().getName())))
                     .addStatement("return " + compositeItem.getName().toUpperCase() + "_FLYWEIGHT")
@@ -291,7 +291,7 @@ public class AgronaWriter implements EiderCodeWriter
             .builder(int.class, "EIDER_ID")
             .addJavadoc("The eider ID of this composite object")
             .addModifiers(Modifier.FINAL)
-            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
             .initializer(Integer.toString(composite.getSequence()))
             .build());
@@ -1022,7 +1022,7 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("buffer.putInt(initialOffset + HEADER_OFFSET"
                     +
-                    ", EIDER_SPEC_ID, "
+                    ", EIDER_ID, "
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
                 .addStatement("buffer.putInt(initialOffset + LENGTH_OFFSET"
                     +
@@ -1041,7 +1041,7 @@ public class AgronaWriter implements EiderCodeWriter
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .addStatement("final int bufferLength = buffer.getInt(initialOffset + LENGTH_OFFSET"
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
-                .addStatement("if (eiderSpecId != EIDER_SPEC_ID) return false")
+                .addStatement("if (eiderSpecId != EIDER_ID) return false")
                 .addStatement("return bufferLength == BUFFER_LENGTH")
                 .build()
         );
@@ -1214,7 +1214,7 @@ public class AgronaWriter implements EiderCodeWriter
     private FieldSpec buildEiderIdField(ProcessingEnvironment processingEnv, int sequence)
     {
         return FieldSpec
-            .builder(int.class, "EIDER_SPEC_ID")
+            .builder(int.class, "EIDER_ID")
             .addJavadoc("The eider spec id for this type. Useful in switch statements to detect type from first 32bits")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
@@ -1230,9 +1230,9 @@ public class AgronaWriter implements EiderCodeWriter
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Returns the eider sequence.\n"
                 +
-                "@return EIDER_SPEC_ID.\n")
+                "@return EIDER_ID.\n")
             .returns(int.class)
-            .addStatement("return EIDER_SPEC_ID")
+            .addStatement("return EIDER_ID")
             .build();
 
     }

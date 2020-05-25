@@ -59,7 +59,7 @@ public class SampleImplementationTest
         Assertions.assertEquals(now, eiderR.readTimestamp());
         Assertions.assertEquals(213, eiderR.readId());
 
-        Assertions.assertEquals(EiderObject.EIDER_SPEC_ID, EiderHelper.getEiderSpecId(0, buffer));
+        Assertions.assertEquals(EiderObject.EIDER_ID, EiderHelper.getEiderSpecId(0, buffer));
     }
 
     @Test
@@ -106,7 +106,6 @@ public class SampleImplementationTest
         Assertions.assertEquals(2, idid);
     }
 
-
     @Test
     public void canUseRepository()
     {
@@ -117,21 +116,24 @@ public class SampleImplementationTest
         generator.setUnderlyingBuffer(buffer, 0);
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
+        assert flyWrite != null;
         flyWrite.writeCusip("CUSIP0001");
         flyWrite.writeEnabled(true);
         flyWrite.writeTimestamp(0);
         flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
+        assert flyWrite != null;
         flyWrite.writeCusip("CUSIP0002");
         flyWrite.writeEnabled(false);
         flyWrite.writeTimestamp(1);
 
         EiderObject flyRead = repository.getByKey(1);
+        assert flyRead != null;
         Assertions.assertEquals("CUSIP0001", flyRead.readCusip());
         flyRead = repository.getByKey(2);
+        assert flyRead != null;
         Assertions.assertEquals("CUSIP0002", flyRead.readCusip());
 
         flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         Assertions.assertNull(flyWrite);
-
     }
 }
