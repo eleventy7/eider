@@ -189,6 +189,8 @@ flyweight = repository.getByKey(2);
 Assertions.assertEquals("CUSIP0002", flyweight.readCusip());
 ```
 
+Repositories also hold an iterator, which allows you to iterate through all elements in the array.
+
 Warnings:
 
 - You will not be able to alter the key of a flyweight returned by the repository using `createWithKey` or `getByKey`.
@@ -255,6 +257,21 @@ Assertions.assertEquals(800L, entry.getStatus().readFilledTimestamp());
 
 int eiderSpecId = EiderHelper.getEiderSpecId(0, buffer);
 Assertions.assertEquals(688, eiderSpecId);
+```
+
+Composite Repositories are supported as well. They behave much the same as object repositories.
+
+```java
+OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacity(10);
+OrderBookEntry entry = repository.appendWithKey(1);
+...
+boolean containsIt = repository.containsKey(1);
+...
+while (repository.allItems().hasNext())
+{
+    OrderBookEntry item = repository.allItems().next();
+    ...
+}
 ```
 
 ### Where is this useful?
