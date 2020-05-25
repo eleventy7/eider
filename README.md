@@ -189,7 +189,7 @@ flyweight = repository.getByKey(2);
 Assertions.assertEquals("CUSIP0002", flyweight.readCusip());
 ```
 
-Repositories also hold an iterator, which allows you to iterate through all elements in the array.
+Repositories also hold an iterator, which allows you to iterate through all elements in the buffer.
 
 Warnings:
 
@@ -266,6 +266,8 @@ OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacit
 OrderBookEntry entry = repository.appendWithKey(1);
 ...
 boolean containsIt = repository.containsKey(1);
+...
+OrderBookEntry read = repository.getByKey(1);
 ...
 while (repository.allItems().hasNext())
 {
