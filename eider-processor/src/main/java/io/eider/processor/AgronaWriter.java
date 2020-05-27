@@ -63,10 +63,10 @@ public class AgronaWriter implements EiderCodeWriter
         {
             packageName = object.getPackageNameGen();
             AgronaWriterState state = new AgronaWriterState();
-            generateFile(pe, object, state, globalState);
+            generateSpecObject(pe, object, state, globalState);
             if (object.buildRepository())
             {
-                generateRepository(pe, object, state, globalState);
+                generateSpecRepository(pe, object, state, globalState);
             }
         }
 
@@ -390,7 +390,7 @@ public class AgronaWriter implements EiderCodeWriter
         TypeSpec.Builder builder = TypeSpec.classBuilder(composite.getName())
             .addFields(buildCompositeFields(pe, composite, state, globalState))
             .addMethods(buildCompositeMethods(pe, composite, state, globalState))
-            .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+            .addModifiers(Modifier.PUBLIC);
         TypeSpec generated = builder.build();
 
         JavaFile javaFile = JavaFile.builder(composite.getPackageNameGen(), generated)
@@ -816,8 +816,8 @@ public class AgronaWriter implements EiderCodeWriter
         return results;
     }
 
-    private void generateRepository(final ProcessingEnvironment pe, final PreprocessedEiderObject object,
-                                    final AgronaWriterState state, final AgronaWriterGlobalState globalState)
+    private void generateSpecRepository(final ProcessingEnvironment pe, final PreprocessedEiderObject object,
+                                        final AgronaWriterState state, final AgronaWriterGlobalState globalState)
     {
         String keyField = getKeyField(object);
 
@@ -1047,17 +1047,6 @@ public class AgronaWriter implements EiderCodeWriter
         return results;
     }
 
-    private MethodSpec buildRepositoryFilterMethod(ProcessingEnvironment processingEnv, PreprocessedEiderProperty prop,
-                                                   PreprocessedEiderObject object)
-    {
-        return MethodSpec.methodBuilder("tempFilter")
-            .addJavadoc("todo.")
-            .addModifiers(Modifier.PUBLIC)
-            .returns(boolean.class)
-            .addStatement("return false")
-            .build();
-    }
-
     private Iterable<FieldSpec> buildRepositoryFields(ProcessingEnvironment processingEnv,
                                                       PreprocessedEiderObject object,
                                                       AgronaWriterState state)
@@ -1134,11 +1123,11 @@ public class AgronaWriter implements EiderCodeWriter
         return null;
     }
 
-    private void generateFile(final ProcessingEnvironment processingEnv, final PreprocessedEiderObject object,
-                              final AgronaWriterState state, final AgronaWriterGlobalState globalState)
+    private void generateSpecObject(final ProcessingEnvironment processingEnv, final PreprocessedEiderObject object,
+                                    final AgronaWriterState state, final AgronaWriterGlobalState globalState)
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
-            .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+            .addModifiers(Modifier.PUBLIC)
             .addField(buildEiderIdField(processingEnv, object.getSequence()))
             .addFields(offsetsForFields(processingEnv, object, state, globalState))
             .addFields(internalFields(processingEnv, object))
