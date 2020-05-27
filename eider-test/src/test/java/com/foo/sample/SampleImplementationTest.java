@@ -40,7 +40,7 @@ public class SampleImplementationTest
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
 
         eiderW.setUnderlyingBuffer(buffer, 0);
         eiderR.setUnderlyingBuffer(buffer, 0);
@@ -69,7 +69,7 @@ public class SampleImplementationTest
         final EpochClock clock = new SystemEpochClock();
         final long now = clock.time();
 
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
 
         eiderR.setUnderlyingBuffer(buffer, 0);
         eiderW.setUnderlyingBuffer(buffer, 0);
@@ -95,14 +95,14 @@ public class SampleImplementationTest
     public void sequencesWork()
     {
         final SequenceGenerator generator = new SequenceGenerator();
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
         generator.setUnderlyingBuffer(buffer, 0);
 
-        generator.writeOrderId(1);
+        generator.initializeOrderId(1);
 
-        int idid = generator.nextOrderIdSequence();
+        final int nextOrderIdSequence = generator.nextOrderIdSequence();
 
-        Assertions.assertEquals(2, idid);
+        Assertions.assertEquals(2, nextOrderIdSequence);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class SampleImplementationTest
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
         final SequenceGenerator generator = new SequenceGenerator();
-        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
         generator.setUnderlyingBuffer(buffer, 0);
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());

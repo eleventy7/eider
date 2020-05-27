@@ -25,6 +25,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface EiderComposite
 {
-    int eiderId() default -1;
+    short eiderId() default -1;
     String name() default "";
 }

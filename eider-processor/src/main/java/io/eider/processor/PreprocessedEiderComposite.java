@@ -22,7 +22,7 @@ public class PreprocessedEiderComposite
 {
     private final String name;
     private final String classNameInput;
-    private final int sequence;
+    private final short eiderId;
     private final String packageNameGen;
     private final boolean buildRepository;
     private final String repositoryName;
@@ -31,14 +31,14 @@ public class PreprocessedEiderComposite
     private final List<PreprocessedNamedEiderObject> objectList;
 
     public PreprocessedEiderComposite(final String name, final String classNameInput,
-                                      final int eiderId, final String packageNameGen,
+                                      final short eiderId, final String packageNameGen,
                                       final boolean buildRepository, final String repositoryName,
                                       final String keyName, final EiderPropertyType keyType,
                                       final List<PreprocessedNamedEiderObject> objectList)
     {
         this.name = name;
         this.classNameInput = classNameInput;
-        this.sequence = eiderId;
+        this.eiderId = eiderId;
         this.packageNameGen = packageNameGen;
         this.buildRepository = buildRepository;
         this.repositoryName = repositoryName;
@@ -62,9 +62,9 @@ public class PreprocessedEiderComposite
         return objectList;
     }
 
-    public int getSequence()
+    public short getEiderId()
     {
-        return sequence;
+        return eiderId;
     }
 
     public String getPackageNameGen()

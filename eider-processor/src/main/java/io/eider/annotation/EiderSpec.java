@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface EiderSpec
 {
-    int eiderId() default -1;
+    short eiderId() default -1;
     boolean fixedLength() default true;
     boolean transactional() default false;
     boolean transactionalDirtyReads() default true;

@@ -150,7 +150,7 @@ ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFE
 generator.setUnderlyingBuffer(buffer, 0);
 
 //initialize to 1
-generator.writeTradeId(1);
+generator.initializeTradeId(1);
 
 //get next tradeId
 int nextTrade = generator.nextTradeIdSequence();
@@ -255,7 +255,7 @@ Assertions.assertEquals(1_000_000L, entry.getOrder().readQuantity());
 Assertions.assertEquals(500L, entry.getStatus().readAcceptedTimestamp());
 Assertions.assertEquals(800L, entry.getStatus().readFilledTimestamp());
 
-int eiderSpecId = EiderHelper.getEiderSpecId(0, buffer);
+short eiderSpecId = EiderHelper.getEiderSpecId(0, buffer);
 Assertions.assertEquals(688, eiderSpecId);
 ```
 
@@ -285,7 +285,3 @@ It's primarily being used for another project with messages sent over Aeron and 
 - Java 11
 - Gradle 6.4.1
 - Agrona 1.5.0
-
-### Why Eider?
-
-Eider ducks produce some of the highest performance and fluffiest down available. Compared to some other flyweight generators, Eider intends to be soft and fluffy to use, while retaining high performance.

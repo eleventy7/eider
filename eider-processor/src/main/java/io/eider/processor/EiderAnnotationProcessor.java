@@ -46,7 +46,7 @@ import io.eider.annotation.EiderSpec;
 public class EiderAnnotationProcessor extends AbstractProcessor
 {
     public static final String STRING = "java.lang.String";
-    private int sequence = 0;
+    private short sequence = 0;
     private EiderCodeWriter writer;
 
     @Override
@@ -218,7 +218,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             }
         }
 
-        int eiderId = annotation.eiderId() == -1 ? sequence : annotation.eiderId();
+        short eiderId = annotation.eiderId() == -1 ? sequence : annotation.eiderId();
         final PreprocessedEiderComposite composite = new PreprocessedEiderComposite(className, classNameInput,
             eiderId, packageNameGen, enableRepository, repositoryName, keyName, keyType, objectsIncluded);
         composites.add(composite);
@@ -231,7 +231,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final String[] f = attrName.split("\\.");
         final String typeNameNoPkg = f[f.length - 1];
 
-        boolean found = false;
         for (final PreprocessedEiderObject object : objects)
         {
             if (object.getClassNameInput().equalsIgnoreCase(typeNameNoPkg))
@@ -306,7 +305,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             }
         }
 
-        final int objectEiderId;
+        final short objectEiderId;
         if (annotation.eiderId() == -1)
         {
             objectEiderId = sequence;
