@@ -115,7 +115,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final String packageName = typeElement.getQualifiedName().toString();
         final String packageNameGen = packageName.replace(classNameInput, "gen");
         String className = classNameInput + "EiderComposite";
-        sequence += 1;
+        sequence += (short)1;
         int keyFieldCount = 0;
 
         EiderComposite annotation = typeElement.getAnnotation(EiderComposite.class);
@@ -248,7 +248,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final String classNameGen = classNameInput + "Eider";
         final String packageName = typeElement.getQualifiedName().toString();
         final String packageNameGen = packageName.replace(classNameInput, "gen");
-        sequence += 1;
+        sequence += (short)1;
         int keyFieldCount = 0;
 
         EiderSpec annotation = typeElement.getAnnotation(EiderSpec.class);
