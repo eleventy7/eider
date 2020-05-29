@@ -205,55 +205,55 @@ public class AgronaWriter implements EiderCodeWriter
         List<FieldSpec> results = new ArrayList<>();
         results.add(FieldSpec
             .builder(ExpandableDirectByteBuffer.class, "internalBuffer")
-            .addJavadoc("The internal MutableDirectBuffer holding capacity instances")
+            .addJavadoc("The internal MutableDirectBuffer holding capacity instances.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(Int2IntHashMap.class, "offsetByKey")
-            .addJavadoc("For mapping the key to the offset")
+            .addJavadoc("For mapping the key to the offset.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "maxUsedOffset")
-            .addJavadoc("The current max offset used of the buffer")
+            .addJavadoc("The current max offset used of the buffer.")
             .initializer("0")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "currentCount")
-            .addJavadoc("The current count of elements in the buffer")
+            .addJavadoc("The current count of elements in the buffer.")
             .addModifiers(Modifier.PRIVATE)
             .initializer("0")
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "maxCapacity")
-            .addJavadoc("The maximum count of elements in the buffer")
+            .addJavadoc("The maximum count of elements in the buffer.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec
             .builder(ClassName.get("", "UnfilteredIterator"), "unfilteredIterator")
-            .addJavadoc("The iterator for unfiltered items")
+            .addJavadoc("The iterator for unfiltered items.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "repositoryBufferLength")
-            .addJavadoc("The length of the internal buffer")
+            .addJavadoc("The length of the internal buffer.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec.builder(ClassName.get(composite.getPackageNameGen(), composite.getName()), "flyweight")
-            .addJavadoc("The flyweight used by the repository")
+            .addJavadoc("The flyweight used by the repository.")
             .initializer("null")
             .addModifiers(Modifier.PRIVATE)
             .build());
@@ -269,10 +269,10 @@ public class AgronaWriter implements EiderCodeWriter
         List<MethodSpec> results = new ArrayList<>();
         results.add(
             MethodSpec.constructorBuilder()
-                .addJavadoc("constructor")
+                .addJavadoc("Standard constructor.")
                 .addParameter(
                     ParameterSpec.builder(int.class, "capacity")
-                        .addJavadoc("capacity to build")
+                        .addJavadoc("capacity to build.")
                         .build()
                 )
                 .addModifiers(Modifier.PRIVATE)
@@ -290,7 +290,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(
             MethodSpec.methodBuilder("createWithCapacity")
-                .addJavadoc("Creates a respository holding at most capacity elements")
+                .addJavadoc("Creates a respository holding at most capacity elements.")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .addParameter(int.class, "capacity")
@@ -421,7 +421,7 @@ public class AgronaWriter implements EiderCodeWriter
         List<MethodSpec> results = new ArrayList<>();
 
         MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
-            .addJavadoc("Constructor that allocates an internal buffer")
+            .addJavadoc("Constructor that allocates an internal buffer.")
             .addModifiers(Modifier.PUBLIC)
             .addStatement("initialOffset = 0")
             .addStatement("internalBuffer = new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
@@ -454,7 +454,7 @@ public class AgronaWriter implements EiderCodeWriter
         results.add(constructor.build());
 
         MethodSpec.Builder constructorExistingBuffer = MethodSpec.constructorBuilder()
-            .addJavadoc("Constructor that does not allocate, it sits atop an external buffer")
+            .addJavadoc("Constructor that does not allocate, it sits atop an external buffer.")
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ExpandableDirectByteBuffer.class, "bufferToUse")
             .addParameter(int.class, OFFSET)
@@ -490,7 +490,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         MethodSpec.Builder setUnderlyingBuffer = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
-            .addJavadoc("Updates the internal buffer and initial offset")
+            .addJavadoc("Updates the internal buffer and initial offset.")
             .addParameter(ExpandableDirectByteBuffer.class, BUFFER)
             .addParameter(int.class, OFFSET)
             .addStatement("internalBuffer = buffer")
@@ -522,14 +522,14 @@ public class AgronaWriter implements EiderCodeWriter
         {
             MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
-                .addJavadoc("Reads the key value from the buffer")
+                .addJavadoc("Reads the key value from the buffer.")
                 .returns(int.class)
                 .addStatement("return internalBuffer.getInt(initialOffset + KEY_FIELD_OFFSET)")
                 .build();
 
             MethodSpec keyWriter = MethodSpec.methodBuilder("write" + upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
-                .addJavadoc("Returns true if the provided key was written, false if not")
+                .addJavadoc("Returns true if the provided key was written, false if not.")
                 .addParameter(int.class, "key")
                 .returns(boolean.class)
                 .beginControlFlow("if (!keyLocked)")
@@ -546,14 +546,14 @@ public class AgronaWriter implements EiderCodeWriter
         {
             MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
-                .addJavadoc("Reads the key value from the buffer")
+                .addJavadoc("Reads the key value from the buffer.")
                 .returns(long.class)
                 .addStatement("return internalBuffer.getLong(initialOffset + KEY_FIELD_OFFSET)")
                 .build();
 
             MethodSpec keyWriter = MethodSpec.methodBuilder("write" + upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
-                .addJavadoc("Returns true if the provided key was written, false if not")
+                .addJavadoc("Returns true if the provided key was written, false if not.")
                 .addParameter(long.class, "key")
                 .returns(boolean.class)
                 .beginControlFlow("if (!keyLocked)")
@@ -578,7 +578,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             results.add(
                 MethodSpec.methodBuilder("copy" + upperFirst(compositeItem.getName()) + "FromBuffer")
-                    .addJavadoc("Copies " + compositeItem.getName() + " from the source to the buffer ")
+                    .addJavadoc("Copies " + compositeItem.getName() + " from the source to the buffer.")
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(ExpandableDirectByteBuffer.class, "sourceBuffer")
                     .addParameter(int.class, OFFSET)
@@ -597,7 +597,7 @@ public class AgronaWriter implements EiderCodeWriter
             String flyWeight = compositeItem.getName().toUpperCase() + "_FLYWEIGHT";
 
             MethodSpec.Builder source = MethodSpec.methodBuilder("put" + upperFirst(compositeItem.getName()))
-                .addJavadoc("Copies the contents from source to this " + compositeItem.getName() + " buffer")
+                .addJavadoc("Copies the contents from source to this " + compositeItem.getName() + " buffer.")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get("", upperFirst(compositeItem.getObject().getName())), "source");
 
@@ -613,7 +613,7 @@ public class AgronaWriter implements EiderCodeWriter
 
             results.add(
                 MethodSpec.methodBuilder("get" + upperFirst(compositeItem.getName()))
-                    .addJavadoc("Returns the " + upperFirst(compositeItem.getObject().getName()) + " flyweight")
+                    .addJavadoc("Returns the " + upperFirst(compositeItem.getObject().getName()) + " flyweight.")
                     .addModifiers(Modifier.PUBLIC)
                     .returns(ClassName.get("", upperFirst(compositeItem.getObject().getName())))
                     .addStatement("return " + compositeItem.getName().toUpperCase() + "_FLYWEIGHT")
@@ -648,7 +648,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         fields.add(FieldSpec
             .builder(int.class, "BUFFER_LENGTH")
-            .addJavadoc("The length of this composite object")
+            .addJavadoc("The length of this composite object.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
@@ -657,13 +657,13 @@ public class AgronaWriter implements EiderCodeWriter
 
         fields.add(FieldSpec
             .builder(int.class, "initialOffset")
-            .addJavadoc("The initial offset in the buffer")
+            .addJavadoc("The initial offset in the buffer.")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         fields.add(FieldSpec
             .builder(short.class, "EIDER_ID")
-            .addJavadoc("The eider ID of this composite object")
+            .addJavadoc("The eider ID of this composite object.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
@@ -672,14 +672,14 @@ public class AgronaWriter implements EiderCodeWriter
 
         fields.add(FieldSpec
             .builder(boolean.class, "keyLocked")
-            .addJavadoc("Indicates if the key is locked or not")
+            .addJavadoc("Indicates if the key is locked or not.")
             .addModifiers(Modifier.PRIVATE)
             .initializer("false")
             .build());
 
         fields.add(FieldSpec
             .builder(int.class, "EIDER_ID_OFFSET")
-            .addJavadoc("The offset of the EIDER ID")
+            .addJavadoc("The offset of the EIDER ID.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.STATIC)
@@ -688,7 +688,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         fields.add(FieldSpec
             .builder(int.class, "LENGTH_OFFSET")
-            .addJavadoc("The offset of the length of this composite object in the buffer")
+            .addJavadoc("The offset of the length of this composite object in the buffer.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.STATIC)
@@ -701,7 +701,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             fields.add(FieldSpec
                 .builder(int.class, "KEY_FIELD_OFFSET")
-                .addJavadoc("The offset of the integer key of this composite object in the buffer")
+                .addJavadoc("The offset of the integer key of this composite object in the buffer.")
                 .addModifiers(Modifier.FINAL)
                 .addModifiers(Modifier.PRIVATE)
                 .addModifiers(Modifier.STATIC)
@@ -713,7 +713,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             fields.add(FieldSpec
                 .builder(int.class, "KEY_FIELD_OFFSET")
-                .addJavadoc("The offset of the long key of this composite object in the buffer")
+                .addJavadoc("The offset of the long key of this composite object in the buffer.")
                 .addModifiers(Modifier.FINAL)
                 .addModifiers(Modifier.PRIVATE)
                 .addModifiers(Modifier.STATIC)
@@ -726,7 +726,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             fields.add(FieldSpec
                 .builder(int.class, compositeItem.getName().toUpperCase() + "_OFFSET")
-                .addJavadoc("The offset of the " + compositeItem.getName() + " within the composite buffer")
+                .addJavadoc("The offset of the " + compositeItem.getName() + " within the composite buffer.")
                 .addModifiers(Modifier.FINAL)
                 .addModifiers(Modifier.PRIVATE)
                 .addModifiers(Modifier.STATIC)
@@ -736,7 +736,7 @@ public class AgronaWriter implements EiderCodeWriter
             fields.add(FieldSpec
                 .builder(ClassName.get("", compositeItem.getObject().getName()),
                     compositeItem.getName().toUpperCase() + "_FLYWEIGHT")
-                .addJavadoc("The flyweight for the " + compositeItem.getName() + " within this buffer")
+                .addJavadoc("The flyweight for the " + compositeItem.getName() + " within this buffer.")
                 .addModifiers(Modifier.FINAL)
                 .addModifiers(Modifier.PRIVATE)
                 .addModifiers(Modifier.STATIC)
@@ -748,7 +748,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         fields.add(FieldSpec
             .builder(ExpandableDirectByteBuffer.class, "internalBuffer")
-            .addJavadoc("The internal buffer to hold this composite object")
+            .addJavadoc("The internal buffer to hold this composite object.")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
@@ -795,7 +795,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(
             MethodSpec.constructorBuilder()
-                .addJavadoc("private constructor")
+                .addJavadoc("private constructor.")
                 .addModifiers(Modifier.PRIVATE)
                 .addStatement("//unused")
                 .build()
@@ -803,7 +803,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(
             MethodSpec.methodBuilder("getEiderId")
-                .addJavadoc("Reads the Eider Id from the buffer at the offset provided")
+                .addJavadoc("Reads the Eider Id from the buffer at the offset provided.")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(short.class)
@@ -935,7 +935,7 @@ public class AgronaWriter implements EiderCodeWriter
                 .addJavadoc("constructor")
                 .addParameter(
                     ParameterSpec.builder(int.class, "capacity")
-                        .addJavadoc("capacity to build")
+                        .addJavadoc("capacity to build.")
                         .build()
                 )
                 .addModifiers(Modifier.PRIVATE)
@@ -953,7 +953,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(
             MethodSpec.methodBuilder("createWithCapacity")
-                .addJavadoc("Creates a respository holding at most capacity elements")
+                .addJavadoc("Creates a respository holding at most capacity elements.")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .addParameter(int.class, "capacity")
@@ -1055,55 +1055,55 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(FieldSpec
             .builder(ExpandableDirectByteBuffer.class, "internalBuffer")
-            .addJavadoc("The internal MutableDirectBuffer holding capacity instances")
+            .addJavadoc("The internal MutableDirectBuffer holding capacity instances.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(Int2IntHashMap.class, "offsetByKey")
-            .addJavadoc("For mapping the key to the offset")
+            .addJavadoc("For mapping the key to the offset.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "maxUsedOffset")
-            .addJavadoc("The current max offset used of the buffer")
+            .addJavadoc("The current max offset used of the buffer.")
             .initializer("0")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "currentCount")
-            .addJavadoc("The current count of elements in the buffer")
+            .addJavadoc("The current count of elements in the buffer.")
             .addModifiers(Modifier.PRIVATE)
             .initializer("0")
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "maxCapacity")
-            .addJavadoc("The maximum count of elements in the buffer")
+            .addJavadoc("The maximum count of elements in the buffer.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec
             .builder(ClassName.get("", "UnfilteredIterator"), "unfilteredIterator")
-            .addJavadoc("The iterator for unfiltered items")
+            .addJavadoc("The iterator for unfiltered items.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "repositoryBufferLength")
-            .addJavadoc("The length of the internal buffer")
+            .addJavadoc("The length of the internal buffer.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .build());
 
         results.add(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()), "flyweight")
-            .addJavadoc("The flyweight used by the repository")
+            .addJavadoc("The flyweight used by the repository.")
             .initializer("null")
             .addModifiers(Modifier.PRIVATE)
             .build());
@@ -1221,7 +1221,7 @@ public class AgronaWriter implements EiderCodeWriter
             MethodSpec.methodBuilder("rollback")
                 .addJavadoc("Restores the internal buffer to the state it was at when beginTransaction was called. ")
                 .addJavadoc("Returns true if rollback was done; false if not. ")
-                .addJavadoc("Will not rollback after a commit or before beginTransaction called")
+                .addJavadoc("Will not rollback after a commit or before beginTransaction called.")
                 .addModifiers(Modifier.PUBLIC)
                 .returns(boolean.class)
                 .beginControlFlow("if (transactionCopyBufferSet)")
@@ -1243,19 +1243,19 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(FieldSpec
             .builder(MutableDirectBuffer.class, BUFFER)
-            .addJavadoc("The internal MutableDirectBuffer")
+            .addJavadoc("The internal MutableDirectBuffer.")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "initialOffset")
-            .addJavadoc("The starting offset for reading and writing")
+            .addJavadoc("The starting offset for reading and writing.")
             .addModifiers(Modifier.PRIVATE)
             .build());
 
         results.add(FieldSpec
             .builder(boolean.class, "FIXED_LENGTH")
-            .addJavadoc("Indicates if this flyweight holds a fixed length object")
+            .addJavadoc("Indicates if this flyweight holds a fixed length object.")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)
@@ -1266,14 +1266,14 @@ public class AgronaWriter implements EiderCodeWriter
         {
             results.add(FieldSpec
                 .builder(boolean.class, "transactionCopyBufferSet")
-                .addJavadoc("Flag which defines if the transaction copy buffer is set")
+                .addJavadoc("Flag which defines if the transaction copy buffer is set.")
                 .addModifiers(Modifier.PRIVATE)
                 .initializer("false")
                 .build());
 
             results.add(FieldSpec
                 .builder(ExpandableDirectByteBuffer.class, "transactionCopy")
-                .addJavadoc("The MutableDirectBuffer used internally for rollbacks")
+                .addJavadoc("The MutableDirectBuffer used internally for rollbacks.")
                 .initializer("new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
@@ -1283,7 +1283,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             results.add(FieldSpec
                 .builder(boolean.class, "keyLocked")
-                .addJavadoc("Internal field to support the lockKey method")
+                .addJavadoc("Internal field to support the lockKey method.")
                 .initializer("false")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
@@ -1316,7 +1316,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(FieldSpec
             .builder(int.class, "HEADER_OFFSET")
-            .addJavadoc("The offset for the header")
+            .addJavadoc("The offset for the header.")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
@@ -1343,7 +1343,7 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(FieldSpec
             .builder(int.class, "BUFFER_LENGTH")
-            .addJavadoc("The total bytes required to store the object")
+            .addJavadoc("The total bytes required to store the object.")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)
@@ -1366,7 +1366,7 @@ public class AgronaWriter implements EiderCodeWriter
         return FieldSpec
             .builder(int.class, getOffsetName(property.getName()))
             .addJavadoc("The byte offset in the byte array for this " + property.getType().name()
-                + ". Byte length is " + bytes)
+                + ". Byte length is " + bytes + ".")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
@@ -1451,7 +1451,7 @@ public class AgronaWriter implements EiderCodeWriter
             if (property.getAnnotations().get(Constants.KEY).equalsIgnoreCase(TRUE))
             {
                 builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key after locking\")");
-                builder.addJavadoc("This field is marked key=true");
+                builder.addJavadoc("This field is marked key=true.");
             }
         }
 
@@ -1469,7 +1469,7 @@ public class AgronaWriter implements EiderCodeWriter
             "Sequence")
             .addModifiers(Modifier.PUBLIC)
             .returns(fromType(property.getType()))
-            .addJavadoc("Increments and returns the sequence in field " + property.getName())
+            .addJavadoc("Increments and returns the sequence in field " + property.getName() + ".")
             .addStatement("final " + fromTypeToStr(property.getType()) + " currentVal = " + read + "()")
             .addStatement(init + "(currentVal + 1)")
             .addStatement("return " + read + "()");
@@ -1499,7 +1499,7 @@ public class AgronaWriter implements EiderCodeWriter
             if (property.getAnnotations().get(Constants.KEY).equalsIgnoreCase(TRUE))
             {
                 builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key after locking\")");
-                builder.addJavadoc("This field is marked key=true");
+                builder.addJavadoc("This field is marked key=true.");
             }
         }
 
@@ -1516,7 +1516,7 @@ public class AgronaWriter implements EiderCodeWriter
     private ParameterSpec getInputType(PreprocessedEiderProperty property)
     {
         return ParameterSpec.builder(fromType(property.getType()), "value")
-            .addJavadoc("Value for the " + property.getName() + " to write to buffer")
+            .addJavadoc("Value for the " + property.getName() + " to write to buffer.")
             .build();
     }
 
@@ -1608,7 +1608,7 @@ public class AgronaWriter implements EiderCodeWriter
     {
         return FieldSpec
             .builder(short.class, "EIDER_ID")
-            .addJavadoc("The eider spec id for this type. Useful in switch statements to detect type from first 16bits")
+            .addJavadoc("The eider spec id for this type. Useful in switch statements to detect type in first 16bits.")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)
