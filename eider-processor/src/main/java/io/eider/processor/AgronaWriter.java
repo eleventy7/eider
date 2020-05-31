@@ -789,7 +789,7 @@ public class AgronaWriter implements EiderCodeWriter
         } catch (IOException e)
         {
             // Note: calling e.printStackTrace() will print IO errors
-            // that occur from the file already existing after its first run, this is normal
+            // that occur from the file alreadyf existing after its first run, this is normal
         }
     }
 
@@ -1257,14 +1257,14 @@ public class AgronaWriter implements EiderCodeWriter
             .builder(MutableDirectBuffer.class, MUTABLE_BUFFER)
             .addJavadoc("The internal DirectBuffer used for mutatation opertions. "
                 +
-                "Valid only if mutable buffer provided.")
+                "Valid only if a mutable buffer was provided.")
             .addModifiers(Modifier.PRIVATE)
             .initializer("null")
             .build());
 
         results.add(FieldSpec
             .builder(UnsafeBuffer.class, UNSAFE_BUFFER)
-            .addJavadoc("The internal UnsafeBuffer. Valid only if an unsafe buffer was provided")
+            .addJavadoc("The internal UnsafeBuffer. Valid only if an unsafe buffer was provided.")
             .addModifiers(Modifier.PRIVATE)
             .initializer("null")
             .build());

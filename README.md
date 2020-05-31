@@ -18,7 +18,7 @@ Current features:
 - generate flyweights that support fixed length objects
     - supports mulitple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
 - generates a helper to detect message types in a buffer
-    - see Aeron Cookbook for sample in use [demuxer sample](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
+    - see Aeron Cookbook for [sample in use](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
 - flyweight backed sequence generator
 - optional fixed size repositories with a pre-defined capactity
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
