@@ -2,11 +2,11 @@
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java)
 
-Experimental annotation based flyweight generator. This is not currently used in production.
+Experimental annotation based flyweight generator.
 
 Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
-Initial implementation uses Agrona Mutable Direct Buffers for read and write. Values are read from and written to the buffer directly - they do not hold any field values internally - and as a result, cannot be used or held like regular objects. Random access writes and reads are supported. 
+Initial implementation uses Agrona Direct Buffers for read and requires Mutable Direct Buffers for write support. Values are read from and written to the buffer directly - they do not hold any field values internally - and as a result, cannot be used or held like regular objects. Random access writes and reads are supported. 
 
 Current features:
 
@@ -16,6 +16,9 @@ Current features:
     - long
     - fixed length ASCII strings
 - generate flyweights that support fixed length objects
+    - supports mulitple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
+- generates a helper to detect message types in a buffer
+    - see Aeron Cookbook for sample in use [demuxer sample](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
 - flyweight backed sequence generator
 - optional fixed size repositories with a pre-defined capactity
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
