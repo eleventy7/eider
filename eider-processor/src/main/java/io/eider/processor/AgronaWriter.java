@@ -37,14 +37,18 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
+import org.agrona.concurrent.UnsafeBuffer;
 
 public class AgronaWriter implements EiderCodeWriter
 {
 
     public static final String BUFFER = "buffer";
+    public static final String MUTABLE_BUFFER = "mutableBuffer";
+    public static final String UNSAFE_BUFFER = "unsafeBuffer";
     private static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = "java.nio.ByteOrder.LITTLE_ENDIAN)";
     private static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1 = ", java.nio.ByteOrder.LITTLE_ENDIAN)";
     private static final String TRUE = "true";
@@ -807,7 +811,7 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(short.class)
-                .addParameter(MutableDirectBuffer.class, BUFFER)
+                .addParameter(DirectBuffer.class, BUFFER)
                 .addParameter(int.class, OFFSET)
                 .addStatement("return buffer.getShort(offset" + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
@@ -1225,7 +1229,8 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .returns(boolean.class)
                 .beginControlFlow("if (transactionCopyBufferSet)")
-                .addStatement("buffer.putBytes(0, transactionCopy, 0, BUFFER_LENGTH)")
+                .addStatement("if (!isMutable) throw new RuntimeException(\"cannot write to immutable buffer\")")
+                .addStatement("mutableBuffer.putBytes(0, transactionCopy, 0, BUFFER_LENGTH)")
                 .addStatement("transactionCopyBufferSet = false")
                 .addStatement("return true")
                 .endControlFlow()
@@ -1242,15 +1247,46 @@ public class AgronaWriter implements EiderCodeWriter
         List<FieldSpec> results = new ArrayList<>();
 
         results.add(FieldSpec
-            .builder(MutableDirectBuffer.class, BUFFER)
-            .addJavadoc("The internal MutableDirectBuffer.")
+            .builder(DirectBuffer.class, BUFFER)
+            .addJavadoc("The internal DirectBuffer.")
             .addModifiers(Modifier.PRIVATE)
+            .initializer("null")
+            .build());
+
+        results.add(FieldSpec
+            .builder(MutableDirectBuffer.class, MUTABLE_BUFFER)
+            .addJavadoc("The internal DirectBuffer used for mutatation opertions. "
+                +
+                "Valid only if mutable buffer provided.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("null")
+            .build());
+
+        results.add(FieldSpec
+            .builder(UnsafeBuffer.class, UNSAFE_BUFFER)
+            .addJavadoc("The internal UnsafeBuffer. Valid only if an unsafe buffer was provided")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("null")
             .build());
 
         results.add(FieldSpec
             .builder(int.class, "initialOffset")
             .addJavadoc("The starting offset for reading and writing.")
             .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        results.add(FieldSpec
+            .builder(boolean.class, "isMutable")
+            .addJavadoc("Flag indicating if the buffer is mutable.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("false")
+            .build());
+
+        results.add(FieldSpec
+            .builder(boolean.class, "isUnsafe")
+            .addJavadoc("Flag indicating if the buffer is an UnsafeBuffer.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("false")
             .build());
 
         results.add(FieldSpec
@@ -1389,11 +1425,12 @@ public class AgronaWriter implements EiderCodeWriter
             MethodSpec.methodBuilder("writeHeader")
                 .addJavadoc("Writes the header data to the buffer.")
                 .addModifiers(Modifier.PUBLIC)
-                .addStatement("buffer.putShort(initialOffset + HEADER_OFFSET"
+                .addStatement("if (!isMutable) throw new RuntimeException(\"cannot write to immutable buffer\")")
+                .addStatement("mutableBuffer.putShort(initialOffset + HEADER_OFFSET"
                     +
                     ", EIDER_ID, "
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
-                .addStatement("buffer.putInt(initialOffset + LENGTH_OFFSET"
+                .addStatement("mutableBuffer.putInt(initialOffset + LENGTH_OFFSET"
                     +
                     ", BUFFER_LENGTH, "
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
@@ -1494,6 +1531,9 @@ public class AgronaWriter implements EiderCodeWriter
             .addJavadoc("Writes " + property.getName() + " to the buffer. ")
             .addParameter(getInputType(property));
 
+        builder.addStatement("if (!isMutable) throw new RuntimeException(\"Cannot write to immutable buffer\")");
+
+
         if (property.getAnnotations() != null)
         {
             if (property.getAnnotations().get(Constants.KEY).equalsIgnoreCase(TRUE))
@@ -1532,26 +1572,26 @@ public class AgronaWriter implements EiderCodeWriter
     {
         if (property.getType() == EiderPropertyType.INT)
         {
-            return "buffer.putInt(initialOffset + " + getOffsetName(property.getName())
+            return "mutableBuffer.putInt(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", value, "
                 + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN;
         }
         else if (property.getType() == EiderPropertyType.LONG)
         {
-            return "buffer.putLong(initialOffset + " + getOffsetName(property.getName())
+            return "mutableBuffer.putLong(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
         }
         else if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            return "buffer.putStringWithoutLengthAscii(initialOffset + " + getOffsetName(property.getName())
+            return "mutableBuffer.putStringWithoutLengthAscii(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", value)";
         }
         else if (property.getType() == EiderPropertyType.BOOLEAN)
         {
-            return "buffer.putByte(initialOffset + " + getOffsetName(property.getName())
+            return "mutableBuffer.putByte(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", value ? (byte)1 : (byte)0)";
         }
@@ -1635,15 +1675,30 @@ public class AgronaWriter implements EiderCodeWriter
         MethodSpec.Builder builder = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
             .returns(void.class)
-            .addJavadoc("Uses the provided {@link org.agrona.MutableDirectBuffer} from the given offset.\n"
+            .addJavadoc("Uses the provided {@link org.agrona.DirectBuffer} from the given offset.\n"
                 +
                 "@param buffer - buffer to read from and write to.\n"
                 +
                 "@param offset - offset to begin reading from/writing to in the buffer.\n")
-            .addParameter(MutableDirectBuffer.class, BUFFER)
+            .addParameter(DirectBuffer.class, BUFFER)
             .addParameter(int.class, OFFSET)
             .addStatement("this.initialOffset = offset")
-            .addStatement("this.buffer = buffer");
+            .addStatement("this.buffer = buffer")
+            .beginControlFlow("if (buffer instanceof UnsafeBuffer)")
+            .addStatement(UNSAFE_BUFFER + " = (UnsafeBuffer) buffer")
+            .addStatement(MUTABLE_BUFFER + " = (MutableDirectBuffer) buffer")
+            .addStatement("isUnsafe = true")
+            .addStatement("isMutable = true")
+            .endControlFlow()
+            .beginControlFlow("else if (buffer instanceof MutableDirectBuffer)")
+            .addStatement(MUTABLE_BUFFER + " = (MutableDirectBuffer) buffer")
+            .addStatement("isUnsafe = false")
+            .addStatement("isMutable = true")
+            .endControlFlow()
+            .beginControlFlow("else")
+            .addStatement("isUnsafe = false")
+            .addStatement("isMutable = false")
+            .endControlFlow();
 
         if (object.isTransactional())
         {

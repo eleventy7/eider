@@ -21,5 +21,6 @@ import io.eider.annotation.EiderSpec;
 @EiderSpec(eiderId = 1500, name = "CurrentValueEvent")
 public class CurrentValueEventSpec
 {
+    private int correlation;
     private int value;
 }

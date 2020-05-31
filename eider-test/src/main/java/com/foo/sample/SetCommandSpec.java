@@ -21,5 +21,6 @@ import io.eider.annotation.EiderSpec;
 @EiderSpec(eiderId = 1000, name = "SetCommand")
 public class SetCommandSpec
 {
+    private int correlation;
     private int value;
 }

@@ -21,5 +21,6 @@ import io.eider.annotation.EiderSpec;
 @EiderSpec(eiderId = 1002, name = "MultiplyCommand")
 public class MultiplyCommandSpec
 {
+    private int correlation;
     private int value;
 }
