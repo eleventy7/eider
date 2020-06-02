@@ -51,8 +51,8 @@ Features not planned for future releases:
 The following specification defines an object with an identifier, timestamp, enabled flag and a 9 character CUSIP string. The eiderId here is the message type identifier, and is written to the buffer at a fixed position regardless of message specification. If no predefined value is given, one is automatically assigned and made available as a static field on the generated object. The eider Id can be used to simplify building demuxers. 
 
 ```java
-@EiderSpec(eiderId = 42)
-public class Sample
+@EiderSpec(eiderId = 42, name="Sample")
+public class SampleSpec
 {
     private int id;
     private long timestamp;
