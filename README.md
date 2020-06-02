@@ -2,7 +2,7 @@
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java)
 
-Experimental annotation based flyweight generator.
+Annotation based flyweight generator. Suitable for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit.
 
 Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
@@ -16,7 +16,7 @@ Current features:
     - long
     - fixed length ASCII strings
 - generate flyweights that support fixed length objects
-    - supports mulitple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
+    - supports multiple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
 - generates a helper to detect message types in a buffer
     - see Aeron Cookbook for [sample in use](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
 - flyweight backed sequence generator
@@ -42,7 +42,7 @@ Features not planned for future releases:
 - thread safety
 - schema validation
 - migrations
-- mulitple variable length fields - this will come at the cost of a header providing structural data to the reader so that random reads remain possible.
+- mulitple variable length fields
 - repeating groups and sub-objects
 - Nullable objects with customizable null representations 
 
