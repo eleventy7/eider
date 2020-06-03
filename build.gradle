@@ -21,6 +21,7 @@ plugins {
     id 'checkstyle'
     id 'maven-publish'
     id 'net.minecrell.licenser' version '0.4.1'
+    id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
 }
 
 defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
@@ -105,7 +106,8 @@ allprojects {
 project('eider-processor') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
-    apply plugin: "maven-publish"
+    apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: 'maven-publish'
 
     license {
         header = new File(rootDir, 'config/header.txt')
@@ -138,13 +140,11 @@ project('eider-processor') {
         }
 
         publications {
-            ghp(MavenPublication) {
-                groupId project.group
-                artifactId project.name
-                version project.version
-                from components.java
+            shadow(MavenPublication) { publication ->
+                project.shadow.component(publication)
             }
         }
+
     }
 }
 
@@ -198,6 +198,6 @@ project('eider-test') {
 }
 
 wrapper {
-    gradleVersion = '6.4.1'
+    gradleVersion = '6.5'
     distributionType = 'ALL'
 }
