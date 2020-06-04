@@ -33,6 +33,8 @@ public enum EiderPropertyType
         {
             case "int":
                 return INT;
+            case "short":
+                return SHORT;
             case "char":
                 return CHAR8;
             case "long":

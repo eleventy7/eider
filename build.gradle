@@ -143,6 +143,12 @@ project('eider-processor') {
             shadow(MavenPublication) { publication ->
                 project.shadow.component(publication)
             }
+            ghp(MavenPublication) {
+                groupId project.group
+                artifactId project.name
+                version project.version
+                from components.java
+            }
         }
 
     }

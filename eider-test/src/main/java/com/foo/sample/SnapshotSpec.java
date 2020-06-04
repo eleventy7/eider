@@ -18,7 +18,7 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(eiderId = 2000, name = "Snapshot")
+@EiderSpec(eiderId = 2000, name = "Snapshot", eiderGroup = 4)
 public class SnapshotSpec
 {
     private int value;

@@ -28,6 +28,6 @@ public @interface EiderSpec
     short eiderId() default -1;
     boolean fixedLength() default true;
     boolean transactional() default false;
-    boolean transactionalDirtyReads() default true;
     String name() default "";
+    short eiderGroup() default 1;
 }

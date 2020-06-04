@@ -21,13 +21,13 @@ import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 
 @EiderRepository
-@EiderSpec(eiderId = 42, name = "EiderObject", transactional = true)
+@EiderSpec(eiderId = 42, name = "EiderObject", transactional = true, eiderGroup = 8)
 public class EiderObjectSpec
 {
-    @EiderAttribute(unique = true, key = true)
+    @EiderAttribute(key = true)
     private int id;
     private long timestamp;
     private boolean enabled;
-    @EiderAttribute(maxLength = 9, indexed = true)
+    @EiderAttribute(maxLength = 9)
     private String cusip;
 }

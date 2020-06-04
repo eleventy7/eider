@@ -18,7 +18,7 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(eiderId = 1002, name = "MultiplyCommand")
+@EiderSpec(eiderId = 1002, name = "MultiplyCommand", eiderGroup = 4)
 public class MultiplyCommandSpec
 {
     private int correlation;

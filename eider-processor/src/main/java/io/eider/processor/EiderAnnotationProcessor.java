@@ -267,12 +267,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                 if (attribute != null)
                 {
                     annotations.put(Constants.MAXLENGTH, Integer.toString(attribute.maxLength()));
-                    annotations.put(Constants.NULL_VALUE_LONG, Long.toString(attribute.nullValueLong()));
-                    annotations.put(Constants.NULL_VALUE_STRING, attribute.nullValueString());
-                    annotations.put(Constants.NULL_VALUE_INT, Integer.toString(attribute.nullValueInt()));
-                    annotations.put(Constants.ATTRIBUTE_ORDER, Integer.toString(attribute.order()));
-                    annotations.put(Constants.UNIQUE, Boolean.toString(attribute.indexed()));
-                    annotations.put(Constants.INDEXED, Boolean.toString(attribute.unique()));
                     annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
                     annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(attribute.sequence()));
 
@@ -350,6 +344,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,
             classNameInput,
             objectEiderId,
+            annotation.eiderGroup(),
             packageNameGen,
             annotation.fixedLength(),
             enableRepository,
@@ -363,12 +358,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
     private void applyDefaultAnnotations(Map<String, String> annotations)
     {
         annotations.put(Constants.MAXLENGTH, Integer.toString(Integer.MIN_VALUE));
-        annotations.put(Constants.NULL_VALUE_LONG, Long.toString(Long.MIN_VALUE));
-        annotations.put(Constants.NULL_VALUE_STRING, "");
-        annotations.put(Constants.NULL_VALUE_INT, Integer.toString(Integer.MIN_VALUE));
-        annotations.put(Constants.ATTRIBUTE_ORDER, Integer.toString(Integer.MIN_VALUE));
-        annotations.put(Constants.UNIQUE, Boolean.toString(false));
-        annotations.put(Constants.INDEXED, Boolean.toString(false));
         annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(false));
         annotations.put(Constants.KEY, Boolean.toString(false));
     }

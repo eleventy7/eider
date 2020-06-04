@@ -59,6 +59,7 @@ public class SampleImplementationTest
         Assertions.assertEquals(213, eiderR.readId());
 
         Assertions.assertEquals(EiderObject.EIDER_ID, EiderHelper.getEiderId(buffer, 0));
+        Assertions.assertEquals(EiderObject.EIDER_GROUP_ID, EiderHelper.getEiderGroupId(buffer, 0));
     }
 
     @Test

@@ -675,6 +675,15 @@ public class AgronaWriter implements EiderCodeWriter
             .build());
 
         fields.add(FieldSpec
+            .builder(short.class, "EIDER_GROUP_ID")
+            .addJavadoc("The eider ID of this composite object.")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(Modifier.STATIC)
+            .initializer(Short.toString((short)1))
+            .build());
+
+        fields.add(FieldSpec
             .builder(boolean.class, "keyLocked")
             .addJavadoc("Indicates if the key is locked or not.")
             .addModifiers(Modifier.PRIVATE)
@@ -691,15 +700,24 @@ public class AgronaWriter implements EiderCodeWriter
             .build());
 
         fields.add(FieldSpec
-            .builder(int.class, "LENGTH_OFFSET")
-            .addJavadoc("The offset of the length of this composite object in the buffer.")
+            .builder(int.class, "EIDER_GROUP_ID_OFFSET")
+            .addJavadoc("The offset of the EIDER GROUP ID.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.STATIC)
             .initializer(Integer.toString(Short.BYTES))
             .build());
 
-        int currentPos = Integer.BYTES + Short.BYTES;
+        fields.add(FieldSpec
+            .builder(int.class, "LENGTH_OFFSET")
+            .addJavadoc("The offset of the length of this composite object in the buffer.")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.STATIC)
+            .initializer(Integer.toString(Short.BYTES + Short.BYTES))
+            .build());
+
+        int currentPos = Integer.BYTES + Short.BYTES + Short.BYTES;
 
         if (composite.getKeyType() == EiderPropertyType.INT)
         {
@@ -814,6 +832,20 @@ public class AgronaWriter implements EiderCodeWriter
                 .addParameter(DirectBuffer.class, BUFFER)
                 .addParameter(int.class, OFFSET)
                 .addStatement("return buffer.getShort(offset" + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("getEiderGroupId")
+                .addJavadoc("Reads the Eider Group Id from the buffer at the offset provided.")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC)
+                .returns(short.class)
+                .addParameter(DirectBuffer.class, BUFFER)
+                .addParameter(int.class, OFFSET)
+                .addStatement("return buffer.getShort(offset + 2"
+                    +
+                    JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
         );
 
@@ -1133,6 +1165,7 @@ public class AgronaWriter implements EiderCodeWriter
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
             .addModifiers(Modifier.PUBLIC)
             .addField(buildEiderIdField(processingEnv, object.getEiderId()))
+            .addField(buildEiderGroupIdField(processingEnv, object.getEiderGroupId()))
             .addFields(offsetsForFields(processingEnv, object, state, globalState))
             .addFields(internalFields(processingEnv, object))
             .addMethod(buildBuffer(processingEnv, object))
@@ -1352,14 +1385,25 @@ public class AgronaWriter implements EiderCodeWriter
 
         results.add(FieldSpec
             .builder(int.class, "HEADER_OFFSET")
-            .addJavadoc("The offset for the header.")
+            .addJavadoc("The offset for the EIDER_ID within the buffer.")
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
             .initializer(Integer.toString(state.getCurrentOffset()))
             .build());
 
-        state.extendCurrentOffset(Integer.BYTES);
+        state.extendCurrentOffset(Short.BYTES);
+
+        results.add(FieldSpec
+            .builder(int.class, "HEADER_GROUP_OFFSET")
+            .addJavadoc("The offset for the EIDER_GROUP_IP within the buffer.")
+            .addModifiers(Modifier.STATIC)
+            .addModifiers(Modifier.PRIVATE)
+            .addModifiers(Modifier.FINAL)
+            .initializer(Integer.toString(state.getCurrentOffset()))
+            .build());
+
+        state.extendCurrentOffset(Short.BYTES);
 
         results.add(FieldSpec
             .builder(int.class, "LENGTH_OFFSET")
@@ -1430,6 +1474,10 @@ public class AgronaWriter implements EiderCodeWriter
                     +
                     ", EIDER_ID, "
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
+                .addStatement("mutableBuffer.putShort(initialOffset + HEADER_GROUP_OFFSET"
+                    +
+                    ", EIDER_GROUP_ID, "
+                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
                 .addStatement("mutableBuffer.putInt(initialOffset + LENGTH_OFFSET"
                     +
                     ", BUFFER_LENGTH, "
@@ -1445,9 +1493,12 @@ public class AgronaWriter implements EiderCodeWriter
                 .returns(boolean.class)
                 .addStatement("final short eiderId = buffer.getShort(initialOffset + HEADER_OFFSET"
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                .addStatement("final short eiderGroupId = buffer.getShort(initialOffset + HEADER_GROUP_OFFSET"
+                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .addStatement("final int bufferLength = buffer.getInt(initialOffset + LENGTH_OFFSET"
                     + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .addStatement("if (eiderId != EIDER_ID) return false")
+                .addStatement("if (eiderGroupId != EIDER_GROUP_ID) return false")
                 .addStatement("return bufferLength == BUFFER_LENGTH")
                 .build()
         );
@@ -1656,6 +1707,19 @@ public class AgronaWriter implements EiderCodeWriter
             .build();
     }
 
+    private FieldSpec buildEiderGroupIdField(ProcessingEnvironment processingEnv, short groupId)
+    {
+        return FieldSpec
+            .builder(short.class, "EIDER_GROUP_ID")
+            .addJavadoc("The eider group id for this type. "
+                +
+                "Useful in switch statements to detect group in second 16bits.")
+            .addModifiers(Modifier.STATIC)
+            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(Modifier.FINAL)
+            .initializer(Short.toString(groupId))
+            .build();
+    }
 
     private MethodSpec buildEiderId(ProcessingEnvironment processingEnv)
     {
@@ -1730,6 +1794,8 @@ public class AgronaWriter implements EiderCodeWriter
         {
             case INT:
                 return int.class;
+            case SHORT:
+                return short.class;
             case LONG:
                 return long.class;
             case BOOLEAN:
@@ -1754,6 +1820,8 @@ public class AgronaWriter implements EiderCodeWriter
                 return Long.BYTES;
             case BOOLEAN:
                 return 1;
+            case SHORT:
+                return Short.BYTES;
             case CHAR8:
                 return Character.BYTES;
             case FIXED_STRING:
@@ -1773,6 +1841,8 @@ public class AgronaWriter implements EiderCodeWriter
                 return "int";
             case LONG:
                 return "long";
+            case SHORT:
+                return "short";
             case BOOLEAN:
                 return "boolean";
             case CHAR8:

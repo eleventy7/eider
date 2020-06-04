@@ -18,7 +18,7 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(eiderId = 1500, name = "CurrentValueEvent")
+@EiderSpec(eiderId = 1500, name = "CurrentValueEvent", eiderGroup = 4)
 public class CurrentValueEventSpec
 {
     private int correlation;

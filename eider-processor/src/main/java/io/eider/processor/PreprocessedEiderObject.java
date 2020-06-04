@@ -23,6 +23,7 @@ public class PreprocessedEiderObject
     private final String name;
     private final String classNameInput;
     private final short eiderId;
+    private final short eiderGroupId;
     private final String packageNameGen;
     private final boolean fixedLength;
     private final boolean buildRepository;
@@ -31,7 +32,8 @@ public class PreprocessedEiderObject
     private final List<PreprocessedEiderProperty> propertyList;
 
     public PreprocessedEiderObject(final String name, final String classNameInput,
-                                   final short eiderId, final String packageNameGen,
+                                   final short eiderId, final short eiderGroupId,
+                                   final String packageNameGen,
                                    final boolean fixedLength,
                                    final boolean buildRepository, final String repositoryName,
                                    final boolean transactional,
@@ -40,6 +42,7 @@ public class PreprocessedEiderObject
         this.name = name;
         this.classNameInput = classNameInput;
         this.eiderId = eiderId;
+        this.eiderGroupId = eiderGroupId;
         this.packageNameGen = packageNameGen;
         this.fixedLength = fixedLength;
         this.buildRepository = buildRepository;
@@ -91,5 +94,10 @@ public class PreprocessedEiderObject
     public boolean isFixedLength()
     {
         return fixedLength;
+    }
+
+    public short getEiderGroupId()
+    {
+        return eiderGroupId;
     }
 }
