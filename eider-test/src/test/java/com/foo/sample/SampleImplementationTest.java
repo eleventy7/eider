@@ -16,10 +16,11 @@
 
 package com.foo.sample;
 
-import com.foo.sample.gen.EiderHelper;
 import com.foo.sample.gen.EiderObject;
 import com.foo.sample.gen.EiderObjectRepository;
 import com.foo.sample.gen.SequenceGenerator;
+
+import io.eider.Helper.EiderHelper;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.concurrent.EpochClock;

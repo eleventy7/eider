@@ -85,7 +85,7 @@ public class AgronaWriter implements EiderCodeWriter
                     generateCompositeRepository(pe, composite, state, globalState);
                 }
             }
-            generateStandardFiles(pe, packageName);
+            generateStandardFiles(pe, "io.eider.Helper");
         }
     }
 
