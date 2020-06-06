@@ -99,9 +99,9 @@ Flyweights may optionally be transactional. Note that this will allocate a buffe
 @EiderSpec(transactional = true)
 public class SampleTxn
 {
-    @EiderAttribute(unique = true, key = true)
+    @EiderAttribute(key = true)
     private int id;
-    @EiderAttribute(maxLength = 9, indexed = true)
+    @EiderAttribute(maxLength = 9)
     private String cusip;
 }
 ```
@@ -167,14 +167,14 @@ int nextTrade = generator.nextTradeIdSequence();
 @EiderSpec
 public class SampleSpec
 {
-    @EiderAttribute(unique = true, key = true)
+    @EiderAttribute(key = true)
     private int id;
-    @EiderAttribute(maxLength = 9, indexed = true)
+    @EiderAttribute(maxLength = 9)
     private String cusip;
 }
 ```
 
-To enable repository generation, just add a `@EiderRepository` attribute to a `@EiderSpec` object. You will have to set exactly one field to be a key using `@EiderAttribute(unique = true, key = true)`.
+To enable repository generation, just add a `@EiderRepository` attribute to a `@EiderSpec` object. You will have to set exactly one field to be a key using `@EiderAttribute(key = true)`.
 
 The repository generated will allow you to work with fixed size repositories that cannot hold more items than specified.
 
