@@ -29,6 +29,7 @@ public class PreprocessedEiderObject
     private final boolean buildRepository;
     private final String repositoryName;
     private final boolean transactional;
+    private final boolean transactionalRepository;
     private final List<PreprocessedEiderProperty> propertyList;
 
     public PreprocessedEiderObject(final String name, final String classNameInput,
@@ -36,7 +37,7 @@ public class PreprocessedEiderObject
                                    final String packageNameGen,
                                    final boolean fixedLength,
                                    final boolean buildRepository, final String repositoryName,
-                                   final boolean transactional,
+                                   final boolean transactional, final boolean transactionalRepository,
                                    final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
@@ -48,6 +49,7 @@ public class PreprocessedEiderObject
         this.buildRepository = buildRepository;
         this.repositoryName = repositoryName;
         this.transactional = transactional;
+        this.transactionalRepository = transactionalRepository;
         this.propertyList = propertyList;
     }
 
@@ -99,5 +101,10 @@ public class PreprocessedEiderObject
     public short getEiderGroupId()
     {
         return eiderGroupId;
+    }
+
+    public boolean isTransactionalRepository()
+    {
+        return transactionalRepository;
     }
 }

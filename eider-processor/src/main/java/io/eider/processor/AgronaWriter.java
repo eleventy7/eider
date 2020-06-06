@@ -23,11 +23,13 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.CRC32;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -680,7 +682,7 @@ public class AgronaWriter implements EiderCodeWriter
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.STATIC)
-            .initializer(Short.toString((short)1))
+            .initializer(Short.toString((short) 1))
             .build());
 
         fields.add(FieldSpec
@@ -868,6 +870,11 @@ public class AgronaWriter implements EiderCodeWriter
             .addFields(buildRepositoryFields(pe, object, state))
             .addTypes(buildRepositoryIterators(pe, object, state));
 
+        if (object.isTransactionalRepository())
+        {
+            builder.addMethods(buildRepositoryTransactionalHelpers(pe, object, state));
+        }
+
         TypeSpec generated = builder.build();
 
         JavaFile javaFile = JavaFile.builder(object.getPackageNameGen(), generated)
@@ -891,6 +898,60 @@ public class AgronaWriter implements EiderCodeWriter
             // Note: calling e.printStackTrace() will print IO errors
             // that occur from the file already existing after its first run, this is normal
         }
+    }
+
+    private Iterable<MethodSpec> buildRepositoryTransactionalHelpers(ProcessingEnvironment pe,
+                                                                     PreprocessedEiderObject object,
+                                                                     AgronaWriterState state)
+    {
+        List<MethodSpec> results = new ArrayList<>();
+
+        results.add(
+            MethodSpec.methodBuilder("beginTransaction")
+                .addJavadoc("Begins the transaction by making a temporary copy of the internal buffer. ")
+                .addModifiers(Modifier.PUBLIC)
+                .beginControlFlow("if (transactionCopyLength != repositoryBufferLength)")
+                .addStatement("transactionCopy = new ExpandableDirectByteBuffer(repositoryBufferLength)")
+                .addStatement("transactionCopyLength = repositoryBufferLength")
+                .endControlFlow()
+                .addStatement("internalBuffer.getBytes(0, transactionCopy, 0, repositoryBufferLength)")
+                .addStatement("offsetByKeyCopy.clear()")
+                .addStatement("offsetByKey.forEach((k, v) -> offsetByKeyCopy.put(k, v))")
+                .addStatement("currentCountCopy = currentCount")
+                .addStatement("transactionCopyBufferSet = true")
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("commit")
+                .addJavadoc("Prevents rollback being called within a new call to beginTransaction.")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement("transactionCopyBufferSet = false")
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("rollback")
+                .addJavadoc("Restores the internal buffer to the state it was at when beginTransaction was called. ")
+                .addJavadoc("Returns true if rollback was done; false if not. ")
+                .addJavadoc("Will not rollback after a commit or before beginTransaction called.")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(boolean.class)
+                .beginControlFlow("if (transactionCopyBufferSet)")
+                .addStatement("internalBuffer.putBytes(0, transactionCopy, 0, repositoryBufferLength)")
+                .addStatement("offsetByKey.clear()")
+                .addStatement("offsetByKeyCopy.forEach((k, v) -> offsetByKey.put(k, v))")
+                .addStatement("offsetByKeyCopy.clear()")
+                .addStatement("currentCount = currentCountCopy")
+                .addStatement("transactionCopyBufferSet = false")
+                .addStatement("currentCountCopy = 0")
+                .addStatement("return true")
+                .endControlFlow()
+                .addStatement("return false")
+                .build()
+        );
+
+        return results;
     }
 
     private Iterable<TypeSpec> buildRepositoryIterators(ProcessingEnvironment processingEnv,
@@ -1051,6 +1112,17 @@ public class AgronaWriter implements EiderCodeWriter
         );
 
         results.add(
+            MethodSpec.methodBuilder("dumpBuffer")
+                .addJavadoc("Returns the internal buffer as a byte[]. Warning! Allocates.")
+                .addModifiers(Modifier.PRIVATE)
+                .returns(ArrayTypeName.of(byte.class))
+                .addStatement("byte[] tmpBuffer = new byte[repositoryBufferLength]")
+                .addStatement("internalBuffer.getBytes(0, tmpBuffer)")
+                .addStatement("return tmpBuffer")
+                .build()
+        );
+
+        results.add(
             MethodSpec.methodBuilder("getByKey")
                 .addJavadoc("Moves the flyweight onto the buffer segment associated with the provided key. ")
                 .addJavadoc("Returns null if not found.")
@@ -1064,6 +1136,17 @@ public class AgronaWriter implements EiderCodeWriter
                 .addStatement("return flyweight")
                 .endControlFlow()
                 .addStatement("return null")
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("getCrc32")
+                .addJavadoc("Returns the CRC32 of the underlying buffer. Warning! Allocates.")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(long.class)
+                .addStatement("crc32.reset()")
+                .addStatement("crc32.update(dumpBuffer())")
+                .addStatement("return crc32.getValue()")
                 .build()
         );
 
@@ -1101,6 +1184,14 @@ public class AgronaWriter implements EiderCodeWriter
             .addJavadoc("For mapping the key to the offset.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        results.add(FieldSpec
+            .builder(CRC32.class, "crc32")
+            .addJavadoc("Used to compute CRC32 of the underlying buffer")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("new CRC32()")
             .build());
 
         results.add(FieldSpec
@@ -1143,6 +1234,43 @@ public class AgronaWriter implements EiderCodeWriter
             .initializer("null")
             .addModifiers(Modifier.PRIVATE)
             .build());
+
+        if (object.isTransactionalRepository())
+        {
+            results.add(FieldSpec
+                .builder(Int2IntHashMap.class, "offsetByKeyCopy")
+                .addJavadoc("The offsets by key at time of beginTransaction.")
+                .addModifiers(Modifier.PRIVATE)
+                .initializer("new Int2IntHashMap(Integer.MIN_VALUE)")
+                .build());
+
+            results.add(FieldSpec
+                .builder(boolean.class, "transactionCopyBufferSet")
+                .addJavadoc("Flag which defines if the transaction copy buffer is set.")
+                .addModifiers(Modifier.PRIVATE)
+                .initializer("false")
+                .build());
+
+            results.add(FieldSpec
+                .builder(int.class, "currentCountCopy")
+                .addJavadoc("The current count of elements in the buffer.")
+                .addModifiers(Modifier.PRIVATE)
+                .initializer("0")
+                .build());
+
+            results.add(FieldSpec
+                .builder(ExpandableDirectByteBuffer.class, "transactionCopy")
+                .addJavadoc("The MutableDirectBuffer used internally for rollbacks.")
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+
+            results.add(FieldSpec
+                .builder(int.class, "transactionCopyLength")
+                .addJavadoc("The current length of the transactionCopy buffer.")
+                .addModifiers(Modifier.PRIVATE)
+                .initializer("0")
+                .build());
+        }
 
         return results;
     }

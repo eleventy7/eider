@@ -322,10 +322,12 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
         EiderRepository repository = typeElement.getAnnotation(EiderRepository.class);
         final boolean enableRepository;
+        final boolean enableTransactionalRepository;
         final String repositoryName;
         if (repository == null)
         {
             enableRepository = false;
+            enableTransactionalRepository = false;
             repositoryName = "";
         }
         else
@@ -339,6 +341,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             {
                 repositoryName = repository.name();
             }
+            enableTransactionalRepository = repository.transactional();
         }
 
         final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,
@@ -350,6 +353,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             enableRepository,
             repositoryName,
             annotation.transactional(),
+            enableTransactionalRepository,
             preprocessedEiderProperties);
 
         objects.add(obj);

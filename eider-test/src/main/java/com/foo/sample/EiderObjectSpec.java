@@ -20,7 +20,7 @@ import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 
-@EiderRepository
+@EiderRepository(transactional = true)
 @EiderSpec(eiderId = 42, name = "EiderObject", transactional = true, eiderGroup = 8)
 public class EiderObjectSpec
 {

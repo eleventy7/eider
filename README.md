@@ -23,6 +23,8 @@ Current features:
 - optional fixed size repositories with a pre-defined capactity
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
     - `getByKey`, `containsKey` and `Iterator<>` functionality
+    - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
+    - optional transactional support. Warning, will cause allocation. 
 - optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
     - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
 - composite reader/writer
@@ -31,7 +33,7 @@ Current features:
 
 Features that may be added to future versions:
 
-- transaction support in the repositories
+- transaction support in the composite repositories
 - JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations
 
 Features not planned for future releases:
@@ -160,10 +162,8 @@ int nextTrade = generator.nextTradeIdSequence();
 ```
 ### Repository Sample
 
-Repositories do not yet support transactions.
-
 ```java
-@EiderRepository
+@EiderRepository(transactional = true)
 @EiderSpec
 public class SampleSpec
 {
@@ -183,13 +183,25 @@ final SampleSpecRepository repository = SampleSpecRepository.createWithCapacity(
 
 SampleSpec flyweight = repository.createWithKey(1);
 flyweight.writeCusip("CUSIP0001");
+
+long crc32Initial = repository.getCrc32();
+
+repository.beginTransaction();
+
 flyweight = repository.createWithKey(2);
 flyweight.writeCusip("CUSIP0002");
+long crc32Final = repository.getCrc32();
 
 flyweight = repository.getByKey(1);
 Assertions.assertEquals("CUSIP0001", flyweight.readCusip());
 flyweight = repository.getByKey(2);
 Assertions.assertEquals("CUSIP0002", flyweight.readCusip());
+Assertions.assertNotEquals(crc32Initial, crc32Final);
+
+repository.rollback();
+
+Assertions.assertNull(repository.getByKey(2));
+Assertions.assertEquals(crc32Initial, repository.getCrc32());
 ```
 
 Repositories also hold an iterator, which allows you to iterate through all elements in the buffer.
@@ -286,5 +298,5 @@ It's primarily being used for another project with messages sent over Aeron and 
 ### Requirements
 
 - Java 11
-- Gradle 6.4.1
+- Gradle 6.5
 - Agrona 1.5.1
