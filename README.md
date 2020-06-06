@@ -12,6 +12,7 @@ Current features:
 
 - type support
     - boolean
+    - short
     - int
     - long
     - fixed length ASCII strings
@@ -38,7 +39,7 @@ Features that may be added to future versions:
 
 Features not planned for future releases:
 
-- byte[], BigDecimal, char, short or other type support
+- byte[], BigDecimal, char or other type support
 - versioning or backwards/forwards compatibility
 - support for anything but JVM
 - thread safety
