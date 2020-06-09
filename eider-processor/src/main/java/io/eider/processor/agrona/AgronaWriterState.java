@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.eider.processor;
+package io.eider.processor.agrona;
 
 public class AgronaWriterState
 {

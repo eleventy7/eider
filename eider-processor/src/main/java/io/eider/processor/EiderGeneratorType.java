@@ -18,7 +18,5 @@ package io.eider.processor;
 
 public enum EiderGeneratorType
 {
-    AGRONA,
-    JDK_14_JEP_370,
-    JDK_15_JEP_383
+    AGRONA
 }

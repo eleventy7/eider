@@ -19,12 +19,10 @@ package io.eider.processor;
 public enum EiderPropertyType
 {
     BOOLEAN,
-    CHAR8,
     SHORT,
     INT,
     LONG,
     FIXED_STRING,
-    VAR_STRING,
     INVALID;
 
     public static EiderPropertyType from(String toString)
@@ -35,8 +33,6 @@ public enum EiderPropertyType
                 return INT;
             case "short":
                 return SHORT;
-            case "char":
-                return CHAR8;
             case "long":
                 return LONG;
             case "boolean":

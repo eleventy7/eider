@@ -18,7 +18,6 @@ package io.eider.processor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +30,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 
 import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderComposite;
@@ -54,7 +52,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
     {
         super.init(processingEnv);
         writer = WriterFactory.getWriter(EiderGeneratorType.AGRONA);
-        writeNote(processingEnv, "Eider is enabled");
     }
 
     @Override
@@ -82,7 +79,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             }
 
             TypeElement element = (TypeElement) el;
-            preprocessObject(processingEnv, element, objects);
+            preprocessObject(element, objects);
         }
 
         for (Element el : roundEnv.getElementsAnnotatedWith(EiderComposite.class))
@@ -107,6 +104,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         return true;
     }
 
+    @SuppressWarnings("all")
     private void preprocessCompositeObject(ProcessingEnvironment pe, TypeElement typeElement,
                                            List<PreprocessedEiderObject> objects,
                                            List<PreprocessedEiderComposite> composites)
@@ -147,7 +145,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     {
                         if (keyFieldCount != 0)
                         {
-                            throw new RuntimeException("Only a single key field allowed");
+                            throw new EiderProcessorException("Only a single key field allowed");
                         }
                         keyFieldCount += 1;
                     }
@@ -168,19 +166,19 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
                     if (keyType == EiderPropertyType.INVALID)
                     {
-                        throw new RuntimeException("Only int and long fields can be EiderComposite keys");
+                        throw new EiderProcessorException("Only int and long fields can be EiderComposite keys");
                     }
 
                     keyName = attrName;
                 }
                 else
                 {
-                    PreprocessedEiderObject eiderObject = getEiderObject(pe, element.asType().toString(),
-                        objects);
+                    PreprocessedEiderObject eiderObject = getEiderObject(element.asType().toString(), objects);
 
                     if (eiderObject == null)
                     {
-                        throw new RuntimeException("Could not find eider spec for " + element.asType().toString());
+                        throw new EiderProcessorException("Could not find eider spec for "
+                            + element.asType().toString());
                     }
                     else
                     {
@@ -194,7 +192,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
         if (keyFieldCount == 0)
         {
-            throw new RuntimeException("EiderComposite objects must have exactly 1 key");
+            throw new EiderProcessorException("EiderComposite objects must have exactly 1 key");
         }
 
         EiderRepository repository = typeElement.getAnnotation(EiderRepository.class);
@@ -224,7 +222,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         composites.add(composite);
     }
 
-    private PreprocessedEiderObject getEiderObject(ProcessingEnvironment pe, String attrName,
+    private PreprocessedEiderObject getEiderObject(String attrName,
                                                    List<PreprocessedEiderObject> objects)
     {
 
@@ -241,7 +239,8 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         return null;
     }
 
-    private void preprocessObject(ProcessingEnvironment processingEnv, TypeElement typeElement,
+    @SuppressWarnings("all")
+    private void preprocessObject(TypeElement typeElement,
                                   final List<PreprocessedEiderObject> objects)
     {
         final String classNameInput = typeElement.getSimpleName().toString();
@@ -274,7 +273,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     {
                         if (keyFieldCount != 0)
                         {
-                            throw new RuntimeException("Only a single key field allowed");
+                            throw new EiderProcessorException("Only a single key field allowed");
                         }
                         keyFieldCount += 1;
                     }
@@ -318,7 +317,6 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         {
             name = classNameGen;
         }
-
 
         EiderRepository repository = typeElement.getAnnotation(EiderRepository.class);
         final boolean enableRepository;
@@ -374,24 +372,10 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         }
         else if (typeStr.equalsIgnoreCase(STRING) && !isFixed)
         {
-            return EiderPropertyType.VAR_STRING;
+            return EiderPropertyType.INVALID;
         }
 
         return EiderPropertyType.from(typeStr);
-    }
-
-    private EiderPropertyType defineKeyType(String typeStr, boolean isFixed)
-    {
-        if (typeStr.equalsIgnoreCase("long"))
-        {
-            return EiderPropertyType.LONG;
-        }
-        else if (typeStr.equalsIgnoreCase("int"))
-        {
-            return EiderPropertyType.INT;
-        }
-
-        return EiderPropertyType.INVALID;
     }
 
     private void checkUnfixedStringInFixedObject(final EiderSpec annotation, final Element element,
@@ -403,20 +387,8 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             &&
             annotation.fixedLength())
         {
-            throw new RuntimeException("Cannot have non fixed length strings on fixed length object");
+            throw new EiderProcessorException("Cannot have non fixed length strings on fixed length object");
         }
-    }
-
-    @Override
-    public Set<String> getSupportedOptions()
-    {
-        final Set<String> options = new HashSet<>();
-        return options;
-    }
-
-    private void writeNote(ProcessingEnvironment pe, String note)
-    {
-        pe.getMessager().printMessage(Diagnostic.Kind.NOTE, note);
     }
 
 }

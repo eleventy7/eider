@@ -16,6 +16,8 @@
 
 package io.eider.processor;
 
+import io.eider.processor.agrona.AgronaWriter;
+
 public class WriterFactory
 {
     private WriterFactory()
