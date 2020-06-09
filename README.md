@@ -15,7 +15,7 @@ Current features:
     - short
     - int
     - long
-    - fixed length ASCII strings
+    - fixed length ASCII strings. Strings that are shorter than max length get padded with spaces. Use `NoPadding` variants to write without any padding. In all cases, trailing space chars get trimmed on read.
 - generate flyweights that support fixed length objects
     - supports multiple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
 - generates a helper to detect message types in a buffer

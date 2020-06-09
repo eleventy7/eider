@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.zip.CRC32;
 
 import static io.eider.processor.Constants.KEY;
+import static io.eider.processor.Constants.MAXLENGTH;
 import static io.eider.processor.Constants.SEQUENCE_GENERATOR;
 import static io.eider.processor.agrona.Constants.BUFFER;
 import static io.eider.processor.agrona.Constants.BUFFER_LENGTH_1;
@@ -489,7 +490,7 @@ public class AgronaSpecGenerator
     }
 
     public void generateSpecObject(final ProcessingEnvironment processingEnv, final PreprocessedEiderObject object,
-                                    final AgronaWriterState state, final AgronaWriterGlobalState globalState)
+                                   final AgronaWriterState state, final AgronaWriterGlobalState globalState)
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
             .addModifiers(Modifier.PUBLIC)
@@ -830,6 +831,10 @@ public class AgronaSpecGenerator
             if (!property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
             {
                 results.add(genWriteProperty(property));
+                if (property.getType() == EiderPropertyType.FIXED_STRING)
+                {
+                    results.add(genWritePropertyNoPadding(property));
+                }
             }
             if (property.getAnnotations() != null)
             {
@@ -846,6 +851,37 @@ public class AgronaSpecGenerator
         }
 
         return results;
+    }
+
+    private MethodSpec genWritePropertyNoPadding(PreprocessedEiderProperty property)
+    {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()
+            + "NoPadding"))
+            .addModifiers(Modifier.PUBLIC)
+            .addJavadoc("Writes " + property.getName() + " to the buffer without any padding. "
+                + "Beware can lead to corruption. ")
+            .addParameter(getInputType(property));
+
+        builder.addStatement("if (!isMutable) throw new RuntimeException(\"Cannot write to immutable buffer\")");
+
+        if (property.getAnnotations() != null && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+        {
+            builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key after locking\")");
+            builder.addJavadoc("This field is marked key=true.");
+        }
+
+        if (property.getType() == EiderPropertyType.FIXED_STRING)
+        {
+            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+            builder.addStatement(fixedLengthStringCheck(property, maxLength));
+            builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
+                + getOffsetName(property.getName()) + ", value)");
+        }
+        else
+        {
+            builder.addStatement(bufferWrite(property));
+        }
+        return builder.build();
     }
 
     private MethodSpec buildSequenceInitialize(PreprocessedEiderProperty property)
@@ -911,11 +947,16 @@ public class AgronaSpecGenerator
 
         if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            builder.addStatement(fixedLengthStringCheck(property));
+            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+            builder.addStatement(fixedLengthStringCheck(property, maxLength));
+            builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
+            builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
+                + getOffsetName(property.getName()) + ", padded)");
         }
-
-        builder.addStatement(bufferWrite(property));
-
+        else
+        {
+            builder.addStatement(bufferWrite(property));
+        }
         return builder.build();
     }
 
@@ -926,10 +967,8 @@ public class AgronaSpecGenerator
             .build();
     }
 
-    private String fixedLengthStringCheck(PreprocessedEiderProperty property)
+    private String fixedLengthStringCheck(PreprocessedEiderProperty property, int maxLength)
     {
-        int maxLength = Integer.parseInt(property.getAnnotations().get(io.eider.processor.Constants.MAXLENGTH));
-
         return "if (value.length() > " + maxLength + ") throw new RuntimeException(\"Field "
             + property.getName() + " is longer than maxLength=" + maxLength + "\")";
     }
@@ -990,7 +1029,7 @@ public class AgronaSpecGenerator
         }
         else if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            int length = Integer.parseInt(property.getAnnotations().get(io.eider.processor.Constants.MAXLENGTH));
+            int length = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
             return "return buffer.getStringWithoutLengthAscii(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", " + length + ").trim()";

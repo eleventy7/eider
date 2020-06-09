@@ -68,6 +68,27 @@ public class SampleImplementationTest
     }
 
     @Test
+    public void canReadWriteStringDiffLength()
+    {
+        final EiderObject eiderR = new EiderObject();
+        final EiderObject eiderW = new EiderObject();
+        final EpochClock clock = new SystemEpochClock();
+        final long now = clock.time();
+
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
+
+        eiderW.setUnderlyingBuffer(buffer, 0);
+        eiderR.setUnderlyingBuffer(buffer, 0);
+
+        eiderW.writeCusip("012345678");
+        assertEquals("012345678", eiderR.readCusip());
+
+        eiderW.writeCusip("ABC");
+        assertEquals("ABC", eiderR.readCusip());
+
+    }
+
+    @Test
     public void canRollback()
     {
         final EiderObject eiderR = new EiderObject();
