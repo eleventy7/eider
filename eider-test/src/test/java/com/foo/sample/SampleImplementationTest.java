@@ -86,6 +86,11 @@ public class SampleImplementationTest
         eiderW.writeCusip("ABC");
         assertEquals("ABC", eiderR.readCusip());
 
+        eiderW.writeCusip("012345678");
+        assertEquals("012345678", eiderR.readCusip());
+
+        eiderW.writeCusipNoPadding("DEF");
+        assertEquals("DEF345678", eiderR.readCusip());
     }
 
     @Test
