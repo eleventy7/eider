@@ -1,40 +1,5 @@
 package io.eider.processor.agrona;
 
-import com.squareup.javapoet.ArrayTypeName;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-
-import io.eider.processor.AttributeConstants;
-import io.eider.processor.EiderPropertyType;
-import io.eider.processor.PreprocessedEiderObject;
-import io.eider.processor.PreprocessedEiderProperty;
-
-import org.agrona.DirectBuffer;
-import org.agrona.ExpandableDirectByteBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Int2IntHashMap;
-import org.agrona.collections.Int2ObjectHashMap;
-import org.agrona.collections.IntHashSet;
-import org.agrona.collections.Object2ObjectHashMap;
-import org.agrona.concurrent.UnsafeBuffer;
-
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.io.Writer;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.CRC32;
-
 import static io.eider.processor.AttributeConstants.INDEXED;
 import static io.eider.processor.AttributeConstants.KEY;
 import static io.eider.processor.AttributeConstants.MAXLENGTH;
@@ -67,6 +32,41 @@ import static io.eider.processor.agrona.Util.getBoxedType;
 import static io.eider.processor.agrona.Util.getComparator;
 import static io.eider.processor.agrona.Util.upperFirst;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.CRC32;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaFileObject;
+
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+
+import org.agrona.DirectBuffer;
+import org.agrona.ExpandableDirectByteBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
+import org.agrona.collections.IntHashSet;
+import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.concurrent.UnsafeBuffer;
+
+import io.eider.processor.AttributeConstants;
+import io.eider.processor.EiderPropertyType;
+import io.eider.processor.PreprocessedEiderObject;
+import io.eider.processor.PreprocessedEiderProperty;
+
 public class AgronaSpecGenerator
 {
 
@@ -90,7 +90,7 @@ public class AgronaSpecGenerator
 
         if (object.isTransactionalRepository())
         {
-            builder.addMethods(buildRepositoryTransactionalHelpers());
+            builder.addMethods(buildRepositoryTransactionalHelpers(object));
         }
 
         TypeSpec generated = builder.build();
@@ -187,31 +187,41 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<FieldSpec> buildRepositoryIndexFields(PreprocessedEiderObject object)
-    {
-        List<FieldSpec> results = new ArrayList<>();
-        //initial index by
-
-        return results;
-    }
-
-    private Iterable<MethodSpec> buildRepositoryTransactionalHelpers()
+    private Iterable<MethodSpec> buildRepositoryTransactionalHelpers(PreprocessedEiderObject object)
     {
         List<MethodSpec> results = new ArrayList<>();
 
-        results.add(
-            MethodSpec.methodBuilder("beginTransaction")
-                .addJavadoc("Begins the transaction by making a temporary copy of the internal buffer. ")
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("internalBuffer.getBytes(0, transactionCopy, 0, repositoryBufferLength)")
-                .addStatement("validOffsetsCopy.clear()")
-                .addStatement("validOffsetsCopy.addAll(validOffsets)")
-                .addStatement("offsetByKeyCopy.clear()")
-                .addStatement("offsetByKey.forEach(offsetByKeyCopy::put)")
-                .addStatement("currentCountCopy = currentCount")
-                .addStatement("transactionCopyBufferSet = true")
-                .build()
-        );
+        MethodSpec.Builder beginTransaction = MethodSpec.methodBuilder("beginTransaction")
+            .addJavadoc("Begins the transaction by making a temporary copy of the internal buffer. ")
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("internalBuffer.getBytes(0, transactionCopy, 0, repositoryBufferLength)")
+            .addStatement("validOffsetsCopy.clear()")
+            .addStatement("validOffsetsCopy.addAll(validOffsets)")
+            .addStatement("offsetByKeyCopy.clear()")
+            .addStatement("offsetByKey.forEach(offsetByKeyCopy::put)")
+            .addStatement("currentCountCopy = currentCount")
+            .addStatement("transactionCopyBufferSet = true");
+
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    final String indexName = "indexDataFor" + upperFirst(prop.getName());
+                    final String revIndexName = "reverseIndexDataFor" + upperFirst(prop.getName());
+                    final String indexNameCopy = "indexDataFor" + upperFirst(prop.getName() + "Copy");
+                    final String revIndexNameCopy = "reverseIndexDataFor" + upperFirst(prop.getName() + "Copy");
+                    //
+                    beginTransaction.addStatement(indexNameCopy + ".clear()");
+                    beginTransaction.addStatement(indexNameCopy + ".putAll(" + indexName + ")");
+                    beginTransaction.addStatement(revIndexNameCopy + ".clear()");
+                    beginTransaction.addStatement(revIndexNameCopy + ".putAll(" + revIndexName + ")");
+                }
+            }
+        }
+
+        results.add(beginTransaction.build());
 
         results.add(
             MethodSpec.methodBuilder("commit")
@@ -221,29 +231,48 @@ public class AgronaSpecGenerator
                 .build()
         );
 
-        results.add(
-            MethodSpec.methodBuilder("rollback")
-                .addJavadoc("Restores the internal buffer to the state it was at when beginTransaction was called. ")
-                .addJavadoc("Returns true if rollback was done; false if not. ")
-                .addJavadoc("Will not rollback after a commit or before beginTransaction called.")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(boolean.class)
-                .beginControlFlow("if (transactionCopyBufferSet)")
-                .addStatement("internalBuffer.putBytes(0, transactionCopy, 0, repositoryBufferLength)")
-                .addStatement("validOffsets.clear()")
-                .addStatement("validOffsets.addAll(validOffsetsCopy)")
-                .addStatement("validOffsetsCopy.clear()")
-                .addStatement("offsetByKey.clear()")
-                .addStatement("offsetByKeyCopy.forEach(offsetByKey::put)")
-                .addStatement("offsetByKeyCopy.clear()")
-                .addStatement("currentCount = currentCountCopy")
-                .addStatement(TRANSACTION_COPY_BUFFER_SET_FALSE)
-                .addStatement("currentCountCopy = 0")
-                .addStatement(RETURN_TRUE)
-                .endControlFlow()
-                .addStatement(RETURN_FALSE)
-                .build()
-        );
+        MethodSpec.Builder rollback = MethodSpec.methodBuilder("rollback")
+            .addJavadoc("Restores the internal buffer to the state it was at when beginTransaction was called. ")
+            .addJavadoc("Returns true if rollback was done; false if not. ")
+            .addJavadoc("Will not rollback after a commit or before beginTransaction called.")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(boolean.class)
+            .beginControlFlow("if (transactionCopyBufferSet)")
+            .addStatement("internalBuffer.putBytes(0, transactionCopy, 0, repositoryBufferLength)")
+            .addStatement("validOffsets.clear()")
+            .addStatement("validOffsets.addAll(validOffsetsCopy)")
+            .addStatement("validOffsetsCopy.clear()")
+            .addStatement("offsetByKey.clear()")
+            .addStatement("offsetByKeyCopy.forEach(offsetByKey::put)")
+            .addStatement("offsetByKeyCopy.clear()")
+            .addStatement("currentCount = currentCountCopy")
+            .addStatement(TRANSACTION_COPY_BUFFER_SET_FALSE)
+            .addStatement("currentCountCopy = 0");
+
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    final String indexName = "indexDataFor" + upperFirst(prop.getName());
+                    final String revIndexName = "reverseIndexDataFor" + upperFirst(prop.getName());
+                    final String indexNameCopy = "indexDataFor" + upperFirst(prop.getName() + "Copy");
+                    final String revIndexNameCopy = "reverseIndexDataFor" + upperFirst(prop.getName() + "Copy");
+                    //
+                    rollback.addStatement(indexName + ".clear()");
+                    rollback.addStatement(indexName + ".putAll(" + indexNameCopy + ")");
+                    rollback.addStatement(indexNameCopy + ".clear()");
+                    rollback.addStatement(revIndexName + ".clear()");
+                    rollback.addStatement(revIndexName + ".putAll(" + revIndexNameCopy + ")");
+                    rollback.addStatement(revIndexNameCopy + ".clear()");
+                }
+            }
+        }
+
+        rollback.addStatement(RETURN_TRUE);
+        rollback.endControlFlow().addStatement(RETURN_FALSE);
+        results.add(rollback.build());
 
         return results;
     }
@@ -607,6 +636,16 @@ public class AgronaSpecGenerator
                         .addModifiers(Modifier.PRIVATE)
                         .build());
 
+                    if (object.isTransactional())
+                    {
+                        results.add(FieldSpec.builder(indexDataMap, "indexDataFor" + upperFirst(prop.getName())
+                            + "Copy")
+                            .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + " field.")
+                            .initializer("new $T()", indexDataMap)
+                            .addModifiers(Modifier.PRIVATE)
+                            .build());
+                    }
+
                     final ClassName reverseMap =
                         ClassName.get(Int2ObjectHashMap.class);
                     final TypeName reversedIndex = ParameterizedTypeName
@@ -618,9 +657,15 @@ public class AgronaSpecGenerator
                         .addModifiers(Modifier.PRIVATE)
                         .build());
 
-                    //By offset index
-
-
+                    if (object.isTransactional())
+                    {
+                        results.add(FieldSpec.builder(reversedIndex, "reverseIndexDataFor"
+                            + upperFirst(prop.getName()) + "Copy")
+                            .addJavadoc("Holds the reverse index data for the " + prop.getName() + " field.")
+                            .initializer("new $T()", reversedIndex)
+                            .addModifiers(Modifier.PRIVATE)
+                            .build());
+                    }
                 }
             }
         }

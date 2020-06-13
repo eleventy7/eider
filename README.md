@@ -2,7 +2,7 @@
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java)
 
-Annotation based flyweight generator. Suitable for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit.
+Annotation based flyweight generator. Suitable for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit. Only suitable for single threaded usage scenarios.
 
 Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
 
@@ -25,7 +25,7 @@ Current features:
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
     - `getByKey`, `getByBufferIndex`, `getByBufferOffset`, `containsKey` and `Iterator<>` functionality
     - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
-    - optional indexed fields. 
+    - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. Warning, indexed fields result in allocation within the repository.
     - optional transactional support. Warning, will cause allocation. 
 - optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
     - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
@@ -228,7 +228,6 @@ public class SampleSpec
 ```
 
 Indexes are added when an `@EiderRepository` object has `@EiderAttribute` with `indexed = true`.
-
 
 ```java
 final SampleSpecRepository repository = SampleSpecRepository.createWithCapacity(2);

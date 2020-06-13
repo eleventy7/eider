@@ -339,8 +339,6 @@ public class SampleImplementationTest
         assertEquals(1059653546L, repository.getCrc32());
     }
 
-
-
     @Test
     public void canUseTransactionalRepository()
     {
@@ -379,6 +377,9 @@ public class SampleImplementationTest
         flyRead = repository.getByKey(1);
         assertEquals("ABCDEFGHI", flyRead.readCusip());
 
+        List<Integer> preCommitItem = repository.getAllWithIndexCusipValue("ABCDEFGHI");
+        assertEquals(1, preCommitItem.size());
+
         repository.rollback();
 
         flyRead = repository.getByKey(1);
@@ -386,6 +387,9 @@ public class SampleImplementationTest
 
         EiderObject nullExpected = repository.getByKey(2);
         assertNull(nullExpected);
+
+        List<Integer> postRollbackItem = repository.getAllWithIndexCusipValue("ABCDEFGHI");
+        assertEquals(0, postRollbackItem.size());
 
         assertEquals(initalCrc32, repository.getCrc32());
     }
