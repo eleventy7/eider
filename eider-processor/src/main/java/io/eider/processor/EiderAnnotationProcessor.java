@@ -140,7 +140,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                 EiderAttribute attribute = element.getAnnotation(EiderAttribute.class);
                 if (attribute != null)
                 {
-                    annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
+                    annotations.put(AttributeConstants.KEY, Boolean.toString(attribute.key()));
                     if (attribute.key())
                     {
                         if (keyFieldCount != 0)
@@ -156,11 +156,11 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                     }
                 } else
                 {
-                    annotations.put(Constants.KEY, "false");
+                    annotations.put(AttributeConstants.KEY, "false");
                 }
                 final String attrName = element.getSimpleName().toString();
 
-                if (annotations.get(Constants.KEY).equalsIgnoreCase("true"))
+                if (annotations.get(AttributeConstants.KEY).equalsIgnoreCase("true"))
                 {
                     keyType = defineType(element.asType().toString(), isFixed);
 
@@ -265,9 +265,11 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                 EiderAttribute attribute = element.getAnnotation(EiderAttribute.class);
                 if (attribute != null)
                 {
-                    annotations.put(Constants.MAXLENGTH, Integer.toString(attribute.maxLength()));
-                    annotations.put(Constants.KEY, Boolean.toString(attribute.key()));
-                    annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(attribute.sequence()));
+                    annotations.put(AttributeConstants.MAXLENGTH, Integer.toString(attribute.maxLength()));
+                    annotations.put(AttributeConstants.KEY, Boolean.toString(attribute.key()));
+                    annotations.put(AttributeConstants.SEQUENCE_GENERATOR, Boolean.toString(attribute.sequence()));
+                    annotations.put(AttributeConstants.INDEXED, Boolean.toString(attribute.indexed()));
+                    annotations.put(AttributeConstants.UNIQUE, Boolean.toString(attribute.unique()));
 
                     if (attribute.key())
                     {
@@ -359,9 +361,11 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
     private void applyDefaultAnnotations(Map<String, String> annotations)
     {
-        annotations.put(Constants.MAXLENGTH, Integer.toString(Integer.MIN_VALUE));
-        annotations.put(Constants.SEQUENCE_GENERATOR, Boolean.toString(false));
-        annotations.put(Constants.KEY, Boolean.toString(false));
+        annotations.put(AttributeConstants.MAXLENGTH, Integer.toString(Integer.MIN_VALUE));
+        annotations.put(AttributeConstants.SEQUENCE_GENERATOR, Boolean.toString(false));
+        annotations.put(AttributeConstants.KEY, Boolean.toString(false));
+        annotations.put(AttributeConstants.UNIQUE, Boolean.toString(false));
+        annotations.put(AttributeConstants.INDEXED, Boolean.toString(false));
     }
 
     private EiderPropertyType defineType(String typeStr, boolean isFixed)

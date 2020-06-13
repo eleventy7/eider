@@ -28,6 +28,8 @@ import org.agrona.concurrent.SystemEpochClock;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -83,13 +85,13 @@ public class SampleImplementationTest
         eiderW.writeCusip("012345678");
         assertEquals("012345678", eiderR.readCusip());
 
-        eiderW.writeCusip("ABC");
+        eiderW.writeCusipWithPadding("ABC");
         assertEquals("ABC", eiderR.readCusip());
 
         eiderW.writeCusip("012345678");
         assertEquals("012345678", eiderR.readCusip());
 
-        eiderW.writeCusipNoPadding("DEF");
+        eiderW.writeCusip("DEF");
         assertEquals("DEF345678", eiderR.readCusip());
     }
 
@@ -164,10 +166,142 @@ public class SampleImplementationTest
         assert flyRead != null;
         assertEquals("CUSIP0002", flyRead.readCusip());
 
+        //when can no longer append (exceeds capacity), should return null
         flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assertNull(flyWrite);
         assertEquals(294084336, repository.getCrc32());
     }
+
+    @Test
+    public void canUseRepositoryByIndexBoolean()
+    {
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
+        EiderObject flyWrite = repository.appendWithKey(90);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = repository.appendWithKey(91);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+        flyWrite = repository.appendWithKey(92);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0003");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        List<Integer> allEnabledEqualTrue = repository.getAllWithIndexEnabledValue(true);
+        List<Integer> allEnabledEqualFalse = repository.getAllWithIndexEnabledValue(false);
+
+        assertEquals(1, allEnabledEqualTrue.size());
+        assertEquals(2, allEnabledEqualFalse.size());
+
+        EiderObject flyRead;
+
+        flyRead = repository.getByBufferOffset(allEnabledEqualTrue.get(0));
+        assertEquals(true, flyRead.readEnabled());
+        assertEquals("CUSIP0001", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(0));
+        assertEquals(false, flyRead.readEnabled());
+        assertEquals("CUSIP0002", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(1));
+        assertEquals(false, flyRead.readEnabled());
+        assertEquals("CUSIP0003", flyRead.readCusip());
+
+    }
+
+    @Test
+    public void canUseRepositoryByIndexString()
+    {
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
+        EiderObject flyWrite = repository.appendWithKey(90);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = repository.appendWithKey(91);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+        flyWrite = repository.appendWithKey(92);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0003");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        List<Integer> allCusip1 = repository.getAllWithIndexCusipValue("CUSIP0001");
+        List<Integer> allCusip3 = repository.getAllWithIndexCusipValue("CUSIP0003");
+
+        assertEquals(1, allCusip1.size());
+        assertEquals(1, allCusip3.size());
+
+        EiderObject flyRead;
+
+        flyRead = repository.getByBufferOffset(allCusip1.get(0));
+        assertEquals(true, flyRead.readEnabled());
+        assertEquals("CUSIP0001", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(allCusip3.get(0));
+        assertEquals(false, flyRead.readEnabled());
+        assertEquals("CUSIP0003", flyRead.readCusip());
+    }
+
+    @Test
+    public void canUseRepositoryByOffset()
+    {
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
+
+        EiderObject flyWrite = repository.appendWithKey(90);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = repository.appendWithKey(91);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+        flyWrite = repository.appendWithKey(92);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0003");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        EiderObject flyRead = repository.getByKey(90);
+        assert flyRead != null;
+        assertEquals("CUSIP0001", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(0);
+        assert flyRead != null;
+        assertEquals("CUSIP0001", flyRead.readCusip());
+
+        flyRead = repository.getByKey(91);
+        assert flyRead != null;
+        assertEquals("CUSIP0002", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(31);
+        assert flyRead != null;
+        assertEquals("CUSIP0002", flyRead.readCusip());
+
+        flyRead = repository.getByKey(92);
+        assert flyRead != null;
+        assertEquals("CUSIP0003", flyRead.readCusip());
+
+        flyRead = repository.getByBufferOffset(62);
+        assert flyRead != null;
+        assertEquals("CUSIP0003", flyRead.readCusip());
+
+        flyWrite = repository.getByBufferOffset(3);
+        assertNull(flyWrite);
+        assertEquals(1059653546L, repository.getCrc32());
+    }
+
+
 
     @Test
     public void canUseTransactionalRepository()
@@ -243,8 +377,8 @@ public class SampleImplementationTest
     @Test
     public void crc32EqualSameContentsDifferentBuffers()
     {
-        final EiderObjectRepository repositoryA = EiderObjectRepository.createWithCapacity(1);
-        final EiderObjectRepository repositoryB = EiderObjectRepository.createWithCapacity(1);
+        final EiderObjectRepository repositoryA = EiderObjectRepository.createWithCapacity(100_000);
+        final EiderObjectRepository repositoryB = EiderObjectRepository.createWithCapacity(100_000);
 
         EiderObject flyWriteA = repositoryA.appendWithKey(1);
         assert flyWriteA != null;

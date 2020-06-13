@@ -2,7 +2,7 @@ package io.eider.processor.agrona;
 
 import java.util.Map;
 
-import io.eider.processor.Constants;
+import io.eider.processor.AttributeConstants;
 import io.eider.processor.EiderPropertyType;
 
 public final class Util
@@ -39,6 +39,23 @@ public final class Util
         }
     }
 
+    public static Class getBoxedType(EiderPropertyType type)
+    {
+        switch (type)
+        {
+            case SHORT:
+                return Short.class;
+            case LONG:
+                return Long.class;
+            case BOOLEAN:
+                return Boolean.class;
+            case FIXED_STRING:
+                return String.class;
+            default:
+                return Integer.class;
+        }
+    }
+
     public static int byteLength(EiderPropertyType type, Map<String, String> annotations)
     {
         switch (type)
@@ -50,7 +67,7 @@ public final class Util
             case SHORT:
                 return Short.BYTES;
             case FIXED_STRING:
-                return Integer.parseInt(annotations.get(Constants.MAXLENGTH));
+                return Integer.parseInt(annotations.get(AttributeConstants.MAXLENGTH));
             default:
                 return Integer.BYTES;
         }

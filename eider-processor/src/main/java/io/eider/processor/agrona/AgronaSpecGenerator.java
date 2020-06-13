@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import io.eider.processor.AttributeConstants;
 import io.eider.processor.EiderPropertyType;
 import io.eider.processor.PreprocessedEiderObject;
 import io.eider.processor.PreprocessedEiderProperty;
@@ -18,6 +19,8 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.IntHashSet;
+import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -31,9 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.CRC32;
 
-import static io.eider.processor.Constants.KEY;
-import static io.eider.processor.Constants.MAXLENGTH;
-import static io.eider.processor.Constants.SEQUENCE_GENERATOR;
+import static io.eider.processor.AttributeConstants.INDEXED;
+import static io.eider.processor.AttributeConstants.KEY;
+import static io.eider.processor.AttributeConstants.MAXLENGTH;
+import static io.eider.processor.AttributeConstants.SEQUENCE_GENERATOR;
 import static io.eider.processor.agrona.Constants.BUFFER;
 import static io.eider.processor.agrona.Constants.BUFFER_LENGTH_1;
 import static io.eider.processor.agrona.Constants.CAPACITY;
@@ -58,6 +62,7 @@ import static io.eider.processor.agrona.Constants.WRITE;
 import static io.eider.processor.agrona.Util.byteLength;
 import static io.eider.processor.agrona.Util.fromType;
 import static io.eider.processor.agrona.Util.fromTypeToStr;
+import static io.eider.processor.agrona.Util.getBoxedType;
 import static io.eider.processor.agrona.Util.upperFirst;
 
 public class AgronaSpecGenerator
@@ -72,10 +77,14 @@ public class AgronaSpecGenerator
             throw new AgronaWriterException("Repository objects must have exactly one key field");
         }
 
+        //todo : transactional index support
+
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addMethods(buildRepositoryMethods(object))
             .addFields(buildRepositoryFields(object))
+            .addFields(buildRepositoryIndexFields(object))
+            .addMethods(buildRepositoryIndexMethods(object))
             .addTypes(buildRepositoryIterators(object));
 
         if (object.isTransactionalRepository())
@@ -108,6 +117,73 @@ public class AgronaSpecGenerator
         }
     }
 
+    private Iterable<MethodSpec> buildRepositoryIndexMethods(PreprocessedEiderObject object)
+    {
+        List<MethodSpec> results = new ArrayList<>();
+
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    final String indexName = "indexDataFor" + upperFirst(prop.getName());
+
+                    results.add(
+                        MethodSpec.methodBuilder("updateIndexFor" + upperFirst(prop.getName()))
+                            .addJavadoc("Accepts a notification that a flyweight's indexed field has been modified")
+                            .addModifiers(Modifier.PRIVATE)
+                            .addParameter(int.class, "offset")
+                            .addParameter(getBoxedType(prop.getType()), "value")
+                            .beginControlFlow("if (" + indexName + ".containsKey(value))")
+                            .addStatement(indexName + ".get(value).add(offset)")
+                            .nextControlFlow("else")
+                            .addStatement("final IntHashSet items = new IntHashSet()")
+                            .addStatement("items.add(offset)")
+                            .addStatement(indexName + ".put(value, items)")
+                            .endControlFlow()
+                            .build()
+                    );
+
+                    final ClassName iterator =
+                        ClassName.get(List.class);
+                    final ClassName genObj = ClassName.get(Integer.class);
+                    final TypeName indexResults = ParameterizedTypeName
+                        .get(iterator, genObj);
+
+                    final ClassName iteratorImpl =
+                        ClassName.get(ArrayList.class);
+                    final TypeName indexResultsImpl = ParameterizedTypeName
+                        .get(iteratorImpl, genObj);
+
+                    results.add(
+                        MethodSpec.methodBuilder("getAllWithIndex" + upperFirst(prop.getName() + "Value"))
+                            .addJavadoc("Uses index to return list of offsets matching given value.")
+                            .addModifiers(Modifier.PUBLIC)
+                            .addParameter(getBoxedType(prop.getType()), "value")
+                            .returns(indexResults)
+                            .addStatement("List<Integer> results = new $T()", indexResultsImpl)
+                            .beginControlFlow("if (" + indexName + ".containsKey(value))")
+                            .addStatement("results.addAll(" + indexName + ".get(value))")
+                            .endControlFlow()
+                            .addStatement("return results")
+                            .build()
+                    );
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private Iterable<FieldSpec> buildRepositoryIndexFields(PreprocessedEiderObject object)
+    {
+        List<FieldSpec> results = new ArrayList<>();
+        //initial index by
+
+        return results;
+    }
+
     private Iterable<MethodSpec> buildRepositoryTransactionalHelpers()
     {
         List<MethodSpec> results = new ArrayList<>();
@@ -117,6 +193,8 @@ public class AgronaSpecGenerator
                 .addJavadoc("Begins the transaction by making a temporary copy of the internal buffer. ")
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("internalBuffer.getBytes(0, transactionCopy, 0, repositoryBufferLength)")
+                .addStatement("validOffsetsCopy.clear()")
+                .addStatement("validOffsetsCopy.addAll(validOffsets)")
                 .addStatement("offsetByKeyCopy.clear()")
                 .addStatement("offsetByKey.forEach(offsetByKeyCopy::put)")
                 .addStatement("currentCountCopy = currentCount")
@@ -141,6 +219,9 @@ public class AgronaSpecGenerator
                 .returns(boolean.class)
                 .beginControlFlow("if (transactionCopyBufferSet)")
                 .addStatement("internalBuffer.putBytes(0, transactionCopy, 0, repositoryBufferLength)")
+                .addStatement("validOffsets.clear()")
+                .addStatement("validOffsets.addAll(validOffsetsCopy)")
+                .addStatement("validOffsetsCopy.clear()")
                 .addStatement("offsetByKey.clear()")
                 .addStatement("offsetByKeyCopy.forEach(offsetByKey::put)")
                 .addStatement("offsetByKeyCopy.clear()")
@@ -243,11 +324,26 @@ public class AgronaSpecGenerator
             .addStatement("internalBuffer = new ExpandableDirectByteBuffer(repositoryBufferLength)")
             .addStatement("internalBuffer.setMemory(0, repositoryBufferLength, (byte)0)")
             .addStatement("offsetByKey = new Int2IntHashMap(Integer.MIN_VALUE)")
+            .addStatement("validOffsets = new IntHashSet()")
             .addStatement("unfilteredIterator = new UnfilteredIterator()");
 
         if (object.isTransactionalRepository())
         {
+            builder.addStatement("offsetByKeyCopy = new Int2IntHashMap(Integer.MIN_VALUE)");
+            builder.addStatement("validOffsetsCopy = new IntHashSet()");
             builder.addStatement("transactionCopy = new ExpandableDirectByteBuffer(repositoryBufferLength)");
+        }
+
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    builder.addStatement("flyweight.setIndexNotifierFor" + upperFirst(prop.getName())
+                        + "(this::updateIndexFor" + upperFirst(prop.getName()) + ")");
+                }
+            }
         }
 
         results.add(builder.build());
@@ -278,6 +374,7 @@ public class AgronaSpecGenerator
                 .endControlFlow()
                 .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
                 .addStatement("offsetByKey.put(id, maxUsedOffset)")
+                .addStatement("validOffsets.add(maxUsedOffset)")
                 .addStatement("flyweight.writeHeader()")
                 .addStatement("flyweight.write" + upperFirst(getKeyField(object)) + "(id)")
                 .addStatement("flyweight.lockKeyId()")
@@ -344,6 +441,39 @@ public class AgronaSpecGenerator
         );
 
         results.add(
+            MethodSpec.methodBuilder("getByBufferIndex")
+                .addJavadoc("Moves the flyweight onto the buffer segment for the provided 0-based buffer index. ")
+                .addJavadoc("Returns null if not found.")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(int.class, "index")
+                .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
+                .beginControlFlow("if ((index + 1) <= currentCount)")
+                .addStatement("int offset = index + (index * flyweight.BUFFER_LENGTH)")
+                .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, offset)")
+                .addStatement("flyweight.lockKeyId()")
+                .addStatement(RETURN_FLYWEIGHT)
+                .endControlFlow()
+                .addStatement(RETURN_NULL)
+                .build()
+        );
+
+        results.add(
+            MethodSpec.methodBuilder("getByBufferOffset")
+                .addJavadoc("Moves the flyweight onto the buffer offset, but only if it is a valid offset. ")
+                .addJavadoc("Returns null if the offset is invalid.")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(int.class, "offset")
+                .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
+                .beginControlFlow("if (validOffsets.contains(offset))")
+                .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, offset)")
+                .addStatement("flyweight.lockKeyId()")
+                .addStatement(RETURN_FLYWEIGHT)
+                .endControlFlow()
+                .addStatement(RETURN_NULL)
+                .build()
+        );
+
+        results.add(
             MethodSpec.methodBuilder("getCrc32")
                 .addJavadoc("Returns the CRC32 of the underlying buffer. Warning! Allocates.")
                 .addModifiers(Modifier.PUBLIC)
@@ -384,6 +514,13 @@ public class AgronaSpecGenerator
         results.add(FieldSpec
             .builder(Int2IntHashMap.class, "offsetByKey")
             .addJavadoc("For mapping the key to the offset.")
+            .addModifiers(Modifier.FINAL)
+            .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        results.add(FieldSpec
+            .builder(IntHashSet.class, "validOffsets")
+            .addJavadoc("Keeps track of valid offsets.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
             .build());
@@ -437,13 +574,42 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PRIVATE)
             .build());
 
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    //By Value Index
+                    final ClassName itemList =
+                        ClassName.get(IntHashSet.class);
+
+                    final ClassName topLevelMap =
+                        ClassName.get(Object2ObjectHashMap.class);
+                    final ClassName genObj = ClassName.get(getBoxedType(prop.getType()));
+                    final TypeName indexDataMap = ParameterizedTypeName
+                        .get(topLevelMap, genObj, itemList);
+
+                    results.add(FieldSpec.builder(indexDataMap, "indexDataFor" + upperFirst(prop.getName()))
+                        .addJavadoc("Holds the index data for the " + prop.getName() + " field.")
+                        .initializer("new $T()", indexDataMap)
+                        .addModifiers(Modifier.PRIVATE)
+                        .build());
+
+                    //By offset index
+
+
+                }
+            }
+        }
+
         if (object.isTransactionalRepository())
         {
             results.add(FieldSpec
                 .builder(Int2IntHashMap.class, "offsetByKeyCopy")
                 .addJavadoc("The offsets by key at time of beginTransaction.")
                 .addModifiers(Modifier.PRIVATE)
-                .initializer("new Int2IntHashMap(Integer.MIN_VALUE)")
+                .initializer("null")
                 .build());
 
             results.add(FieldSpec
@@ -471,6 +637,13 @@ public class AgronaSpecGenerator
                 .addJavadoc("The current length of the transactionCopy buffer.")
                 .addModifiers(Modifier.PRIVATE)
                 .initializer("0")
+                .build());
+
+            results.add(FieldSpec
+                .builder(IntHashSet.class, "validOffsetsCopy")
+                .addJavadoc("Transactional copy of valid offsets set.")
+                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE)
                 .build());
         }
 
@@ -629,6 +802,28 @@ public class AgronaSpecGenerator
             .initializer("null")
             .build());
 
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    final ClassName iterator =
+                        ClassName.get("io.eider.Helper", "IndexUpdateConsumer");
+                    final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+                    final TypeName indexUpdateNotifier = ParameterizedTypeName
+                        .get(iterator, fieldName);
+
+                    results.add(FieldSpec
+                        .builder(indexUpdateNotifier, "indexUpdateNotifier" + upperFirst(prop.getName()))
+                        .addJavadoc("The consumer notified of indexed field updates. Used to maintain indexes.")
+                        .addModifiers(Modifier.PRIVATE)
+                        .initializer("null")
+                        .build());
+                }
+            }
+        }
+
         results.add(FieldSpec
             .builder(int.class, "initialOffset")
             .addJavadoc("The starting offset for reading and writing.")
@@ -685,7 +880,36 @@ public class AgronaSpecGenerator
                 .build());
         }
 
+        //add flags for modifications to indexed fields
+        for (PreprocessedEiderProperty prop : object.getPropertyList())
+        {
+            if (prop.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
+            {
+                final String fieldName = "is" + upperFirst(prop.getName()) + "Modified";
+                results.add(FieldSpec
+                    .builder(boolean.class, fieldName)
+                    .addJavadoc("Flag to indicate if the property was modified.")
+                    .initializer(FALSE)
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
+            }
+        }
+
+
         return results;
+    }
+
+    private boolean objectHasIndexedField(PreprocessedEiderObject object)
+    {
+        for (final PreprocessedEiderProperty property : object.getPropertyList())
+        {
+            if (property.getAnnotations() != null && property.getAnnotations().containsKey(INDEXED)
+                && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean containsKeyField(PreprocessedEiderObject object)
@@ -825,6 +1049,31 @@ public class AgronaSpecGenerator
                 .build()
         );
 
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    final ClassName iterator =
+                        ClassName.get("io.eider.Helper", "IndexUpdateConsumer");
+                    final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+                    final TypeName indexUpdateNotifier = ParameterizedTypeName
+                        .get(iterator, fieldName);
+
+                    results.add(
+                        MethodSpec.methodBuilder("setIndexNotifierFor" + upperFirst(prop.getName()))
+                            .addModifiers(Modifier.PUBLIC)
+                            .addJavadoc("Sets the indexed field update notifier to provided consumer.")
+                            .addParameter(indexUpdateNotifier, "indexedNotifier")
+                            .addStatement("this.indexUpdateNotifier" + upperFirst(prop.getName())
+                                + " = indexedNotifier")
+                            .build()
+                    );
+                }
+            }
+        }
+
         for (final PreprocessedEiderProperty property : propertyList)
         {
             results.add(genReadProperty(property));
@@ -833,7 +1082,7 @@ public class AgronaSpecGenerator
                 results.add(genWriteProperty(property));
                 if (property.getType() == EiderPropertyType.FIXED_STRING)
                 {
-                    results.add(genWritePropertyNoPadding(property));
+                    results.add(genWritePropertyWithPadding(property));
                 }
             }
             if (property.getAnnotations() != null)
@@ -853,13 +1102,12 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private MethodSpec genWritePropertyNoPadding(PreprocessedEiderProperty property)
+    private MethodSpec genWritePropertyWithPadding(PreprocessedEiderProperty property)
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()
-            + "NoPadding"))
+            + "WithPadding"))
             .addModifiers(Modifier.PUBLIC)
-            .addJavadoc("Writes " + property.getName() + " to the buffer without any padding. "
-                + "Beware can lead to corruption. ")
+            .addJavadoc("Writes " + property.getName() + " to the buffer with padding. ")
             .addParameter(getInputType(property));
 
         builder.addStatement("if (!isMutable) throw new RuntimeException(\"Cannot write to immutable buffer\")");
@@ -874,8 +1122,9 @@ public class AgronaSpecGenerator
         {
             int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
             builder.addStatement(fixedLengthStringCheck(property, maxLength));
+            builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
             builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
-                + getOffsetName(property.getName()) + ", value)");
+                + getOffsetName(property.getName()) + ", padded)");
         }
         else
         {
@@ -945,13 +1194,24 @@ public class AgronaSpecGenerator
             builder.addJavadoc("This field is marked key=true.");
         }
 
+        if (property.getAnnotations() != null && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+        {
+            final String fieldName = "is" + upperFirst(property.getName()) + "Modified";
+            builder.addStatement(fieldName + " = true");
+            builder.beginControlFlow("if (indexUpdateNotifier" + upperFirst(property.getName()) + " != null)");
+            builder.addStatement("indexUpdateNotifier" + upperFirst(property.getName())
+                + ".accept(initialOffset, value)");
+            builder.endControlFlow();
+            builder.addJavadoc("Indexed field.");
+        }
+
         if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
             int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
             builder.addStatement(fixedLengthStringCheck(property, maxLength));
-            builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
+            builder.addJavadoc("Warning! Does not pad the string.");
             builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
-                + getOffsetName(property.getName()) + ", padded)");
+                + getOffsetName(property.getName()) + ", value)");
         }
         else
         {
@@ -985,6 +1245,12 @@ public class AgronaSpecGenerator
         else if (property.getType() == EiderPropertyType.LONG)
         {
             return "mutableBuffer.putLong(initialOffset + " + getOffsetName(property.getName())
+                +
+                ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
+        }
+        else if (property.getType() == EiderPropertyType.SHORT)
+        {
+            return "mutableBuffer.putShort(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
         }
@@ -1037,6 +1303,12 @@ public class AgronaSpecGenerator
         else if (property.getType() == EiderPropertyType.BOOLEAN)
         {
             return "return buffer.getByte(initialOffset + " + getOffsetName(property.getName())
+                +
+                ") == (byte)1";
+        }
+        else if (property.getType() == EiderPropertyType.SHORT)
+        {
+            return "return buffer.getShort(initialOffset + " + getOffsetName(property.getName())
                 +
                 ") == (byte)1";
         }

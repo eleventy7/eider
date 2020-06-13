@@ -27,7 +27,8 @@ public class EiderObjectSpec
     @EiderAttribute(key = true)
     private int id;
     private long timestamp;
+    @EiderAttribute(indexed = true)
     private boolean enabled;
-    @EiderAttribute(maxLength = 9)
+    @EiderAttribute(maxLength = 9, indexed = true)
     private String cusip;
 }
