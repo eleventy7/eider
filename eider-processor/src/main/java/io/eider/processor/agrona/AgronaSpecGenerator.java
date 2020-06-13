@@ -19,6 +19,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.IntHashSet;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -63,6 +64,7 @@ import static io.eider.processor.agrona.Util.byteLength;
 import static io.eider.processor.agrona.Util.fromType;
 import static io.eider.processor.agrona.Util.fromTypeToStr;
 import static io.eider.processor.agrona.Util.getBoxedType;
+import static io.eider.processor.agrona.Util.getComparator;
 import static io.eider.processor.agrona.Util.upperFirst;
 
 public class AgronaSpecGenerator
@@ -83,7 +85,6 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addMethods(buildRepositoryMethods(object))
             .addFields(buildRepositoryFields(object))
-            .addFields(buildRepositoryIndexFields(object))
             .addMethods(buildRepositoryIndexMethods(object))
             .addTypes(buildRepositoryIterators(object));
 
@@ -128,6 +129,7 @@ public class AgronaSpecGenerator
                 if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
                 {
                     final String indexName = "indexDataFor" + upperFirst(prop.getName());
+                    final String revIndexName = "reverseIndexDataFor" + upperFirst(prop.getName());
 
                     results.add(
                         MethodSpec.methodBuilder("updateIndexFor" + upperFirst(prop.getName()))
@@ -135,6 +137,14 @@ public class AgronaSpecGenerator
                             .addModifiers(Modifier.PRIVATE)
                             .addParameter(int.class, "offset")
                             .addParameter(getBoxedType(prop.getType()), "value")
+                            .beginControlFlow("if (" + revIndexName + ".containsKey(offset))")
+                            .addStatement(fromTypeToStr(prop.getType()) + " oldValue = "
+                                + revIndexName + ".get(offset)")
+                            .beginControlFlow("if (!" + revIndexName + ".get(offset)."
+                                + getComparator(prop.getType(), "value") + ")")
+                            .addStatement(indexName + ".get(oldValue).remove(offset)")
+                            .endControlFlow()
+                            .endControlFlow()
                             .beginControlFlow("if (" + indexName + ".containsKey(value))")
                             .addStatement(indexName + ".get(value).add(offset)")
                             .nextControlFlow("else")
@@ -142,6 +152,7 @@ public class AgronaSpecGenerator
                             .addStatement("items.add(offset)")
                             .addStatement(indexName + ".put(value, items)")
                             .endControlFlow()
+                            .addStatement(revIndexName + ".put(offset, value)")
                             .build()
                     );
 
@@ -593,6 +604,17 @@ public class AgronaSpecGenerator
                     results.add(FieldSpec.builder(indexDataMap, "indexDataFor" + upperFirst(prop.getName()))
                         .addJavadoc("Holds the index data for the " + prop.getName() + " field.")
                         .initializer("new $T()", indexDataMap)
+                        .addModifiers(Modifier.PRIVATE)
+                        .build());
+
+                    final ClassName reverseMap =
+                        ClassName.get(Int2ObjectHashMap.class);
+                    final TypeName reversedIndex = ParameterizedTypeName
+                        .get(reverseMap, genObj);
+
+                    results.add(FieldSpec.builder(reversedIndex, "reverseIndexDataFor" + upperFirst(prop.getName()))
+                        .addJavadoc("Holds the reverse index data for the " + prop.getName() + " field.")
+                        .initializer("new $T()", reversedIndex)
                         .addModifiers(Modifier.PRIVATE)
                         .build());
 

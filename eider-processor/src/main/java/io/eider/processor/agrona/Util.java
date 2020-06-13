@@ -56,6 +56,25 @@ public final class Util
         }
     }
 
+
+    public static String getComparator(EiderPropertyType type, String sourceValue)
+    {
+        switch (type)
+        {
+            case SHORT:
+                return "Short.class";
+            case LONG:
+                return "Long.class";
+            case BOOLEAN:
+                return "booleanValue() == " + sourceValue;
+            case FIXED_STRING:
+                return "equalsIgnoreCase(value)";
+            default:
+                return "Integer.class";
+        }
+    }
+
+
     public static int byteLength(EiderPropertyType type, Map<String, String> annotations)
     {
         switch (type)
@@ -86,6 +105,7 @@ public final class Util
             case BOOLEAN:
                 return "boolean";
             case FIXED_STRING:
+                return "String";
             default:
                 return "invalid";
         }

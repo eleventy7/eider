@@ -243,6 +243,13 @@ flyweight = repository.getByOffset(allCusip1.get(0));
 
 Assertions.assertEquals(1, allCusip1.size());
 Assertions.assertEquals("CUSIP0001", flyweight.readCusip());
+
+flyweight.writeCusip("CUSIP0003");
+
+List<Integer> allCusip1NowEmpty = repository.getAllWithIndexCusipValue("CUSIP0001");
+List<Integer> allCusip3 = repository.getAllWithIndexCusipValue("CUSIP0003");
+Assertions.assertEquals(0, allCusip1NowEmpty.size());
+Assertions.assertEquals(1, allCusip3.size());
 ```
 
 ### Composite Sample

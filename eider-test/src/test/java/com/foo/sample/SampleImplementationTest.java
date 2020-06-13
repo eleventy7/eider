@@ -252,6 +252,44 @@ public class SampleImplementationTest
     }
 
     @Test
+    public void canHandleIndexedDataUpdates()
+    {
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
+        EiderObject flyWrite = repository.appendWithKey(90);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = repository.appendWithKey(91);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+        flyWrite = repository.appendWithKey(92);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0003");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        List<Integer> allCusip1 = repository.getAllWithIndexCusipValue("CUSIP0001");
+        List<Integer> allCusip3 = repository.getAllWithIndexCusipValue("CUSIP0003");
+
+        assertEquals(1, allCusip1.size());
+        assertEquals(1, allCusip3.size());
+
+        EiderObject flyMutableRead;
+
+        flyMutableRead = repository.getByBufferOffset(allCusip1.get(0));
+        flyMutableRead.writeCusip("CUSIP0004");
+
+        List<Integer> allCusip1NowEmpty = repository.getAllWithIndexCusipValue("CUSIP0001");
+        List<Integer> allCusip4 = repository.getAllWithIndexCusipValue("CUSIP0003");
+
+        assertEquals(0, allCusip1NowEmpty.size());
+        assertEquals(1, allCusip4.size());
+    }
+
+    @Test
     public void canUseRepositoryByOffset()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
