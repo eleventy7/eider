@@ -809,7 +809,7 @@ public class AgronaSpecGenerator
                 if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
                 {
                     final ClassName iterator =
-                        ClassName.get("io.eider.Helper", "IndexUpdateConsumer");
+                        ClassName.get("io.eider.util", "IndexUpdateConsumer");
                     final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
                     final TypeName indexUpdateNotifier = ParameterizedTypeName
                         .get(iterator, fieldName);
@@ -1056,7 +1056,7 @@ public class AgronaSpecGenerator
                 if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
                 {
                     final ClassName iterator =
-                        ClassName.get("io.eider.Helper", "IndexUpdateConsumer");
+                        ClassName.get("io.eider.util", "IndexUpdateConsumer");
                     final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
                     final TypeName indexUpdateNotifier = ParameterizedTypeName
                         .get(iterator, fieldName);

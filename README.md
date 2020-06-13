@@ -23,8 +23,9 @@ Current features:
 - flyweight backed sequence generator
 - optional fixed size repositories with a pre-defined capactity
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
-    - `getByKey`, `containsKey` and `Iterator<>` functionality
+    - `getByKey`, `getByBufferIndex`, `getByBufferOffset`, `containsKey` and `Iterator<>` functionality
     - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
+    - optional indexed fields. 
     - optional transactional support. Warning, will cause allocation. 
 - optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
     - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
@@ -161,6 +162,7 @@ generator.initializeTradeId(1);
 //get next tradeId
 int nextTrade = generator.nextTradeIdSequence();
 ```
+
 ### Repository Sample
 
 ```java
@@ -210,6 +212,38 @@ Repositories also hold an iterator, which allows you to iterate through all elem
 Warnings:
 
 - You will not be able to alter the key of a flyweight returned by the repository using `createWithKey` or `getByKey`.
+
+### Indexed Repository
+
+```java
+@EiderRepository(transactional = true)
+@EiderSpec
+public class SampleSpec
+{
+    @EiderAttribute(key = true)
+    private int id;
+    @EiderAttribute(maxLength = 9, indexed = true)
+    private String cusip;
+}
+```
+
+Indexes are added when an `@EiderRepository` object has `@EiderAttribute` with `indexed = true`.
+
+
+```java
+final SampleSpecRepository repository = SampleSpecRepository.createWithCapacity(2);
+
+SampleSpec flyweight = repository.createWithKey(1);
+flyweight.writeCusip("CUSIP0001");
+flyweight = repository.createWithKey(2);
+flyweight.writeCusip("CUSIP0002");
+
+List<Integer> allCusip1 = repository.getAllWithIndexCusipValue("CUSIP0001");
+flyweight = repository.getByOffset(allCusip1.get(0));
+
+Assertions.assertEquals(1, allCusip1.size());
+Assertions.assertEquals("CUSIP0001", flyweight.readCusip());
+```
 
 ### Composite Sample
 

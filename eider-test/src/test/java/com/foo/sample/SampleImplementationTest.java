@@ -20,7 +20,7 @@ import com.foo.sample.gen.EiderObject;
 import com.foo.sample.gen.EiderObjectRepository;
 import com.foo.sample.gen.SequenceGenerator;
 
-import io.eider.Helper.EiderHelper;
+import io.eider.util.EiderHelper;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.concurrent.EpochClock;

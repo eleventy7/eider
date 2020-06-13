@@ -5,7 +5,7 @@ import com.foo.sample.gen.OrderBookEntry;
 
 import com.foo.sample.gen.OrderBookEntryRepository;
 
-import io.eider.Helper.EiderHelper;
+import io.eider.util.EiderHelper;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.junit.jupiter.api.Assertions;

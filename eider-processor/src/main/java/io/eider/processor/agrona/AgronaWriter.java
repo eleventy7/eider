@@ -83,7 +83,7 @@ public class AgronaWriter implements EiderCodeWriter
 
     private void generateEiderHelperInterfaces(ProcessingEnvironment pe)
     {
-        final String packageName = "io.eider.Helper";
+        final String packageName = "io.eider.util";
 
         TypeSpec.Builder builder = TypeSpec.interfaceBuilder("IndexUpdateConsumer")
             .addModifiers(Modifier.PUBLIC)
@@ -124,7 +124,7 @@ public class AgronaWriter implements EiderCodeWriter
 
     private void generateEiderHelper(ProcessingEnvironment pe)
     {
-        final String packageName = "io.eider.Helper";
+        final String packageName = "io.eider.util";
 
         TypeSpec.Builder builder = TypeSpec.classBuilder("EiderHelper")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
