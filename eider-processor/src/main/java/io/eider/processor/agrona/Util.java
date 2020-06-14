@@ -61,16 +61,12 @@ public final class Util
     {
         switch (type)
         {
-            case SHORT:
-                return "Short.class";
-            case LONG:
-                return "Long.class";
             case BOOLEAN:
                 return "booleanValue() == " + sourceValue;
             case FIXED_STRING:
                 return "equalsIgnoreCase(value)";
             default:
-                return "Integer.class";
+                return "equals(value)";
         }
     }
 
