@@ -62,7 +62,6 @@ import org.agrona.collections.IntHashSet;
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.UnsafeBuffer;
 
-import io.eider.processor.AttributeConstants;
 import io.eider.processor.EiderPropertyType;
 import io.eider.processor.PreprocessedEiderObject;
 import io.eider.processor.PreprocessedEiderProperty;
@@ -947,22 +946,6 @@ public class AgronaSpecGenerator
                 .build());
         }
 
-        //add flags for modifications to indexed fields
-        for (PreprocessedEiderProperty prop : object.getPropertyList())
-        {
-            if (prop.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
-            {
-                final String fieldName = "is" + upperFirst(prop.getName()) + "Modified";
-                results.add(FieldSpec
-                    .builder(boolean.class, fieldName)
-                    .addJavadoc("Flag to indicate if the property was modified.")
-                    .initializer(FALSE)
-                    .addModifiers(Modifier.PRIVATE)
-                    .build());
-            }
-        }
-
-
         return results;
     }
 
@@ -1263,8 +1246,7 @@ public class AgronaSpecGenerator
 
         if (property.getAnnotations() != null && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
         {
-            final String fieldName = "is" + upperFirst(property.getName()) + "Modified";
-            builder.addStatement(fieldName + " = true");
+
             builder.beginControlFlow("if (indexUpdateNotifier" + upperFirst(property.getName()) + " != null)");
             builder.addStatement("indexUpdateNotifier" + upperFirst(property.getName())
                 + ".accept(initialOffset, value)");
