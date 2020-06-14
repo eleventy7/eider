@@ -30,6 +30,7 @@ public class PreprocessedEiderComposite
     private final EiderPropertyType keyType;
     private final List<PreprocessedNamedEiderObject> objectList;
 
+    @SuppressWarnings("all")
     public PreprocessedEiderComposite(final String name, final String classNameInput,
                                       final short eiderId, final String packageNameGen,
                                       final boolean buildRepository, final String repositoryName,

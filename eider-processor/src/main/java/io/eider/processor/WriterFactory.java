@@ -33,7 +33,7 @@ public class WriterFactory
         }
         else
         {
-            throw new RuntimeException("Unsupported generator type");
+            throw new EiderProcessorException("Unsupported generator type");
         }
     }
 }

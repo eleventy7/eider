@@ -1,7 +1,12 @@
 package io.eider.processor;
 
-public class AttributeConstants
+public final class AttributeConstants
 {
+    private AttributeConstants()
+    {
+        //nothing
+    }
+
     public static final String MAXLENGTH = "string.maxlength";
     public static final String KEY = "key";
     public static final String UNIQUE = "unique";

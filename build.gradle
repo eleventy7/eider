@@ -22,6 +22,7 @@ plugins {
     id 'maven-publish'
     id 'net.minecrell.licenser' version '0.4.1'
     id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
+    id "org.sonarqube" version "2.8"
 }
 
 defaultTasks 'clean', 'licenseFormat', 'check', 'build', 'test'
@@ -30,6 +31,35 @@ def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
 def javaVersion = JavaVersion.VERSION_11
 
+def propFile = file('sonar.properties')
+def sonar_login;
+def sonar_organization;
+def sonar_projectKey;
+def Properties props = new Properties()
+if (propFile.canRead()) {
+    props.load(new FileInputStream(propFile))
+    if (props != null && props.containsKey('sonarProjectKey')) {
+        sonar_projectKey = props['sonarProjectKey']
+    } else {
+        sonar_projectKey = System.getenv("SONAR_PROJECT_KEY")
+    }
+
+    if (props != null && props.containsKey('sonarLogin')) {
+        sonar_login = props['sonarLogin']
+    } else {
+        sonar_login = System.getenv("SONAR_LOGIN")
+    }
+
+    if (props != null && props.containsKey('sonarOrganization')) {
+        sonar_organization = props['sonarOrganization']
+    } else {
+        sonar_organization = System.getenv("SONAR_ORGANIZATION")
+    }
+} else {
+    sonar_projectKey = System.getenv("SONAR_PROJECT_KEY")
+    sonar_login = System.getenv("SONAR_LOGIN")
+    sonar_organization = System.getenv("SONAR_ORGANIZATION")
+}
 
 allprojects {
     apply plugin: 'java'
@@ -201,6 +231,15 @@ project('eider-test') {
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
 
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", sonar_projectKey
+        property "sonar.organization", sonar_organization
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.login", sonar_login
+    }
 }
 
 wrapper {

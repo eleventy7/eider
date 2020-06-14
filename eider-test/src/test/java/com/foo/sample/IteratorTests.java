@@ -6,10 +6,10 @@ import com.foo.sample.gen.EiderObjectRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class IteratorTests
+class IteratorTests
 {
     @Test
-    public void canIterate()
+    void canIterate()
     {
         EiderObjectRepository underTest = EiderObjectRepository.createWithCapacity(10);
 

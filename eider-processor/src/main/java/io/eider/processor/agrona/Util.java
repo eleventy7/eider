@@ -39,6 +39,7 @@ public final class Util
         }
     }
 
+    @SuppressWarnings("all")
     public static Class getBoxedType(EiderPropertyType type)
     {
         switch (type)

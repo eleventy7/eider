@@ -78,8 +78,6 @@ public class AgronaSpecGenerator
             throw new AgronaWriterException("Repository objects must have exactly one key field");
         }
 
-        //todo : transactional index support
-
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addMethods(buildRepositoryMethods(object))
@@ -738,7 +736,7 @@ public class AgronaSpecGenerator
             .addFields(offsetsForFields(object, state, globalState))
             .addFields(internalFields(object))
             .addMethod(buildSetUnderlyingBuffer(object))
-            .addMethod(buildSetUnderlyingBufferAndWriteHeader(object))
+            .addMethod(buildSetUnderlyingBufferAndWriteHeader())
             .addMethod(buildEiderId())
             .addMethods(forInternalFields(object));
 
@@ -1057,6 +1055,7 @@ public class AgronaSpecGenerator
         return name.toUpperCase() + "_OFFSET";
     }
 
+    @SuppressWarnings("all")
     private Iterable<MethodSpec> forInternalFields(PreprocessedEiderObject object)
     {
         List<PreprocessedEiderProperty> propertyList = object.getPropertyList();
@@ -1450,7 +1449,7 @@ public class AgronaSpecGenerator
     }
 
 
-    private MethodSpec buildSetUnderlyingBufferAndWriteHeader(PreprocessedEiderObject object)
+    private MethodSpec buildSetUnderlyingBufferAndWriteHeader()
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("setBufferWriteHeader")
             .addModifiers(Modifier.PUBLIC)

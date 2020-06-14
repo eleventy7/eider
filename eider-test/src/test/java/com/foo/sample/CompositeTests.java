@@ -12,15 +12,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CompositeTests
+class CompositeTests
 {
     public static final String INSTRUMENT = "012345678";
     public static final String ORDER_123 = "ORDER123";
 
     @Test
-    public void canReadWriteCompositeInternalBuffer()
+    void canReadWriteCompositeInternalBuffer()
     {
         OrderBookEntry entry = new OrderBookEntry();
         entry.writeId(45);
@@ -39,18 +41,18 @@ public class CompositeTests
     }
 
     @Test
-    public void canLockTheKey()
+    void canLockTheKey()
     {
         OrderBookEntry entry = new OrderBookEntry();
         entry.writeId(45);
         entry.lockKeyId();
         boolean written = entry.writeId(47);
-        assertEquals(false, written);
+        assertFalse(written);
         assertEquals(45, entry.readId());
     }
 
     @Test
-    public void canReadWriteCompositeExternalBuffer()
+    void canReadWriteCompositeExternalBuffer()
     {
         ExpandableDirectByteBuffer buffer = new ExpandableDirectByteBuffer(OrderBookEntry.BUFFER_LENGTH);
 
@@ -72,7 +74,7 @@ public class CompositeTests
     }
 
     @Test
-    public void canCopyFromBuffer()
+    void canCopyFromBuffer()
     {
         ExpandableDirectByteBuffer buffer = new ExpandableDirectByteBuffer(Order.BUFFER_LENGTH);
         Order fromNetwork = new Order();
@@ -96,7 +98,7 @@ public class CompositeTests
     }
 
     @Test
-    public void canPut()
+    void canPut()
     {
         ExpandableDirectByteBuffer buffer = new ExpandableDirectByteBuffer(Order.BUFFER_LENGTH);
         Order fromNetwork = new Order();
@@ -120,10 +122,11 @@ public class CompositeTests
     }
 
     @Test
-    public void repositoryWorks()
+    void repositoryWorks()
     {
         OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacity(10);
         OrderBookEntry entry = repository.appendWithKey(1);
+        assertNotNull(entry);
         entry.getStatus().writeFilledTimestamp(100L);
         entry.getStatus().writeAcceptedTimestamp(200L);
         entry.getStatus().writeFilled(true);
@@ -134,6 +137,7 @@ public class CompositeTests
         assertTrue(containsIt);
 
         OrderBookEntry read = repository.getByKey(1);
+        assertNotNull(read);
         assertEquals(100L, read.getStatus().readFilledTimestamp());
         assertEquals(200L, read.getStatus().readAcceptedTimestamp());
         assertTrue(read.getStatus().readFilled());
@@ -142,7 +146,7 @@ public class CompositeTests
     }
 
     @Test
-    public void repositoryIterationWorks()
+    void repositoryIterationWorks()
     {
         OrderBookEntryRepository repository = OrderBookEntryRepository.createWithCapacity(10);
         repository.appendWithKey(0);

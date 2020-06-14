@@ -31,16 +31,19 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SampleImplementationTest
+class SampleImplementationTest
 {
 
     public static final String CUSIP = "037833100";
 
     @Test
-    public void canReadWrite()
+    void canReadWrite()
     {
         final EiderObject eiderR = new EiderObject();
         final EiderObject eiderW = new EiderObject();
@@ -70,12 +73,10 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canReadWriteStringDiffLength()
+    void canReadWriteStringDiffLength()
     {
         final EiderObject eiderR = new EiderObject();
         final EiderObject eiderW = new EiderObject();
-        final EpochClock clock = new SystemEpochClock();
-        final long now = clock.time();
 
         final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(EiderObject.BUFFER_LENGTH);
 
@@ -96,7 +97,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canRollback()
+    void canRollback()
     {
         final EiderObject eiderR = new EiderObject();
         final EiderObject eiderW = new EiderObject();
@@ -126,7 +127,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void sequencesWork()
+    void sequencesWork()
     {
         final SequenceGenerator generator = new SequenceGenerator();
         final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
@@ -140,7 +141,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canUseRepository()
+    void canUseRepository()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
@@ -173,7 +174,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canUseRepositoryByIndexBoolean()
+    void canUseRepositoryByIndexBoolean()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
         EiderObject flyWrite = repository.appendWithKey(90);
@@ -201,21 +202,24 @@ public class SampleImplementationTest
         EiderObject flyRead;
 
         flyRead = repository.getByBufferOffset(allEnabledEqualTrue.get(0));
-        assertEquals(true, flyRead.readEnabled());
+        assertNotNull(flyRead);
+        assertTrue(flyRead.readEnabled());
         assertEquals("CUSIP0001", flyRead.readCusip());
 
         flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(0));
-        assertEquals(false, flyRead.readEnabled());
+        assertNotNull(flyRead);
+        assertFalse(flyRead.readEnabled());
         assertEquals("CUSIP0002", flyRead.readCusip());
 
         flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(1));
-        assertEquals(false, flyRead.readEnabled());
+        assertNotNull(flyRead);
+        assertFalse(flyRead.readEnabled());
         assertEquals("CUSIP0003", flyRead.readCusip());
 
     }
 
     @Test
-    public void canUseRepositoryByIndexString()
+    void canUseRepositoryByIndexString()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
         EiderObject flyWrite = repository.appendWithKey(90);
@@ -243,16 +247,18 @@ public class SampleImplementationTest
         EiderObject flyRead;
 
         flyRead = repository.getByBufferOffset(allCusip1.get(0));
-        assertEquals(true, flyRead.readEnabled());
+        assertNotNull(flyRead);
+        assertTrue(flyRead.readEnabled());
         assertEquals("CUSIP0001", flyRead.readCusip());
 
         flyRead = repository.getByBufferOffset(allCusip3.get(0));
-        assertEquals(false, flyRead.readEnabled());
+        assertNotNull(flyRead);
+        assertFalse(flyRead.readEnabled());
         assertEquals("CUSIP0003", flyRead.readCusip());
     }
 
     @Test
-    public void canHandleIndexedDataUpdates()
+    void canHandleIndexedDataUpdates()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
         EiderObject flyWrite = repository.appendWithKey(90);
@@ -280,6 +286,7 @@ public class SampleImplementationTest
         EiderObject flyMutableRead;
 
         flyMutableRead = repository.getByBufferOffset(allCusip1.get(0));
+        assertNotNull(flyMutableRead);
         flyMutableRead.writeCusip("CUSIP0004");
 
         List<Integer> allCusip1NowEmpty = repository.getAllWithIndexCusipValue("CUSIP0001");
@@ -290,7 +297,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canUseRepositoryByOffset()
+    void canUseRepositoryByOffset()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
 
@@ -340,7 +347,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canUseTransactionalRepository()
+    void canUseTransactionalRepository()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
@@ -373,8 +380,10 @@ public class SampleImplementationTest
         assertEquals("CUSIP0002", flyRead.readCusip());
 
         flyWrite = repository.getByKey(1);
+        assertNotNull(flyWrite);
         flyWrite.writeCusip("ABCDEFGHI");
         flyRead = repository.getByKey(1);
+        assertNotNull(flyRead);
         assertEquals("ABCDEFGHI", flyRead.readCusip());
 
         List<Integer> preCommitItem = repository.getAllWithIndexCusipValue("ABCDEFGHI");
@@ -383,6 +392,7 @@ public class SampleImplementationTest
         repository.rollback();
 
         flyRead = repository.getByKey(1);
+        assertNotNull(flyRead);
         assertEquals("CUSIP0001", flyRead.readCusip());
 
         EiderObject nullExpected = repository.getByKey(2);
@@ -395,7 +405,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canDetectChangesWithCrc32ChangedData()
+    void canDetectChangesWithCrc32ChangedData()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(1);
 
@@ -417,7 +427,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void crc32EqualSameContentsDifferentBuffers()
+    void crc32EqualSameContentsDifferentBuffers()
     {
         final EiderObjectRepository repositoryA = EiderObjectRepository.createWithCapacity(100_000);
         final EiderObjectRepository repositoryB = EiderObjectRepository.createWithCapacity(100_000);
@@ -442,7 +452,7 @@ public class SampleImplementationTest
     }
 
     @Test
-    public void canDetectChangesWithCrc32NewElements()
+    void canDetectChangesWithCrc32NewElements()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
