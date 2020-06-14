@@ -737,7 +737,8 @@ public class AgronaSpecGenerator
             .addField(buildEiderGroupIdField(object.getEiderGroupId()))
             .addFields(offsetsForFields(object, state, globalState))
             .addFields(internalFields(object))
-            .addMethod(buildBuffer(object))
+            .addMethod(buildSetUnderlyingBuffer(object))
+            .addMethod(buildSetUnderlyingBufferAndWriteHeader(object))
             .addMethod(buildEiderId())
             .addMethods(forInternalFields(object));
 
@@ -1404,7 +1405,7 @@ public class AgronaSpecGenerator
 
     }
 
-    private MethodSpec buildBuffer(PreprocessedEiderObject object)
+    private MethodSpec buildSetUnderlyingBuffer(PreprocessedEiderObject object)
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
@@ -1445,6 +1446,25 @@ public class AgronaSpecGenerator
         }
 
         builder.addStatement("buffer.checkLimit(initialOffset + BUFFER_LENGTH)");
+        return builder.build();
+    }
+
+
+    private MethodSpec buildSetUnderlyingBufferAndWriteHeader(PreprocessedEiderObject object)
+    {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("setBufferWriteHeader")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(void.class)
+            .addJavadoc("Uses the provided {@link org.agrona.DirectBuffer} from the given offset.\n"
+                +
+                "@param buffer - buffer to read from and write to.\n"
+                +
+                "@param offset - offset to begin reading from/writing to in the buffer.\n")
+            .addParameter(DirectBuffer.class, BUFFER)
+            .addParameter(int.class, OFFSET)
+            .addStatement("setUnderlyingBuffer(buffer, offset)")
+            .addStatement("writeHeader()");
+
         return builder.build();
     }
 }

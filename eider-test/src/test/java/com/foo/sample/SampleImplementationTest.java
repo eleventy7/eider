@@ -130,7 +130,7 @@ public class SampleImplementationTest
     {
         final SequenceGenerator generator = new SequenceGenerator();
         final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setUnderlyingBuffer(buffer, 0);
+        generator.setBufferWriteHeader(buffer, 0);
 
         generator.initializeOrderId(1);
 
