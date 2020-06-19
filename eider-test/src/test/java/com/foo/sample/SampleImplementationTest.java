@@ -279,7 +279,7 @@ class SampleImplementationTest
 
         final EiderObjectRepository destRepo = EiderObjectRepository.createWithCapacity(3);
 
-        for(int i = 0; i < sourceRepo.getCurrentCount(); i++)
+        for (int i = 0; i < sourceRepo.getCurrentCount(); i++)
         {
             int offset = sourceRepo.getOffsetByBufferIndex(i);
             EiderObject eiderObject = destRepo.appendByCopyFromBuffer(sourceRepo.getUnderlyingBuffer(), offset);
