@@ -427,6 +427,32 @@ public class AgronaSpecGenerator
         );
 
         results.add(
+            MethodSpec.methodBuilder("appendByCopyFromBuffer")
+                .addJavadoc("Appends an element in the buffer by copying over from source buffer. ")
+                .addJavadoc("Returns null if new element could not be created or if the key already exists.")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(DirectBuffer.class, "buffer")
+                .addParameter(int.class, "offset")
+                .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
+                .beginControlFlow("if (currentCount >= maxCapacity)")
+                .addStatement(RETURN_NULL)
+                .endControlFlow()
+                .beginControlFlow("if (offsetByKey.containsKey(id))")
+                .addStatement(RETURN_NULL)
+                .endControlFlow()
+                .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
+                .addStatement("offsetByKey.put(id, maxUsedOffset)")
+                .addStatement("validOffsets.add(maxUsedOffset)")
+                .addStatement("flyweight.writeHeader()")
+                .addStatement("flyweight.write" + upperFirst(getKeyField(object)) + "(id)")
+                .addStatement("flyweight.lockKeyId()")
+                .addStatement("currentCount += 1")
+                .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1)
+                .addStatement(RETURN_FLYWEIGHT)
+                .build()
+        );
+
+        results.add(
             MethodSpec.methodBuilder("containsKey")
                 .addJavadoc("Returns true if the given key is known; false if not.")
                 .addModifiers(Modifier.PUBLIC)
