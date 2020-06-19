@@ -25,6 +25,7 @@ Current features:
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
     - `getByKey`, `getByBufferIndex`, `getByBufferOffset`, `containsKey` and `Iterator<>` functionality
     - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
+    - `getOffsetByBufferIndex` and `appendByCopyFromBuffer` which can be used for Aeron Cluster snapshot reading and writing.
     - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. Warning, indexed fields result in allocation within the repository.
     - optional transactional support. Warning, will cause allocation. 
 - optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
@@ -250,6 +251,25 @@ List<Integer> allCusip3 = repository.getAllWithIndexCusipValue("CUSIP0003");
 Assertions.assertEquals(0, allCusip1NowEmpty.size());
 Assertions.assertEquals(1, allCusip3.size());
 ```
+
+### Repository support for snapshotting
+
+```java
+final EiderObjectRepository sourceRepo = EiderObjectRepository.createWithCapacity(3);
+final EiderObjectRepository destRepo = EiderObjectRepository.createWithCapacity(3);
+
+//...write some data to the sourceRepo...
+
+for (int i = 0; i < sourceRepo.getCurrentCount(); i++)
+{
+    int offset = sourceRepo.getOffsetByBufferIndex(i);
+    destRepo.appendByCopyFromBuffer(sourceRepo.getUnderlyingBuffer(), offset);
+}
+
+assertEquals(sourceRepo.getCrc32(), destRepo.getCrc32());
+```
+
+When writing to an Aeron Cluster snapshot, use the `getOffsetByBufferIndex` to step through the buffer. When reading from the Aeron Cluster snapshot image, make use of `appendByCopyFromBuffer` to append an item into the repository by copying from the provided image.
 
 ### Composite Sample
 
