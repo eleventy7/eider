@@ -449,8 +449,7 @@ public class AgronaSpecGenerator
             .addStatement("internalBuffer.putBytes(maxUsedOffset, buffer, offset, "
                 + object.getName() + ".BUFFER_LENGTH)")
             .addStatement("flyweight.lockKeyId()")
-            .addStatement("currentCount += 1")
-            .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1);
+            .addStatement("currentCount += 1");
 
         if (objectHasIndexedField(object))
         {
@@ -466,6 +465,7 @@ public class AgronaSpecGenerator
             }
         }
 
+        bufferCopy.addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1);
         bufferCopy.addStatement(RETURN_FLYWEIGHT);
         results.add(bufferCopy.build());
 

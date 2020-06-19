@@ -307,6 +307,9 @@ class SampleImplementationTest
         assertEquals(sourceRepo.getCrc32(), destRepo.getCrc32());
         assertEquals(sourceRepo.getAllWithIndexCusipValue("CUSIP0001").size(),
             destRepo.getAllWithIndexCusipValue("CUSIP0001").size());
+
+        assertEquals(sourceRepo.getAllWithIndexCusipValue("CUSIP0001").get(0),
+            destRepo.getAllWithIndexCusipValue("CUSIP0001").get(0));
     }
 
     @Test
