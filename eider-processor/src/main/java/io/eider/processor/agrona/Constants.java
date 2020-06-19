@@ -2,12 +2,8 @@ package io.eider.processor.agrona;
 
 public final class Constants
 {
-    private Constants()
-    {
-        //
-    }
-
     static final String MUTABLE_BUFFER = "mutableBuffer";
+    static final String NEW_$_T = "new $T()";
     static final String UNSAFE_BUFFER = "unsafeBuffer";
     static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = "java.nio.ByteOrder.LITTLE_ENDIAN)";
     static final String JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1 = ", java.nio.ByteOrder.LITTLE_ENDIAN)";
@@ -32,4 +28,14 @@ public final class Constants
     static final String BUFFER = "buffer";
     static final String FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER =
         "_FLYWEIGHT.setUnderlyingBuffer(internalBuffer, ";
+    static final String FIELD = " field.";
+    static final String INDEX_DATA_FOR = "indexDataFor";
+    static final String FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER_OFFSET =
+        "flyweight.setUnderlyingBuffer(internalBuffer, offset)";
+    static final String REVERSE_INDEX_DATA_FOR = "reverseIndexDataFor";
+
+    private Constants()
+    {
+        //
+    }
 }
