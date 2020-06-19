@@ -359,6 +359,7 @@ public class AgronaSpecGenerator
             )
             .addModifiers(Modifier.PRIVATE)
             .addStatement("flyweight = new " + object.getName() + "()")
+            .addStatement("appendFlyweight = new " + object.getName() + "()")
             .addStatement("maxCapacity = capacity")
             .addStatement("repositoryBufferLength = capacity * "
                 +
@@ -426,6 +427,7 @@ public class AgronaSpecGenerator
                 .build()
         );
 
+        final String readKeyMethod = "appendFlyweight.read" + upperFirst(getKeyField(object));
         results.add(
             MethodSpec.methodBuilder("appendByCopyFromBuffer")
                 .addJavadoc("Appends an element in the buffer by copying over from source buffer. ")
@@ -437,14 +439,15 @@ public class AgronaSpecGenerator
                 .beginControlFlow("if (currentCount >= maxCapacity)")
                 .addStatement(RETURN_NULL)
                 .endControlFlow()
-                .beginControlFlow("if (offsetByKey.containsKey(id))")
+                .addStatement("appendFlyweight.setUnderlyingBuffer(buffer, offset)")
+                .beginControlFlow("if (offsetByKey.containsKey(" + readKeyMethod + "()))")
                 .addStatement(RETURN_NULL)
                 .endControlFlow()
                 .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
-                .addStatement("offsetByKey.put(id, maxUsedOffset)")
+                .addStatement("offsetByKey.put(" + readKeyMethod + "(), maxUsedOffset)")
                 .addStatement("validOffsets.add(maxUsedOffset)")
-                .addStatement("flyweight.writeHeader()")
-                .addStatement("flyweight.write" + upperFirst(getKeyField(object)) + "(id)")
+                .addStatement("internalBuffer.putBytes(maxUsedOffset, buffer, offset, "
+                    + object.getName() + ".BUFFER_LENGTH)")
                 .addStatement("flyweight.lockKeyId()")
                 .addStatement("currentCount += 1")
                 .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1)
@@ -555,6 +558,15 @@ public class AgronaSpecGenerator
         );
 
         results.add(
+            MethodSpec.methodBuilder("getUnderlyingBuffer")
+                .addJavadoc("Returns the underlying buffer.")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(DirectBuffer.class)
+                .addStatement("return internalBuffer")
+                .build()
+        );
+
+        results.add(
             MethodSpec.methodBuilder("getCrc32")
                 .addJavadoc("Returns the CRC32 of the underlying buffer. Warning! Allocates.")
                 .addModifiers(Modifier.PUBLIC)
@@ -651,6 +663,13 @@ public class AgronaSpecGenerator
 
         results.add(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()), "flyweight")
             .addJavadoc("The flyweight used by the repository.")
+            .initializer("null")
+            .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        results.add(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()),
+            "appendFlyweight")
+            .addJavadoc("The flyweight used by the repository for reads during append from buffer operations.")
             .initializer("null")
             .addModifiers(Modifier.PRIVATE)
             .build());

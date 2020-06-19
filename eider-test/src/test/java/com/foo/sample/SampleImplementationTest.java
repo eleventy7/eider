@@ -258,6 +258,56 @@ class SampleImplementationTest
     }
 
     @Test
+    void canUseRepositoryForSnapshotWriteRead()
+    {
+        final EiderObjectRepository sourceRepo = EiderObjectRepository.createWithCapacity(3);
+        EiderObject flyWrite = sourceRepo.appendWithKey(90);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0001");
+        flyWrite.writeEnabled(true);
+        flyWrite.writeTimestamp(0);
+        flyWrite = sourceRepo.appendWithKey(91);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0002");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+        flyWrite = sourceRepo.appendWithKey(92);
+        assert flyWrite != null;
+        flyWrite.writeCusip("CUSIP0003");
+        flyWrite.writeEnabled(false);
+        flyWrite.writeTimestamp(1);
+
+        final EiderObjectRepository destRepo = EiderObjectRepository.createWithCapacity(3);
+
+        for(int i = 0; i < sourceRepo.getCurrentCount(); i++)
+        {
+            int offset = sourceRepo.getOffsetByBufferIndex(i);
+            EiderObject eiderObject = destRepo.appendByCopyFromBuffer(sourceRepo.getUnderlyingBuffer(), offset);
+            assertNotNull(eiderObject);
+        }
+
+        EiderObject validator = destRepo.getByBufferIndex(0);
+        assertEquals("CUSIP0001", validator.readCusip());
+        assertEquals(90, validator.readId());
+        assertEquals(true, validator.readEnabled());
+        assertEquals(0, validator.readTimestamp());
+
+        validator = destRepo.getByBufferIndex(1);
+        assertEquals("CUSIP0002", validator.readCusip());
+        assertEquals(91, validator.readId());
+        assertEquals(false, validator.readEnabled());
+        assertEquals(1, validator.readTimestamp());
+
+        validator = destRepo.getByBufferIndex(2);
+        assertEquals("CUSIP0003", validator.readCusip());
+        assertEquals(92, validator.readId());
+        assertEquals(false, validator.readEnabled());
+        assertEquals(1, validator.readTimestamp());
+
+        assertEquals(sourceRepo.getCrc32(), destRepo.getCrc32());
+    }
+
+    @Test
     void canHandleIndexedDataUpdates()
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(3);
