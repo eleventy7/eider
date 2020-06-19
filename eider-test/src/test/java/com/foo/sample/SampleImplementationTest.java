@@ -531,4 +531,25 @@ class SampleImplementationTest
 
         assertNotEquals(initialCrc, repository.getCrc32());
     }
+
+
+    @Test
+    void canUseUniqueRepository()
+    {
+        final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
+
+        final SequenceGenerator generator = new SequenceGenerator();
+        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
+        generator.setUnderlyingBuffer(buffer, 0);
+
+        EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
+        assert flyWrite != null;
+        boolean allowedWrite = flyWrite.writeCusip("CUSIP0001");
+        assertTrue(allowedWrite);
+
+        flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
+        assert flyWrite != null;
+        boolean allowedWriteAgain = flyWrite.writeCusip("CUSIP0001");
+        assertFalse(allowedWriteAgain);
+    }
 }

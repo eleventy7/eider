@@ -21,6 +21,7 @@ import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.IntHashSet;
 import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.collections.ObjectHashSet;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -38,6 +39,7 @@ import static io.eider.processor.AttributeConstants.INDEXED;
 import static io.eider.processor.AttributeConstants.KEY;
 import static io.eider.processor.AttributeConstants.MAXLENGTH;
 import static io.eider.processor.AttributeConstants.SEQUENCE_GENERATOR;
+import static io.eider.processor.AttributeConstants.UNIQUE;
 import static io.eider.processor.agrona.Constants.BUFFER;
 import static io.eider.processor.agrona.Constants.BUFFER_LENGTH_1;
 import static io.eider.processor.agrona.Constants.CAPACITY;
@@ -124,65 +126,78 @@ public class AgronaSpecGenerator
     {
         List<MethodSpec> results = new ArrayList<>();
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
+
+            MethodSpec.Builder builder = MethodSpec.methodBuilder("updateIndexFor" + upperFirst(prop.getName()))
+                .addJavadoc("Accepts a notification that a flyweight's indexed field has been modified")
+                .addModifiers(Modifier.PRIVATE)
+                .addParameter(int.class, "offset")
+                .addParameter(getBoxedType(prop.getType()), "value")
+                .beginControlFlow("if (" + revIndexName + ".containsKey(offset))")
+                .addStatement(fromTypeToStr(prop.getType()) + " oldValue = "
+                    + revIndexName + ".get(offset)")
+                .beginControlFlow("if (!" + revIndexName + ".get(offset)."
+                    + getComparator(prop.getType(), "value") + ")")
+                .addStatement(indexName + ".get(oldValue).remove(offset)")
+                .endControlFlow()
+                .endControlFlow()
+                .beginControlFlow("if (" + indexName + ".containsKey(value))")
+                .addStatement(indexName + ".get(value).add(offset)")
+                .nextControlFlow("else")
+                .addStatement("final IntHashSet items = new IntHashSet()")
+                .addStatement("items.add(offset)")
+                .addStatement(indexName + ".put(value, items)")
+                .endControlFlow()
+                .addStatement(revIndexName + ".put(offset, value)");
+
+            if (isUniqueIndexOnProp(prop))
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-                    final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
+                final String uniqueIndex = "uniqueIndexFor" + upperFirst(prop.getName());
+                builder.addStatement(uniqueIndex + ".add(value)");
+            }
 
-                    results.add(
-                        MethodSpec.methodBuilder("updateIndexFor" + upperFirst(prop.getName()))
-                            .addJavadoc("Accepts a notification that a flyweight's indexed field has been modified")
-                            .addModifiers(Modifier.PRIVATE)
-                            .addParameter(int.class, "offset")
-                            .addParameter(getBoxedType(prop.getType()), "value")
-                            .beginControlFlow("if (" + revIndexName + ".containsKey(offset))")
-                            .addStatement(fromTypeToStr(prop.getType()) + " oldValue = "
-                                + revIndexName + ".get(offset)")
-                            .beginControlFlow("if (!" + revIndexName + ".get(offset)."
-                                + getComparator(prop.getType(), "value") + ")")
-                            .addStatement(indexName + ".get(oldValue).remove(offset)")
-                            .endControlFlow()
-                            .endControlFlow()
-                            .beginControlFlow("if (" + indexName + ".containsKey(value))")
-                            .addStatement(indexName + ".get(value).add(offset)")
-                            .nextControlFlow("else")
-                            .addStatement("final IntHashSet items = new IntHashSet()")
-                            .addStatement("items.add(offset)")
-                            .addStatement(indexName + ".put(value, items)")
-                            .endControlFlow()
-                            .addStatement(revIndexName + ".put(offset, value)")
-                            .build()
-                    );
+            results.add(builder.build());
 
-                    final ClassName iterator =
-                        ClassName.get(List.class);
-                    final ClassName genObj = ClassName.get(Integer.class);
-                    final TypeName indexResults = ParameterizedTypeName
-                        .get(iterator, genObj);
+            final ClassName iterator =
+                ClassName.get(List.class);
+            final ClassName genObj = ClassName.get(Integer.class);
+            final TypeName indexResults = ParameterizedTypeName
+                .get(iterator, genObj);
 
-                    final ClassName iteratorImpl =
-                        ClassName.get(ArrayList.class);
-                    final TypeName indexResultsImpl = ParameterizedTypeName
-                        .get(iteratorImpl, genObj);
+            final ClassName iteratorImpl =
+                ClassName.get(ArrayList.class);
+            final TypeName indexResultsImpl = ParameterizedTypeName
+                .get(iteratorImpl, genObj);
 
-                    results.add(
-                        MethodSpec.methodBuilder("getAllWithIndex" + upperFirst(prop.getName() + "Value"))
-                            .addJavadoc("Uses index to return list of offsets matching given value.")
-                            .addModifiers(Modifier.PUBLIC)
-                            .addParameter(getBoxedType(prop.getType()), "value")
-                            .returns(indexResults)
-                            .addStatement("List<Integer> results = new $T()", indexResultsImpl)
-                            .beginControlFlow("if (" + indexName + ".containsKey(value))")
-                            .addStatement("results.addAll(" + indexName + ".get(value))")
-                            .endControlFlow()
-                            .addStatement("return results")
-                            .build()
-                    );
-                }
+            results.add(
+                MethodSpec.methodBuilder("getAllWithIndex" + upperFirst(prop.getName() + "Value"))
+                    .addJavadoc("Uses index to return list of offsets matching given value.")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(getBoxedType(prop.getType()), "value")
+                    .returns(indexResults)
+                    .addStatement("List<Integer> results = new $T()", indexResultsImpl)
+                    .beginControlFlow("if (" + indexName + ".containsKey(value))")
+                    .addStatement("results.addAll(" + indexName + ".get(value))")
+                    .endControlFlow()
+                    .addStatement("return results")
+                    .build()
+            );
+
+            if (isUniqueIndexOnProp(prop))
+            {
+                final String uniqueIndex = "uniqueIndexFor" + upperFirst(prop.getName());
+                results.add(
+                    MethodSpec.methodBuilder("isUnique" + upperFirst(prop.getName() + "Value"))
+                        .addJavadoc("Uses unique index to confirm if the repository contains this value or not.")
+                        .addModifiers(Modifier.PRIVATE)
+                        .addParameter(getBoxedType(prop.getType()), "value")
+                        .returns(boolean.class)
+                        .addStatement("return !" + uniqueIndex + ".contains(value)")
+                        .build()
+                );
             }
         }
 
@@ -204,22 +219,24 @@ public class AgronaSpecGenerator
             .addStatement("currentCountCopy = currentCount")
             .addStatement("transactionCopyBufferSet = true");
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            //
+            beginTransaction.addStatement(indexNameCopy + ".clear()");
+            beginTransaction.addStatement(indexNameCopy + ".putAll(" + indexName + ")");
+            beginTransaction.addStatement(revIndexNameCopy + ".clear()");
+            beginTransaction.addStatement(revIndexNameCopy + ".putAll(" + revIndexName + ")");
+
+            if (isUniqueIndexOnProp(prop))
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-                    final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
-                    final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-                    final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-                    //
-                    beginTransaction.addStatement(indexNameCopy + ".clear()");
-                    beginTransaction.addStatement(indexNameCopy + ".putAll(" + indexName + ")");
-                    beginTransaction.addStatement(revIndexNameCopy + ".clear()");
-                    beginTransaction.addStatement(revIndexNameCopy + ".putAll(" + revIndexName + ")");
-                }
+                final String unqiueIndex = "uniqueIndexFor" + upperFirst(prop.getName());
+                final String unqiueIndexCopy = "uniqueIndexCopyFor" + upperFirst(prop.getName());
+                beginTransaction.addStatement(unqiueIndexCopy + ".clear()");
+                beginTransaction.addStatement(unqiueIndexCopy + ".addAll(" + unqiueIndex + ")");
             }
         }
 
@@ -251,24 +268,27 @@ public class AgronaSpecGenerator
             .addStatement(TRANSACTION_COPY_BUFFER_SET_FALSE)
             .addStatement("currentCountCopy = 0");
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            //
+            rollback.addStatement(indexName + ".clear()");
+            rollback.addStatement(indexName + ".putAll(" + indexNameCopy + ")");
+            rollback.addStatement(indexNameCopy + ".clear()");
+            rollback.addStatement(revIndexName + ".clear()");
+            rollback.addStatement(revIndexName + ".putAll(" + revIndexNameCopy + ")");
+            rollback.addStatement(revIndexNameCopy + ".clear()");
+
+            if (isUniqueIndexOnProp(prop))
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-                    final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
-                    final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-                    final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-                    //
-                    rollback.addStatement(indexName + ".clear()");
-                    rollback.addStatement(indexName + ".putAll(" + indexNameCopy + ")");
-                    rollback.addStatement(indexNameCopy + ".clear()");
-                    rollback.addStatement(revIndexName + ".clear()");
-                    rollback.addStatement(revIndexName + ".putAll(" + revIndexNameCopy + ")");
-                    rollback.addStatement(revIndexNameCopy + ".clear()");
-                }
+                final String unqiueIndex = "uniqueIndexFor" + upperFirst(prop.getName());
+                final String unqiueIndexCopy = "uniqueIndexCopyFor" + upperFirst(prop.getName());
+                beginTransaction.addStatement(unqiueIndex + ".clear()");
+                beginTransaction.addStatement(unqiueIndex + ".addAll(" + unqiueIndexCopy + ")");
+                beginTransaction.addStatement(unqiueIndexCopy + ".clear()");
             }
         }
 
@@ -377,15 +397,15 @@ public class AgronaSpecGenerator
             builder.addStatement("transactionCopy = new ExpandableDirectByteBuffer(repositoryBufferLength)");
         }
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            builder.addStatement("flyweight.setIndexNotifierFor" + upperFirst(prop.getName())
+                + "(this::updateIndexFor" + upperFirst(prop.getName()) + ")");
+
+            if (isUniqueIndexOnProp(prop))
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    builder.addStatement("flyweight.setIndexNotifierFor" + upperFirst(prop.getName())
-                        + "(this::updateIndexFor" + upperFirst(prop.getName()) + ")");
-                }
+                builder.addStatement("flyweight.setIndexUniqueCheckerFor" + upperFirst(prop.getName())
+                    + "(this::isUnique" + upperFirst(prop.getName()) + "Value)");
             }
         }
 
@@ -688,59 +708,76 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PRIVATE)
             .build());
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            //By Value Index
+            final ClassName itemList =
+                ClassName.get(IntHashSet.class);
+
+            final ClassName topLevelMap =
+                ClassName.get(Object2ObjectHashMap.class);
+            final ClassName genObj = ClassName.get(getBoxedType(prop.getType()));
+            final TypeName indexDataMap = ParameterizedTypeName
+                .get(topLevelMap, genObj, itemList);
+
+            results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName()))
+                .addJavadoc("Holds the index data for the " + prop.getName() + FIELD)
+                .initializer(NEW_$_T, indexDataMap)
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+
+            if (isUniqueIndexOnProp(prop))
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                final ClassName topLevelUniqueSet =
+                    ClassName.get(ObjectHashSet.class);
+                final TypeName indexDataSet = ParameterizedTypeName
+                    .get(topLevelUniqueSet, genObj);
+
+                results.add(FieldSpec.builder(indexDataSet, "uniqueIndexFor" + upperFirst(prop.getName()))
+                    .addJavadoc("Holds the unique index data for the " + prop.getName() + FIELD)
+                    .initializer(NEW_$_T, indexDataSet)
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
+
+                if (object.isTransactional())
                 {
-                    //By Value Index
-                    final ClassName itemList =
-                        ClassName.get(IntHashSet.class);
-
-                    final ClassName topLevelMap =
-                        ClassName.get(Object2ObjectHashMap.class);
-                    final ClassName genObj = ClassName.get(getBoxedType(prop.getType()));
-                    final TypeName indexDataMap = ParameterizedTypeName
-                        .get(topLevelMap, genObj, itemList);
-
-                    results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName()))
-                        .addJavadoc("Holds the index data for the " + prop.getName() + FIELD)
-                        .initializer(NEW_$_T, indexDataMap)
+                    results.add(FieldSpec.builder(indexDataSet, "uniqueIndexCopyFor" + upperFirst(prop.getName()))
+                        .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
+                        .initializer(NEW_$_T, indexDataSet)
                         .addModifiers(Modifier.PRIVATE)
                         .build());
-
-                    if (object.isTransactional())
-                    {
-                        results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName())
-                            + "Copy")
-                            .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
-                            .initializer(NEW_$_T, indexDataMap)
-                            .addModifiers(Modifier.PRIVATE)
-                            .build());
-                    }
-
-                    final ClassName reverseMap =
-                        ClassName.get(Int2ObjectHashMap.class);
-                    final TypeName reversedIndex = ParameterizedTypeName
-                        .get(reverseMap, genObj);
-
-                    results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName()))
-                        .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
-                        .initializer(NEW_$_T, reversedIndex)
-                        .addModifiers(Modifier.PRIVATE)
-                        .build());
-
-                    if (object.isTransactional())
-                    {
-                        results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR
-                            + upperFirst(prop.getName()) + "Copy")
-                            .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
-                            .initializer(NEW_$_T, reversedIndex)
-                            .addModifiers(Modifier.PRIVATE)
-                            .build());
-                    }
                 }
+            }
+
+            if (object.isTransactional())
+            {
+                results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName())
+                    + "Copy")
+                    .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
+                    .initializer(NEW_$_T, indexDataMap)
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
+            }
+
+            final ClassName reverseMap =
+                ClassName.get(Int2ObjectHashMap.class);
+            final TypeName reversedIndex = ParameterizedTypeName
+                .get(reverseMap, genObj);
+
+            results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName()))
+                .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
+                .initializer(NEW_$_T, reversedIndex)
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+
+            if (object.isTransactional())
+            {
+                results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR
+                    + upperFirst(prop.getName()) + "Copy")
+                    .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
+                    .initializer(NEW_$_T, reversedIndex)
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
             }
         }
 
@@ -944,25 +981,34 @@ public class AgronaSpecGenerator
             .initializer("null")
             .build());
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
-            {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    final ClassName iterator =
-                        ClassName.get("io.eider.util", "IndexUpdateConsumer");
-                    final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
-                    final TypeName indexUpdateNotifier = ParameterizedTypeName
-                        .get(iterator, fieldName);
+            final ClassName indexNotifier =
+                ClassName.get("io.eider.util", "IndexUpdateConsumer");
+            final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+            final TypeName indexUpdateNotifier = ParameterizedTypeName
+                .get(indexNotifier, fieldName);
 
-                    results.add(FieldSpec
-                        .builder(indexUpdateNotifier, "indexUpdateNotifier" + upperFirst(prop.getName()))
-                        .addJavadoc("The consumer notified of indexed field updates. Used to maintain indexes.")
-                        .addModifiers(Modifier.PRIVATE)
-                        .initializer("null")
-                        .build());
-                }
+            results.add(FieldSpec
+                .builder(indexUpdateNotifier, "indexUpdateNotifier" + upperFirst(prop.getName()))
+                .addJavadoc("The consumer notified of indexed field updates. Used to maintain indexes.")
+                .addModifiers(Modifier.PRIVATE)
+                .initializer("null")
+                .build());
+
+            final ClassName uniqueIndexChecker =
+                ClassName.get("io.eider.util", "IndexUniquenessConsumer");
+            final TypeName indexUniquenessChecker = ParameterizedTypeName
+                .get(uniqueIndexChecker, fieldName);
+
+            if (isUniqueIndexOnProp(prop))
+            {
+                results.add(FieldSpec
+                    .builder(indexUniquenessChecker, "indexUniquenessChecker" + upperFirst(prop.getName()))
+                    .addJavadoc("The used to confirm the uniqueness of an index value.")
+                    .addModifiers(Modifier.PRIVATE)
+                    .initializer("null")
+                    .build());
             }
         }
 
@@ -1176,28 +1222,40 @@ public class AgronaSpecGenerator
                 .build()
         );
 
-        if (objectHasIndexedField(object))
+        for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            for (PreprocessedEiderProperty prop : object.getPropertyList())
-            {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
-                {
-                    final ClassName iterator =
-                        ClassName.get("io.eider.util", "IndexUpdateConsumer");
-                    final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
-                    final TypeName indexUpdateNotifier = ParameterizedTypeName
-                        .get(iterator, fieldName);
+            final ClassName iterator =
+                ClassName.get("io.eider.util", "IndexUpdateConsumer");
+            final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+            final TypeName indexUpdateNotifier = ParameterizedTypeName
+                .get(iterator, fieldName);
 
-                    results.add(
-                        MethodSpec.methodBuilder("setIndexNotifierFor" + upperFirst(prop.getName()))
-                            .addModifiers(Modifier.PUBLIC)
-                            .addJavadoc("Sets the indexed field update notifier to provided consumer.")
-                            .addParameter(indexUpdateNotifier, "indexedNotifier")
-                            .addStatement("this.indexUpdateNotifier" + upperFirst(prop.getName())
-                                + " = indexedNotifier")
-                            .build()
-                    );
-                }
+            results.add(
+                MethodSpec.methodBuilder("setIndexNotifierFor" + upperFirst(prop.getName()))
+                    .addModifiers(Modifier.PUBLIC)
+                    .addJavadoc("Sets the indexed field update notifier to provided consumer.")
+                    .addParameter(indexUpdateNotifier, "indexedNotifier")
+                    .addStatement("this.indexUpdateNotifier" + upperFirst(prop.getName())
+                        + " = indexedNotifier")
+                    .build()
+            );
+
+            if (isUniqueIndexOnProp(prop))
+            {
+                final ClassName uniqueIndexChecker =
+                    ClassName.get("io.eider.util", "IndexUniquenessConsumer");
+                final TypeName indexUniquenessChecker = ParameterizedTypeName
+                    .get(uniqueIndexChecker, fieldName);
+
+                results.add(
+                    MethodSpec.methodBuilder("setIndexUniqueCheckerFor" + upperFirst(prop.getName()))
+                        .addModifiers(Modifier.PUBLIC)
+                        .addJavadoc("Sets the indexed field checker to provided method.")
+                        .addParameter(indexUniquenessChecker, "indexChecker")
+                        .addStatement("this.indexUniquenessChecker" + upperFirst(prop.getName())
+                            + " = indexChecker")
+                        .build()
+                );
             }
         }
 
@@ -1234,29 +1292,14 @@ public class AgronaSpecGenerator
         MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()
             + "WithPadding"))
             .addModifiers(Modifier.PUBLIC)
+            .returns(boolean.class)
             .addJavadoc("Writes " + property.getName() + " to the buffer with padding. ")
             .addParameter(getInputType(property));
 
-        builder.addStatement("if (!isMutable) throw new RuntimeException(\"Cannot write to immutable buffer\")");
-
-        if (property.getAnnotations() != null && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
-        {
-            builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key value after locking\")");
-            builder.addJavadoc("This field is marked with key=true.");
-        }
-
-        if (property.getType() == EiderPropertyType.FIXED_STRING)
-        {
-            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
-            builder.addStatement(fixedLengthStringCheck(property, maxLength));
-            builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
-            builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
-                + getOffsetName(property.getName()) + ", padded)");
-        }
-        else
-        {
-            builder.addStatement(bufferWrite(property));
-        }
+        final String underlying = WRITE + upperFirst(property.getName());
+        int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+        builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
+        builder.addStatement("return " + underlying + "(padded)");
         return builder.build();
     }
 
@@ -1309,11 +1352,17 @@ public class AgronaSpecGenerator
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
-            .addJavadoc("Writes " + property.getName() + " to the buffer. ")
+            .returns(boolean.class)
+            .addJavadoc("Writes " + property.getName() + " to the buffer. Returns true if success, false if not.")
             .addParameter(getInputType(property));
 
         builder.addStatement("if (!isMutable) throw new RuntimeException(\"Cannot write to immutable buffer\")");
 
+        if (property.getType() == EiderPropertyType.FIXED_STRING)
+        {
+            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+            builder.addStatement(fixedLengthStringCheck(property, maxLength));
+        }
 
         if (property.getAnnotations() != null && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
         {
@@ -1324,17 +1373,32 @@ public class AgronaSpecGenerator
         if (property.getAnnotations() != null && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
         {
 
+            if (property.getAnnotations().get(UNIQUE).equalsIgnoreCase(TRUE))
+            {
+                //this.indexUniquenessChecker
+                builder.beginControlFlow("if (indexUniquenessChecker" + upperFirst(property.getName()) + " != null)");
+                final String condition = "indexUniquenessChecker" + upperFirst(property.getName())
+                    + ".isUnique(value)";
+                builder.beginControlFlow("if (!" + condition + ")");
+                builder.addStatement(RETURN_FALSE);
+                builder.endControlFlow();
+                builder.endControlFlow();
+
+                builder.addJavadoc(" Uniquely indexed field. ");
+            }
+            else
+            {
+                builder.addJavadoc(" Indexed field. ");
+            }
+
             builder.beginControlFlow("if (indexUpdateNotifier" + upperFirst(property.getName()) + " != null)");
             builder.addStatement("indexUpdateNotifier" + upperFirst(property.getName())
                 + ".accept(initialOffset, value)");
             builder.endControlFlow();
-            builder.addJavadoc("Indexed field.");
         }
 
         if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
-            builder.addStatement(fixedLengthStringCheck(property, maxLength));
             builder.addJavadoc("Warning! Does not pad the string.");
             builder.addStatement("mutableBuffer.putStringWithoutLengthAscii(initialOffset + "
                 + getOffsetName(property.getName()) + ", value)");
@@ -1343,6 +1407,7 @@ public class AgronaSpecGenerator
         {
             builder.addStatement(bufferWrite(property));
         }
+        builder.addStatement(RETURN_TRUE);
         return builder.build();
     }
 
@@ -1542,5 +1607,31 @@ public class AgronaSpecGenerator
             .addStatement("writeHeader()");
 
         return builder.build();
+    }
+
+    private List<PreprocessedEiderProperty> indexFields(PreprocessedEiderObject object)
+    {
+        final List<PreprocessedEiderProperty> result = new ArrayList<>();
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    result.add(prop);
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean isUniqueIndexOnProp(PreprocessedEiderProperty prop)
+    {
+        if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE)
+            && prop.getAnnotations().get(UNIQUE).equalsIgnoreCase(TRUE))
+        {
+            return true;
+        }
+        return false;
     }
 }

@@ -26,7 +26,7 @@ Current features:
     - `getByKey`, `getByBufferIndex`, `getByBufferOffset`, `containsKey` and `Iterator<>` functionality
     - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
     - `getOffsetByBufferIndex` and `appendByCopyFromBuffer` which can be used for Aeron Cluster snapshot reading and writing.
-    - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. Warning, indexed fields result in allocation within the repository.
+    - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. Unique indexes on fields are optional - to confirm write was legal, check for true in the return from the uniquely indexed field write method. Warning, indexed fields result in allocation within the repository.
     - optional transactional support. Warning, will cause allocation. 
 - optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
     - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
