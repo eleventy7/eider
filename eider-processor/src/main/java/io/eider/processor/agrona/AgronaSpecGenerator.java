@@ -428,32 +428,46 @@ public class AgronaSpecGenerator
         );
 
         final String readKeyMethod = "appendFlyweight.read" + upperFirst(getKeyField(object));
-        results.add(
-            MethodSpec.methodBuilder("appendByCopyFromBuffer")
-                .addJavadoc("Appends an element in the buffer by copying over from source buffer. ")
-                .addJavadoc("Returns null if new element could not be created or if the key already exists.")
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(DirectBuffer.class, "buffer")
-                .addParameter(int.class, "offset")
-                .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
-                .beginControlFlow("if (currentCount >= maxCapacity)")
-                .addStatement(RETURN_NULL)
-                .endControlFlow()
-                .addStatement("appendFlyweight.setUnderlyingBuffer(buffer, offset)")
-                .beginControlFlow("if (offsetByKey.containsKey(" + readKeyMethod + "()))")
-                .addStatement(RETURN_NULL)
-                .endControlFlow()
-                .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
-                .addStatement("offsetByKey.put(" + readKeyMethod + "(), maxUsedOffset)")
-                .addStatement("validOffsets.add(maxUsedOffset)")
-                .addStatement("internalBuffer.putBytes(maxUsedOffset, buffer, offset, "
-                    + object.getName() + ".BUFFER_LENGTH)")
-                .addStatement("flyweight.lockKeyId()")
-                .addStatement("currentCount += 1")
-                .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1)
-                .addStatement(RETURN_FLYWEIGHT)
-                .build()
-        );
+
+        MethodSpec.Builder bufferCopy = MethodSpec.methodBuilder("appendByCopyFromBuffer")
+            .addJavadoc("Appends an element in the buffer by copying over from source buffer. ")
+            .addJavadoc("Returns null if new element could not be created or if the key already exists.")
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(DirectBuffer.class, "buffer")
+            .addParameter(int.class, "offset")
+            .returns(ClassName.get(object.getPackageNameGen(), object.getName()))
+            .beginControlFlow("if (currentCount >= maxCapacity)")
+            .addStatement(RETURN_NULL)
+            .endControlFlow()
+            .addStatement("appendFlyweight.setUnderlyingBuffer(buffer, offset)")
+            .beginControlFlow("if (offsetByKey.containsKey(" + readKeyMethod + "()))")
+            .addStatement(RETURN_NULL)
+            .endControlFlow()
+            .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
+            .addStatement("offsetByKey.put(" + readKeyMethod + "(), maxUsedOffset)")
+            .addStatement("validOffsets.add(maxUsedOffset)")
+            .addStatement("internalBuffer.putBytes(maxUsedOffset, buffer, offset, "
+                + object.getName() + ".BUFFER_LENGTH)")
+            .addStatement("flyweight.lockKeyId()")
+            .addStatement("currentCount += 1")
+            .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1);
+
+        if (objectHasIndexedField(object))
+        {
+            for (PreprocessedEiderProperty prop : object.getPropertyList())
+            {
+                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                {
+                    //need to update the index for each item read.
+                    String read = "appendFlyweight.read" + upperFirst(prop.getName()) + "()";
+                    String call = "updateIndexFor" + upperFirst(prop.getName() + "(maxUsedOffset, " + read + ")");
+                    bufferCopy.addStatement(call);
+                }
+            }
+        }
+
+        bufferCopy.addStatement(RETURN_FLYWEIGHT);
+        results.add(bufferCopy.build());
 
         results.add(
             MethodSpec.methodBuilder("containsKey")
