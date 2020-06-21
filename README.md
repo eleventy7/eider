@@ -4,39 +4,42 @@
 
 Annotation based flyweight generator. Suitable for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit. Only suitable for single threaded usage scenarios.
 
-Given a specification object, Eider generates a flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the targetted buffer implementation.
+Given a specification object, Eider generates a zero-copy flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the target buffer implementation.
 
 Initial implementation uses Agrona Direct Buffers for read and requires Mutable Direct Buffers for write support. Values are read from and written to the buffer directly - they do not hold any field values internally - and as a result, cannot be used or held like regular objects. Random access writes and reads are supported. 
 
 Current features:
 
-- type support
-    - boolean
-    - short
-    - int
-    - long
-    - fixed length ASCII strings. Strings that are shorter than max length get padded with spaces. Use `NoPadding` variants to write without any padding. In all cases, trailing space chars get trimmed on read.
-- generate flyweights that support fixed length objects
-    - supports multiple underlying buffers including `UnsafeBuffer` plus `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron Subscriptions and EgressListeners.
-- generates a helper to detect message types in a buffer
+- Generate zero-copy flyweights that support fixed length objects
+    - supports multiple underlying buffers including `UnsafeBuffer`, `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron `Subscriptions` and `EgressListeners`.
+    - Type support is limited to:
+        - boolean
+        - short
+        - int
+        - long
+        - fixed length ASCII strings. Use `WithPadding` variants to write with padding (this is useful for reused flyweights). In all cases, trailing space chars get trimmed on read.
+- Generates a helper to detect message types in a buffer
     - see Aeron Cookbook for [sample in use](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
-- flyweight backed sequence generator
-- optional fixed size repositories with a pre-defined capactity
+- Sequence Generator
+- Optional repositories
+    - Note! Repositories hold data within internal buffers and maps. This will cause allocation.
+    - repositories hold a maximum number of items, and cannot be resized at runtime
     - `appendWithKey` appends an item to the end of the buffer, up to the pre-defined capacity
     - `getByKey`, `getByBufferIndex`, `getByBufferOffset`, `containsKey` and `Iterator<>` functionality
     - `getCrc32` useful to support cross process comparison of repository contents (e.g. in a Aeron Cluster determinism check)
     - `getOffsetByBufferIndex` and `appendByCopyFromBuffer` which can be used for Aeron Cluster snapshot reading and writing.
-    - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. Unique indexes on fields are optional - to confirm write was legal, check for true in the return from the uniquely indexed field write method. Warning, indexed fields result in allocation within the repository.
-    - optional transactional support. Warning, will cause allocation. 
-- optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
+    - optional indexed fields. Indexes support updates and transactions. Indexes update synchronously at the time a field write occurs. 
+    - optional Unique indexes on fields
+    - optional transactional support.  
+- Optional transactional support on each flyweight. If this is enabled, the flyweight adds `beginTransaction`, `commit` and `rollback` methods. Note, by default reads are dirty; the buffer is only rolled back to the state it was in when `beginTransaction` was called if `rollback` was called. 
     - Note: this will allocate a buffer of length equal to the flyweight buffer length internally.   
-- composite reader/writer
+- Composite reader/writer
     - provides a single, keyed object which contains multiple Eider objects read/written into a single buffer
-    - optional repository support
+    - Optional repository support
 
 Features that may be added to future versions:
 
-- transaction support in the composite repositories
+- Transaction support in the composite repositories
 - JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations
 
 Features not planned for future releases:
