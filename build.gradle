@@ -192,6 +192,12 @@ project('eider-test') {
 
     sourceSets {
         generated.java.srcDir generatedDir
+        jmh {
+            java.srcDirs += 'src/jmh/java'
+            java.srcDirs += generatedDir
+            compileClasspath += sourceSets.main.runtimeClasspath
+            runtimeClasspath += sourceSets.test.runtimeClasspath
+        }
     }
 
     license {
@@ -218,6 +224,9 @@ project('eider-test') {
 
     dependencies {
         annotationProcessor project(':eider-processor')
+        jmhCompile project
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.23"
+        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.23"
         implementation project(path: ':eider-processor')
         implementation "org.agrona:agrona:1.5.0"
         implementation "org.openjdk.jmh:jmh-core:1.23"
@@ -231,6 +240,10 @@ project('eider-test') {
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
 
+    task jmh(type: JavaExec, description: 'Executing JMH benchmarks') {
+        classpath = sourceSets.jmh.runtimeClasspath
+        main = 'org.openjdk.jmh.Main'
+    }
 }
 
 sonarqube {

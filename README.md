@@ -36,6 +36,10 @@ Current features:
 - Composite reader/writer
     - provides a single, keyed object which contains multiple Eider objects read/written into a single buffer
     - Optional repository support
+- Reasonable performance
+    - Performance varies on the object complexity
+    - Complex transactional objects read and write around 1.2 million messages/second (a roundtrip of around 0.82μs) 
+    - Simple non-transactional objects read and write at around 175 million messages/second (a roundtrip of around 5.7ns)
 
 Features that may be added to future versions:
 
