@@ -96,7 +96,7 @@ allprojects {
     }
 
     dependencies {
-        implementation group: 'org.agrona', name: 'agrona', version: '1.5.1'
+        implementation group: 'org.agrona', name: 'agrona', version: '1.6.0'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
@@ -146,7 +146,7 @@ project('eider-processor') {
     }
 
     dependencies {
-        implementation "org.agrona:agrona:1.5.1"
+        implementation "org.agrona:agrona:1.6.0"
         implementation 'com.squareup:javapoet:1.13.0'
         implementation "org.openjdk.jmh:jmh-core:1.23"
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
@@ -228,7 +228,7 @@ project('eider-test') {
         jmhImplementation "org.openjdk.jmh:jmh-core:1.23"
         jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.23"
         implementation project(path: ':eider-processor')
-        implementation "org.agrona:agrona:1.5.0"
+        implementation "org.agrona:agrona:1.6.0"
         implementation "org.openjdk.jmh:jmh-core:1.23"
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
