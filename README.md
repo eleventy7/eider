@@ -160,9 +160,7 @@ public class SequenceGeneratorSpec
 One spec can hold more than one sequence. Initialize and get new sequences by:
 
 ```java
-final SequenceGenerator generator = new SequenceGenerator();
-ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-generator.setUnderlyingBuffer(buffer, 0);
+final SequenceGenerator generator = SequenceGenerator.INSTANCE();
 
 //initialize to 1
 generator.initializeTradeId(1);

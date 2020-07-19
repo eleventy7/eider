@@ -15,6 +15,7 @@ import io.eider.processor.PreprocessedEiderObject;
 import io.eider.processor.PreprocessedEiderProperty;
 
 import org.agrona.DirectBuffer;
+import org.agrona.ExpandableArrayBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
@@ -368,7 +369,6 @@ public class AgronaSpecGenerator
     private Iterable<MethodSpec> buildRepositoryMethods(PreprocessedEiderObject object)
     {
         List<MethodSpec> results = new ArrayList<>();
-
 
         MethodSpec.Builder builder = MethodSpec.constructorBuilder()
             .addJavadoc("constructor")
@@ -1278,6 +1278,7 @@ public class AgronaSpecGenerator
                 }
                 if (property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
                 {
+                    results.add(buildInternalBufferAllocator(object));
                     results.add(buildSequenceGenerator(property));
                     results.add(buildSequenceInitialize(property));
                 }
@@ -1285,6 +1286,25 @@ public class AgronaSpecGenerator
         }
 
         return results;
+    }
+
+    private MethodSpec buildInternalBufferAllocator(PreprocessedEiderObject object)
+    {
+        final ClassName genObj = ClassName.get("", object.getName());
+        final TypeName typeEab = TypeName.get(ExpandableArrayBuffer.class);
+        final String objectName = object.getName();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("INSTANCE")
+            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(Modifier.STATIC)
+            .returns(genObj)
+            .addJavadoc("Constructs an instance of this object with an internally allocated buffer.");
+
+        builder.addStatement("final DirectBuffer buffer = new $T(BUFFER_LENGTH)", typeEab);
+        builder.addStatement("final " + objectName + " instance = new " + objectName + "()");
+        builder.addStatement("instance.setBufferWriteHeader(buffer, 0)");
+        builder.addStatement("return instance");
+        return builder.build();
     }
 
     private MethodSpec genWritePropertyWithPadding(PreprocessedEiderProperty property)
