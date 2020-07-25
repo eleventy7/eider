@@ -1509,7 +1509,7 @@ public class AgronaSpecGenerator
         {
             return "return buffer.getShort(initialOffset + " + getOffsetName(property.getName())
                 +
-                ") == (byte)1";
+                ")";
         }
         return "// unsupported type " + property.getType().name();
     }

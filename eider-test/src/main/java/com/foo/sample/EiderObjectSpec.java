@@ -26,6 +26,7 @@ public class EiderObjectSpec
 {
     @EiderAttribute(key = true)
     private int id;
+    private short field;
     private long timestamp;
     @EiderAttribute(indexed = true)
     private boolean enabled;

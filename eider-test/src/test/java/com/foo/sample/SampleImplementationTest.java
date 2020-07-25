@@ -170,7 +170,7 @@ class SampleImplementationTest
         //when can no longer append (exceeds capacity), should return null
         flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assertNull(flyWrite);
-        assertEquals(294084336, repository.getCrc32());
+        assertEquals(665883171, repository.getCrc32());
     }
 
     @Test
@@ -209,12 +209,12 @@ class SampleImplementationTest
         flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(0));
         assertNotNull(flyRead);
         assertFalse(flyRead.readEnabled());
-        assertEquals("CUSIP0002", flyRead.readCusip());
+        assertEquals("CUSIP0003", flyRead.readCusip());
 
         flyRead = repository.getByBufferOffset(allEnabledEqualFalse.get(1));
         assertNotNull(flyRead);
         assertFalse(flyRead.readEnabled());
-        assertEquals("CUSIP0003", flyRead.readCusip());
+        assertEquals("CUSIP0002", flyRead.readCusip());
 
     }
 
@@ -384,7 +384,7 @@ class SampleImplementationTest
         assert flyRead != null;
         assertEquals("CUSIP0002", flyRead.readCusip());
 
-        flyRead = repository.getByBufferOffset(31);
+        flyRead = repository.getByBufferOffset(EiderObject.BUFFER_LENGTH + 1);
         assert flyRead != null;
         assertEquals("CUSIP0002", flyRead.readCusip());
 
@@ -392,13 +392,13 @@ class SampleImplementationTest
         assert flyRead != null;
         assertEquals("CUSIP0003", flyRead.readCusip());
 
-        flyRead = repository.getByBufferOffset(62);
+        flyRead = repository.getByBufferOffset((EiderObject.BUFFER_LENGTH * 2) + 2);
         assert flyRead != null;
         assertEquals("CUSIP0003", flyRead.readCusip());
 
         flyWrite = repository.getByBufferOffset(3);
         assertNull(flyWrite);
-        assertEquals(1059653546L, repository.getCrc32());
+        assertEquals(2276448055L, repository.getCrc32());
     }
 
     @Test
