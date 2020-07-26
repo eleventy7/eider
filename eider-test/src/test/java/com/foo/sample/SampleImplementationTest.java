@@ -170,7 +170,7 @@ class SampleImplementationTest
         //when can no longer append (exceeds capacity), should return null
         flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assertNull(flyWrite);
-        assertEquals(665883171, repository.getCrc32());
+        assertEquals(201450551L, repository.getCrc32());
     }
 
     @Test
@@ -398,7 +398,7 @@ class SampleImplementationTest
 
         flyWrite = repository.getByBufferOffset(3);
         assertNull(flyWrite);
-        assertEquals(2276448055L, repository.getCrc32());
+        assertEquals(2255832961L, repository.getCrc32());
     }
 
     @Test

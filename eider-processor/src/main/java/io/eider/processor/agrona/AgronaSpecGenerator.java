@@ -16,7 +16,6 @@ import io.eider.processor.PreprocessedEiderProperty;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Int2ObjectHashMap;
@@ -374,10 +373,11 @@ public class AgronaSpecGenerator
             .addStatement("flyweight = new " + object.getName() + "()")
             .addStatement("appendFlyweight = new " + object.getName() + "()")
             .addStatement("maxCapacity = capacity")
-            .addStatement("repositoryBufferLength = capacity * "
+            .addStatement("repositoryBufferLength = (capacity * "
                 +
-                object.getName() + ".BUFFER_LENGTH")
-            .addStatement("internalBuffer = new ExpandableDirectByteBuffer(repositoryBufferLength)")
+                object.getName() + ".BUFFER_LENGTH) + capacity")
+            .addStatement("internalBuffer = new "
+                + "UnsafeBuffer(java.nio.ByteBuffer.allocateDirect(repositoryBufferLength + 1))")
             .addStatement("internalBuffer.setMemory(0, repositoryBufferLength, (byte)0)")
             .addStatement("offsetByKey = new Int2IntHashMap(Integer.MIN_VALUE)")
             .addStatement("validOffsets = new IntHashSet()")
@@ -387,7 +387,8 @@ public class AgronaSpecGenerator
         {
             builder.addStatement("offsetByKeyCopy = new Int2IntHashMap(Integer.MIN_VALUE)");
             builder.addStatement("validOffsetsCopy = new IntHashSet()");
-            builder.addStatement("transactionCopy = new ExpandableDirectByteBuffer(repositoryBufferLength)");
+            builder.addStatement("transactionCopy = new "
+                + "UnsafeBuffer(java.nio.ByteBuffer.allocateDirect(repositoryBufferLength  + 1))");
         }
 
         for (PreprocessedEiderProperty prop : indexFields(object))
@@ -625,7 +626,7 @@ public class AgronaSpecGenerator
         List<FieldSpec> results = new ArrayList<>();
 
         results.add(FieldSpec
-            .builder(ExpandableDirectByteBuffer.class, INTERNAL_BUFFER)
+            .builder(UnsafeBuffer.class, INTERNAL_BUFFER)
             .addJavadoc("The internal MutableDirectBuffer holding capacity instances.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
@@ -798,7 +799,7 @@ public class AgronaSpecGenerator
                 .build());
 
             results.add(FieldSpec
-                .builder(ExpandableDirectByteBuffer.class, "transactionCopy")
+                .builder(UnsafeBuffer.class, "transactionCopy")
                 .addJavadoc("The MutableDirectBuffer used internally for rollbacks.")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
@@ -1039,9 +1040,9 @@ public class AgronaSpecGenerator
                 .build());
 
             results.add(FieldSpec
-                .builder(ExpandableDirectByteBuffer.class, "transactionCopy")
+                .builder(UnsafeBuffer.class, "transactionCopy")
                 .addJavadoc("The MutableDirectBuffer used internally for rollbacks.")
-                .initializer("new ExpandableDirectByteBuffer(BUFFER_LENGTH)")
+                .initializer("new UnsafeBuffer(java.nio.ByteBuffer.allocateDirect(BUFFER_LENGTH + 1))")
                 .addModifiers(Modifier.PRIVATE)
                 .build());
         }
