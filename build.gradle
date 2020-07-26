@@ -145,6 +145,7 @@ project('eider-processor') {
         sourceSets = [project.sourceSets.main]
     }
 
+
     dependencies {
         implementation "org.agrona:agrona:1.6.0"
         implementation 'com.squareup:javapoet:1.13.0'
@@ -205,6 +206,11 @@ project('eider-test') {
         sourceSets = [project.sourceSets.main]
     }
 
+    task cleanUpJmh(type: Delete) {
+        delete 'build/generated/sources/annotationProcessor/java/jmh'
+        followSymlinks = false
+    }
+
     compileJava {
         String relativePath = "build/generated/src/main/java"
         sourceSets.main.java { srcDir relativePath }
@@ -213,6 +219,7 @@ project('eider-test') {
         project.mkdir(generatedSourceDir)
         options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
         outputs.dir(generatedSourceDir)
+        dependsOn(cleanUpJmh)
     }
 
     compileGeneratedJava {
@@ -239,6 +246,7 @@ project('eider-test') {
         testImplementation sourceSets.generated.output
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
+
 
     task jmh(type: JavaExec, description: 'Executing JMH benchmarks') {
         classpath = sourceSets.jmh.runtimeClasspath
