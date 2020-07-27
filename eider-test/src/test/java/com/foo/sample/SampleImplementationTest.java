@@ -129,15 +129,11 @@ class SampleImplementationTest
     @Test
     void sequencesWork()
     {
-        final SequenceGenerator generator = new SequenceGenerator();
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setBufferWriteHeader(buffer, 0);
+        final SequenceGenerator generator =  SequenceGenerator.INSTANCE();
 
-        generator.initializeOrderId(1);
-
-        final int nextOrderIdSequence = generator.nextOrderIdSequence();
-
-        assertEquals(2, nextOrderIdSequence);
+        assertEquals(1, generator.nextOrderIdSequence());
+        assertEquals(2, generator.nextOrderIdSequence());
+        assertEquals(3, generator.nextOrderIdSequence());
     }
 
     @Test
@@ -145,9 +141,7 @@ class SampleImplementationTest
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
-        final SequenceGenerator generator = new SequenceGenerator();
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setUnderlyingBuffer(buffer, 0);
+        final SequenceGenerator generator = SequenceGenerator.INSTANCE();
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assert flyWrite != null;
@@ -406,9 +400,7 @@ class SampleImplementationTest
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
-        final SequenceGenerator generator = new SequenceGenerator();
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setUnderlyingBuffer(buffer, 0);
+        final SequenceGenerator generator = SequenceGenerator.INSTANCE();
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assert flyWrite != null;
@@ -464,9 +456,7 @@ class SampleImplementationTest
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(1);
 
-        final SequenceGenerator generator = new SequenceGenerator();
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setUnderlyingBuffer(buffer, 0);
+        final SequenceGenerator generator = SequenceGenerator.INSTANCE();
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assert flyWrite != null;
@@ -511,9 +501,7 @@ class SampleImplementationTest
     {
         final EiderObjectRepository repository = EiderObjectRepository.createWithCapacity(2);
 
-        final SequenceGenerator generator = new SequenceGenerator();
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(SequenceGenerator.BUFFER_LENGTH);
-        generator.setUnderlyingBuffer(buffer, 0);
+        final SequenceGenerator generator = SequenceGenerator.INSTANCE();
 
         EiderObject flyWrite = repository.appendWithKey(generator.nextOrderIdSequence());
         assert flyWrite != null;

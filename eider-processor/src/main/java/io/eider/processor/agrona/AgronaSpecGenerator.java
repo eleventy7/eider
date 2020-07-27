@@ -15,7 +15,6 @@ import io.eider.processor.PreprocessedEiderObject;
 import io.eider.processor.PreprocessedEiderProperty;
 
 import org.agrona.DirectBuffer;
-import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Int2ObjectHashMap;
@@ -1280,7 +1279,7 @@ public class AgronaSpecGenerator
     private MethodSpec buildInternalBufferAllocator(PreprocessedEiderObject object)
     {
         final ClassName genObj = ClassName.get("", object.getName());
-        final TypeName typeEab = TypeName.get(ExpandableArrayBuffer.class);
+        final TypeName typeEab = TypeName.get(UnsafeBuffer.class);
         final String objectName = object.getName();
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder("INSTANCE")
@@ -1289,9 +1288,16 @@ public class AgronaSpecGenerator
             .returns(genObj)
             .addJavadoc("Constructs an instance of this object with an internally allocated buffer.");
 
-        builder.addStatement("final DirectBuffer buffer = new $T(BUFFER_LENGTH)", typeEab);
+        builder.addStatement("final UnsafeBuffer buffer = new $T(java.nio.ByteBuffer."
+            + "allocateDirect(BUFFER_LENGTH))", typeEab);
         builder.addStatement("final " + objectName + " instance = new " + objectName + "()");
         builder.addStatement("instance.setBufferWriteHeader(buffer, 0)");
+
+        for (final PreprocessedEiderProperty property : object.getPropertyList())
+        {
+            builder.addStatement("instance.initialize" + upperFirst(property.getName() + "(1)"));
+        }
+
         builder.addStatement("return instance");
         return builder.build();
     }
@@ -1331,8 +1337,9 @@ public class AgronaSpecGenerator
 
     private MethodSpec buildSequenceGenerator(PreprocessedEiderProperty property)
     {
-        final String read = "read" + upperFirst(property.getName());
-        final String init = "initialize" + upperFirst(property.getName());
+        //final String read = "read" + upperFirst(property.getName());
+        final String offset = property.getName().toUpperCase() + "_OFFSET";
+        //final String init = "initialize" + upperFirst(property.getName());
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder("next" + upperFirst(property.getName())
             +
@@ -1340,9 +1347,9 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PUBLIC)
             .returns(fromType(property.getType()))
             .addJavadoc("Increments and returns the sequence in field " + property.getName() + ".")
-            .addStatement("final " + fromTypeToStr(property.getType()) + " currentVal = " + read + "()")
-            .addStatement(init + "(currentVal + 1)")
-            .addStatement("return " + read + "()");
+            .addStatement("final " + fromTypeToStr(property.getType()) + " currentVal = "
+                + "unsafeBuffer.getAndAddInt(initialOffset + " + offset + ", 1)")
+            .addStatement("return currentVal");
 
         return builder.build();
     }
