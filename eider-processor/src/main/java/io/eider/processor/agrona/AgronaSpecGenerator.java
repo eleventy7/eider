@@ -1337,9 +1337,9 @@ public class AgronaSpecGenerator
 
     private MethodSpec buildSequenceGenerator(PreprocessedEiderProperty property)
     {
-        //final String read = "read" + upperFirst(property.getName());
+        final String read = "read" + upperFirst(property.getName());
         final String offset = property.getName().toUpperCase() + "_OFFSET";
-        //final String init = "initialize" + upperFirst(property.getName());
+        final String init = "initialize" + upperFirst(property.getName());
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder("next" + upperFirst(property.getName())
             +
@@ -1347,9 +1347,14 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PUBLIC)
             .returns(fromType(property.getType()))
             .addJavadoc("Increments and returns the sequence in field " + property.getName() + ".")
+            .beginControlFlow("if (isUnsafe)")
             .addStatement("final " + fromTypeToStr(property.getType()) + " currentVal = "
                 + "unsafeBuffer.getAndAddInt(initialOffset + " + offset + ", 1)")
-            .addStatement("return currentVal");
+            .addStatement("return currentVal")
+            .endControlFlow()
+            .addStatement("final " + fromTypeToStr(property.getType()) + " safeCurrentVal = " + read + "()")
+            .addStatement(init + "(safeCurrentVal + 1)")
+            .addStatement("return " + read + "()");
 
         return builder.build();
     }
