@@ -215,7 +215,6 @@ project('eider-test') {
         String relativePath = "build/generated/src/main/java"
         sourceSets.main.java { srcDir relativePath }
         File generatedSourceDir = project.file("build/generated/src/main/java")
-        println "Creating and configuring generated source directory $generatedSourceDir"
         project.mkdir(generatedSourceDir)
         options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
         outputs.dir(generatedSourceDir)
@@ -264,6 +263,6 @@ sonarqube {
 }
 
 wrapper {
-    gradleVersion = '6.5.1'
+    gradleVersion = '6.6'
     distributionType = 'ALL'
 }
