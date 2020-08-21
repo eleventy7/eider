@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<eider>
+    <enums>
+        <enum name="Family" encodingType="short">
+            <validValue name="HIGH_YIELD">0</validValue>
+            <validValue name="INVESTMENT_GRADE">1</validValue>
+        </enum>
+        <enum name="Vendor" encodingType="short">
+            <validValue name="BBG">0</validValue>
+            <validValue name="IDC">1</validValue>
+        </enum>
+    </enums>
+    <types>
+        <type name="InstrumentEntry">
+            <field name="timestampUpdated" primitiveType="long"/>
+            <field name="minQty" primitiveType="short"/>
+            <field name="id" primitiveType="short"/>
+            <field name="family" type="Family"/>
+            <field name="vendor" type="Vendor"/>
+        </type>
+    </types>
+    <messages>
+        <message name="AddInstrument">
+            <field name="timestampUpdated" primitiveType="long"/>
+            <field name="minQty" primitiveType="short"/>
+            <field name="id" primitiveType="short"/>
+            <field name="family" type="Family"/>
+            <field name="vendor" type="Vendor"/>
+        </message>
+    </messages>
+    <repositories>
+        <repository name="Instruments" transactional="true" replication="true" snapshotting="true">
+            <setOf name="instruments" type="InstrumentEntry" keyfield="InstrumentEntry.id"/>
+            <indexes>
+                <unorderedIndex source="InstrumentEntry.id"/>
+                <unorderedIndex source="InstrumentEntry.family"/>
+                <unorderedIndex source="InstrumentEntry.vendor"/>
+                <orderedIndex source="InstrumentEntry.timestampUpdated"/>
+            </indexes>
+        </repository>
+    </repositories>
+</eider>
