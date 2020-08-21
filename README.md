@@ -2,7 +2,7 @@
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java) [![Known Vulnerabilities](https://snyk.io/test/github/eleventy7/eider/badge.svg?targetFile=build.gradle)](https://snyk.io/test/github/eleventy7/eider?targetFile=build.gradle)
 
-Annotation based flyweight generator. Suitable for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit. Only suitable for single threaded usage scenarios.
+Annotation based flyweight generator built for fast iteration while developing [Aeron Cookbook](https://aeroncookbook.com). Intended for messages over Aeron and Aeron IPC when all processes are built and deployed as a single unit. Only suitable for single threaded usage scenarios. *Not considered to be suitable for production*.
 
 Given a specification object, Eider generates a zero-copy flyweight that can be used to read and write to a buffer with random access. The original specification object is not used at runtime. The generated flyweight has no runtime dependencies beyond Java and the target buffer implementation.
 
@@ -41,11 +41,6 @@ Current features:
     - Complex transactional objects read and write around 1.2 million messages/second (a roundtrip of around 0.82μs) 
     - Simple non-transactional objects read and write at around 175 million messages/second (a roundtrip of around 5.7ns)
 
-Features that may be added to future versions:
-
-- Transaction support in the composite repositories
-- JEP 370, JEP 383 and Intel PCJ (https://github.com/pmem/pcj) implementations
-
 Features not planned for future releases:
 
 - byte[], BigDecimal, char or other type support
@@ -57,6 +52,7 @@ Features not planned for future releases:
 - mulitple variable length fields
 - repeating groups and sub-objects
 - Nullable objects with customizable null representations 
+- Maven Central publishing
 
 ### Flyweight Sample
 
