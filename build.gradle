@@ -149,7 +149,7 @@ project('eider-processor') {
     dependencies {
         implementation "org.agrona:agrona:1.6.0"
         implementation 'com.squareup:javapoet:1.13.0'
-        implementation "org.openjdk.jmh:jmh-core:1.25"
+        implementation "org.openjdk.jmh:jmh-core:1.25.1"
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
@@ -235,7 +235,7 @@ project('eider-test') {
         jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.25.1"
         implementation project(path: ':eider-processor')
         implementation "org.agrona:agrona:1.6.0"
-        implementation "org.openjdk.jmh:jmh-core:1.25"
+        implementation "org.openjdk.jmh:jmh-core:1.25.1"
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
