@@ -359,10 +359,10 @@ while (repository.allItems().hasNext())
 
 ### Where is this useful?
 
-It's primarily being used for another project with messages sent over Aeron and Aeron Cluster byte buffers, plus data held within a Replicated State Machine running within Aeron Cluster. 
+It's primarily being used for another project (aeroncookbook.com) with messages sent over Aeron and Aeron Cluster byte buffers, plus data held within a Replicated State Machine running within Aeron Cluster. It is not used in production and is not suitable for production use. 
  
 ### Requirements
 
 - Java 11
 - Gradle 6.6.1
-- Agrona 1.6.0
+- Agrona 1.7.0
