@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 plugins {
     id 'java'
     id 'idea'
@@ -102,6 +101,8 @@ allprojects {
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
         checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.36'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
+        implementation "org.openjdk.jmh:jmh-core:1.25.1"
+        implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
 
     tasks.withType(Checkstyle) {
@@ -145,17 +146,8 @@ project('eider-processor') {
         sourceSets = [project.sourceSets.main]
     }
 
-
     dependencies {
-        implementation "org.agrona:agrona:1.6.0"
         implementation 'com.squareup:javapoet:1.13.0'
-        implementation "org.openjdk.jmh:jmh-core:1.25.1"
-        implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.36'
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
 
     publishing {
@@ -231,19 +223,10 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhCompile project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.25"
-        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.25.1"
         implementation project(path: ':eider-processor')
-        implementation "org.agrona:agrona:1.6.0"
-        implementation "org.openjdk.jmh:jmh-core:1.25.1"
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.6.2'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.36'
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.2'
     }
 
 
@@ -263,6 +246,6 @@ sonarqube {
 }
 
 wrapper {
-    gradleVersion = '6.6'
+    gradleVersion = '6.6.1'
     distributionType = 'ALL'
 }
