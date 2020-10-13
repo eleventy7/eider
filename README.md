@@ -359,6 +359,6 @@ It's primarily being used for another project with messages sent over Aeron and 
  
 ### Requirements
 
-- Java 11
-- Gradle 6.5.1
-- Agrona 1.6.0
+- Java 15
+- Gradle 6.6.1
+- Agrona 1.8.0
