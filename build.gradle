@@ -221,7 +221,7 @@ project('eider-test') {
 
     dependencies {
         annotationProcessor project(':eider-processor')
-        jmhCompile project
+        jmhImplementation project
         jmhImplementation "org.openjdk.jmh:jmh-core:1.26"
         jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.26"
         implementation project(path: ':eider-processor')
@@ -248,6 +248,6 @@ sonarqube {
 }
 
 wrapper {
-    gradleVersion = '6.6.1'
+    gradleVersion = '6.7'
     distributionType = 'ALL'
 }

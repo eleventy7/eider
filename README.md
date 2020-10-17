@@ -360,5 +360,5 @@ It's primarily being used for another project with messages sent over Aeron and 
 ### Requirements
 
 - Java 15
-- Gradle 6.6.1
+- Gradle 6.7
 - Agrona 1.8.0
