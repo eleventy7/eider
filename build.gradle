@@ -99,7 +99,7 @@ allprojects {
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.0'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.36.2'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.39'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.0'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
@@ -108,7 +108,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '8.36.2'
+            toolVersion = '8.39'
             ignoreFailures = false
             showViolations = true
         }
@@ -222,11 +222,11 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhImplementation project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.26"
-        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.26"
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.27"
+        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.27"
         implementation project(path: ':eider-processor')
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation "org.openjdk.jmh:jmh-core:1.26"
+        implementation "org.openjdk.jmh:jmh-core:1.27"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
     }
@@ -248,6 +248,6 @@ sonarqube {
 }
 
 wrapper {
-    gradleVersion = '6.7'
+    gradleVersion = '6.8'
     distributionType = 'ALL'
 }
