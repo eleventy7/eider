@@ -27,7 +27,7 @@ defaultTasks 'clean', 'check', 'build', 'test'
 
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
-def javaVersion = JavaVersion.VERSION_11
+def javaVersion = JavaVersion.VERSION_15
 
 def propFile = file('sonar.properties')
 def sonar_login;
@@ -219,6 +219,12 @@ project('eider-test') {
         testImplementation sourceSets.generated.output
     }
 
+    compileGeneratedJava.dependsOn(compileJava)
+    checkstyleMain.dependsOn(compileGeneratedJava)
+    compileJmhJava.dependsOn(compileGeneratedJava)
+    checkstyleGenerated.dependsOn(compileJmhJava)
+    checkstyleGenerated.dependsOn(compileJmhJava)
+    compileJmhJava.dependsOn(compileTestJava)
 
     task jmh(type: JavaExec, description: 'Executing JMH benchmarks') {
         classpath = sourceSets.jmh.runtimeClasspath
