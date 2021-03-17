@@ -27,7 +27,7 @@ defaultTasks 'clean', 'check', 'build', 'test'
 
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
-def javaVersion = JavaVersion.VERSION_15
+def javaVersion = JavaVersion.VERSION_16
 
 def propFile = file('sonar.properties')
 def sonar_login;
@@ -107,7 +107,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '8.40'
+            toolVersion = '8.41'
             ignoreFailures = false
             showViolations = true
         }
@@ -210,11 +210,11 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhImplementation project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.27"
-        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.27"
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.28"
+        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.28"
         implementation project(path: ':eider-processor')
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation "org.openjdk.jmh:jmh-core:1.27"
+        implementation "org.openjdk.jmh:jmh-core:1.28"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
     }
@@ -239,9 +239,4 @@ sonarqube {
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.login", sonar_login
     }
-}
-
-wrapper {
-    gradleVersion = '6.8.2'
-    distributionType = 'ALL'
 }
