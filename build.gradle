@@ -113,6 +113,12 @@ allprojects {
         }
     }
 
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(16))
+        }
+    }
+
     test {
         useJUnitPlatform()
         jvmArgs('--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED')
