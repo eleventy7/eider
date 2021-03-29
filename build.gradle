@@ -98,7 +98,7 @@ allprojects {
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.1'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.40'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.41.1'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
