@@ -216,7 +216,7 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhImplementation project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.28"
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.30"
         jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.28"
         implementation project(path: ':eider-processor')
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
