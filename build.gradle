@@ -94,11 +94,11 @@ allprojects {
     }
 
     dependencies {
-        implementation group: 'org.agrona', name: 'agrona', version: '1.9.0'
+        implementation group: 'org.agrona', name: 'agrona', version: '1.10.0'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.1'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.40'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.42'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
@@ -107,7 +107,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '8.41'
+            toolVersion = '8.42'
             ignoreFailures = false
             showViolations = true
         }
@@ -216,11 +216,11 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhImplementation project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.28"
-        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.28"
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.30"
+        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.30"
         implementation project(path: ':eider-processor')
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation "org.openjdk.jmh:jmh-core:1.28"
+        implementation "org.openjdk.jmh:jmh-core:1.30"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
     }
