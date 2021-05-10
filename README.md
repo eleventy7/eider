@@ -362,5 +362,5 @@ It's primarily being used for another project with messages sent over Aeron and 
 ### Requirements
 
 - Java 16
-- Gradle 7 nightly (until 7 is GA)
-- Agrona 1.9.0
+- Gradle 7 
+- Agrona 1.10.0
