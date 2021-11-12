@@ -40,7 +40,7 @@ import io.eider.annotation.EiderSpec;
     "io.eider.annotation.EiderSpec",
     "io.eider.annotation.EiderComposite"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class EiderAnnotationProcessor extends AbstractProcessor
 {
     public static final String STRING = "java.lang.String";

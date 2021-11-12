@@ -27,7 +27,7 @@ defaultTasks 'clean', 'check', 'build', 'test'
 
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
-def javaVersion = JavaVersion.VERSION_16
+def javaVersion = JavaVersion.VERSION_17
 
 def propFile = file('sonar.properties')
 def sonar_login;
@@ -96,10 +96,10 @@ allprojects {
     dependencies {
         implementation group: 'org.agrona', name: 'agrona', version: '1.12.0'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.32'
-        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.5'
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.7.2'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '8.45.1'
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.2'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.6'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.1'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '9.1'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.1'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
 
@@ -107,7 +107,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '8.43'
+            toolVersion = '8.45'
             ignoreFailures = false
             showViolations = true
         }
@@ -115,7 +115,7 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(16))
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
     }
 
