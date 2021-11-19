@@ -19,6 +19,7 @@ package io.eider.processor;
 public enum EiderPropertyType
 {
     BOOLEAN,
+    DOUBLE,
     SHORT,
     INT,
     LONG,
@@ -37,6 +38,8 @@ public enum EiderPropertyType
                 return LONG;
             case "boolean":
                 return BOOLEAN;
+            case "double":
+                return DOUBLE;
             default:
                 return INVALID;
         }

@@ -1466,6 +1466,12 @@ public class AgronaSpecGenerator
                 +
                 ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
         }
+        else if (property.getType() == EiderPropertyType.DOUBLE)
+        {
+            return "mutableBuffer.putDouble(initialOffset + " + getOffsetName(property.getName())
+                +
+                ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
+        }
         else if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
             return "mutableBuffer.putStringWithoutLengthAscii(initialOffset + " + getOffsetName(property.getName())
@@ -1521,6 +1527,12 @@ public class AgronaSpecGenerator
         else if (property.getType() == EiderPropertyType.SHORT)
         {
             return "return buffer.getShort(initialOffset + " + getOffsetName(property.getName())
+                +
+                ")";
+        }
+        else if (property.getType() == EiderPropertyType.DOUBLE)
+        {
+            return "return buffer.getDouble(initialOffset + " + getOffsetName(property.getName())
                 +
                 ")";
         }

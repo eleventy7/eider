@@ -34,6 +34,8 @@ public final class Util
                 return boolean.class;
             case FIXED_STRING:
                 return String.class;
+            case DOUBLE:
+                return Double.class;
             default:
                 return int.class;
         }
@@ -52,6 +54,8 @@ public final class Util
                 return Boolean.class;
             case FIXED_STRING:
                 return String.class;
+            case DOUBLE:
+                return Double.class;
             default:
                 return Integer.class;
         }
@@ -82,6 +86,8 @@ public final class Util
                 return 1;
             case SHORT:
                 return Short.BYTES;
+            case DOUBLE:
+                return Double.BYTES;
             case FIXED_STRING:
                 return Integer.parseInt(annotations.get(AttributeConstants.MAXLENGTH));
             default:
@@ -103,6 +109,8 @@ public final class Util
                 return "boolean";
             case FIXED_STRING:
                 return "String";
+            case DOUBLE:
+                return "double";
             default:
                 return "invalid";
         }

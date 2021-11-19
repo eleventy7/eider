@@ -30,4 +30,5 @@ public class OrderSpec
     private long quantity;
     @EiderAttribute(maxLength = 9)
     private String instrument;
+    private double foo;
 }
