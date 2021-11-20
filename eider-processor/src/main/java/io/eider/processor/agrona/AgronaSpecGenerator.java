@@ -838,14 +838,19 @@ public class AgronaSpecGenerator
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
             .addModifiers(Modifier.PUBLIC)
-            .addField(buildEiderIdField(object.getEiderId()))
-            .addField(buildEiderGroupIdField(object.getEiderGroupId()))
-            .addFields(offsetsForFields(object, state, globalState))
+            .addField(buildEiderIdField(object.getEiderId(), object.mustBuildHeader()));
+
+        builder.addFields(offsetsForFields(object, state, globalState))
             .addFields(internalFields(object))
             .addMethod(buildSetUnderlyingBuffer(object))
-            .addMethod(buildSetUnderlyingBufferAndWriteHeader())
             .addMethod(buildEiderId())
             .addMethods(forInternalFields(object));
+
+        if (object.mustBuildHeader())
+        {
+            builder.addField(buildEiderGroupIdField(object.getEiderGroupId()))
+                .addMethod(buildSetUnderlyingBufferAndWriteHeader());
+        }
 
         if (object.isTransactional())
         {
@@ -1091,38 +1096,41 @@ public class AgronaSpecGenerator
     {
         List<FieldSpec> results = new ArrayList<>();
 
-        results.add(FieldSpec
-            .builder(int.class, "HEADER_OFFSET")
-            .addJavadoc("The offset for the EIDER_ID within the buffer.")
-            .addModifiers(Modifier.STATIC)
-            .addModifiers(Modifier.PRIVATE)
-            .addModifiers(Modifier.FINAL)
-            .initializer(Integer.toString(state.getCurrentOffset()))
-            .build());
+        if (object.mustBuildHeader())
+        {
+            results.add(FieldSpec
+                .builder(int.class, "HEADER_OFFSET")
+                .addJavadoc("The offset for the EIDER_ID within the buffer.")
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.FINAL)
+                .initializer(Integer.toString(state.getCurrentOffset()))
+                .build());
 
-        state.extendCurrentOffset(Short.BYTES);
+            state.extendCurrentOffset(Short.BYTES);
 
-        results.add(FieldSpec
-            .builder(int.class, "HEADER_GROUP_OFFSET")
-            .addJavadoc("The offset for the EIDER_GROUP_IP within the buffer.")
-            .addModifiers(Modifier.STATIC)
-            .addModifiers(Modifier.PRIVATE)
-            .addModifiers(Modifier.FINAL)
-            .initializer(Integer.toString(state.getCurrentOffset()))
-            .build());
+            results.add(FieldSpec
+                .builder(int.class, "HEADER_GROUP_OFFSET")
+                .addJavadoc("The offset for the EIDER_GROUP_IP within the buffer.")
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.FINAL)
+                .initializer(Integer.toString(state.getCurrentOffset()))
+                .build());
 
-        state.extendCurrentOffset(Short.BYTES);
+            state.extendCurrentOffset(Short.BYTES);
 
-        results.add(FieldSpec
-            .builder(int.class, "LENGTH_OFFSET")
-            .addJavadoc("The length offset. Required for segmented buffers.")
-            .addModifiers(Modifier.STATIC)
-            .addModifiers(Modifier.PRIVATE)
-            .addModifiers(Modifier.FINAL)
-            .initializer(Integer.toString(state.getCurrentOffset()))
-            .build());
+            results.add(FieldSpec
+                .builder(int.class, "LENGTH_OFFSET")
+                .addJavadoc("The length offset. Required for segmented buffers.")
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.FINAL)
+                .initializer(Integer.toString(state.getCurrentOffset()))
+                .build());
 
-        state.extendCurrentOffset(Integer.BYTES);
+            state.extendCurrentOffset(Integer.BYTES);
+        }
 
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -1172,43 +1180,46 @@ public class AgronaSpecGenerator
         List<PreprocessedEiderProperty> propertyList = object.getPropertyList();
         List<MethodSpec> results = new ArrayList<>();
 
-        results.add(
-            MethodSpec.methodBuilder("writeHeader")
-                .addJavadoc("Writes the header data to the buffer.")
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("if (!isMutable) throw new RuntimeException(\"cannot write to immutable buffer\")")
-                .addStatement("mutableBuffer.putShort(initialOffset + HEADER_OFFSET"
-                    +
-                    ", EIDER_ID, "
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
-                .addStatement("mutableBuffer.putShort(initialOffset + HEADER_GROUP_OFFSET"
-                    +
-                    ", EIDER_GROUP_ID, "
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
-                .addStatement("mutableBuffer.putInt(initialOffset + LENGTH_OFFSET"
-                    +
-                    ", BUFFER_LENGTH, "
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
-                .build()
-        );
+        if (object.mustBuildHeader())
+        {
+            results.add(
+                MethodSpec.methodBuilder("writeHeader")
+                    .addJavadoc("Writes the header data to the buffer.")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addStatement("if (!isMutable) throw new RuntimeException(\"cannot write to immutable buffer\")")
+                    .addStatement("mutableBuffer.putShort(initialOffset + HEADER_OFFSET"
+                        +
+                        ", EIDER_ID, "
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
+                    .addStatement("mutableBuffer.putShort(initialOffset + HEADER_GROUP_OFFSET"
+                        +
+                        ", EIDER_GROUP_ID, "
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
+                    .addStatement("mutableBuffer.putInt(initialOffset + LENGTH_OFFSET"
+                        +
+                        ", BUFFER_LENGTH, "
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN)
+                    .build()
+            );
 
-        results.add(
-            MethodSpec.methodBuilder("validateHeader")
-                .addModifiers(Modifier.PUBLIC)
-                .addJavadoc("Validates the length and eiderSpecId in the header "
-                    + "against the expected values. False if invalid.")
-                .returns(boolean.class)
-                .addStatement("final short eiderId = buffer.getShort(initialOffset + HEADER_OFFSET"
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
-                .addStatement("final short eiderGroupId = buffer.getShort(initialOffset + HEADER_GROUP_OFFSET"
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
-                .addStatement("final int bufferLength = buffer.getInt(initialOffset + LENGTH_OFFSET"
-                    + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
-                .addStatement("if (eiderId != EIDER_ID) return false")
-                .addStatement("if (eiderGroupId != EIDER_GROUP_ID) return false")
-                .addStatement("return bufferLength == BUFFER_LENGTH")
-                .build()
-        );
+            results.add(
+                MethodSpec.methodBuilder("validateHeader")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addJavadoc("Validates the length and eiderSpecId in the header "
+                        + "against the expected values. False if invalid.")
+                    .returns(boolean.class)
+                    .addStatement("final short eiderId = buffer.getShort(initialOffset + HEADER_OFFSET"
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                    .addStatement("final short eiderGroupId = buffer.getShort(initialOffset + HEADER_GROUP_OFFSET"
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                    .addStatement("final int bufferLength = buffer.getInt(initialOffset + LENGTH_OFFSET"
+                        + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                    .addStatement("if (eiderId != EIDER_ID) return false")
+                    .addStatement("if (eiderGroupId != EIDER_GROUP_ID) return false")
+                    .addStatement("return bufferLength == BUFFER_LENGTH")
+                    .build()
+            );
+        }
 
         for (PreprocessedEiderProperty prop : indexFields(object))
         {
@@ -1540,11 +1551,21 @@ public class AgronaSpecGenerator
     }
 
 
-    private FieldSpec buildEiderIdField(short eiderId)
+    private FieldSpec buildEiderIdField(short eiderId, boolean hasHeader)
     {
+        final String comment;
+        if (hasHeader)
+        {
+            comment = "The eider spec id for this type. Useful in switch statements to detect type in first 16bits.";
+        }
+        else
+        {
+            comment = "The eider spec id for this type. Not written to the output buffer as there is no header.";
+        }
+
         return FieldSpec
             .builder(short.class, "EIDER_ID")
-            .addJavadoc("The eider spec id for this type. Useful in switch statements to detect type in first 16bits.")
+            .addJavadoc(comment)
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)

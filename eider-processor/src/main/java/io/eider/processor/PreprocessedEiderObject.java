@@ -27,6 +27,7 @@ public class PreprocessedEiderObject
     private final String packageNameGen;
     private final boolean fixedLength;
     private final boolean buildRepository;
+    private final boolean buildHeader;
     private final String repositoryName;
     private final boolean transactional;
     private final boolean transactionalRepository;
@@ -38,7 +39,7 @@ public class PreprocessedEiderObject
                                    final boolean fixedLength,
                                    final boolean buildRepository, final String repositoryName,
                                    final boolean transactional, final boolean transactionalRepository,
-                                   final List<PreprocessedEiderProperty> propertyList)
+                                   final boolean buildHeader, final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
         this.classNameInput = classNameInput;
@@ -51,6 +52,7 @@ public class PreprocessedEiderObject
         this.transactional = transactional;
         this.transactionalRepository = transactionalRepository;
         this.propertyList = propertyList;
+        this.buildHeader = buildHeader;
     }
 
     public String getName()
@@ -106,5 +108,10 @@ public class PreprocessedEiderObject
     public boolean isTransactionalRepository()
     {
         return transactionalRepository;
+    }
+
+    public boolean mustBuildHeader()
+    {
+        return buildHeader;
     }
 }

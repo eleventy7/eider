@@ -15,13 +15,15 @@ Current features:
 - Generate zero-copy flyweights that support fixed length objects
     - supports multiple underlying buffers including `UnsafeBuffer`, `MutableDirectBuffer` and `DirectBuffer` implementations. Object adjusts internally depending on the provided buffer implementation, making it simpler to work with in read only paths such as Aeron `Subscriptions` and `EgressListeners`.
     - Type support is limited to:
+        - double  
         - boolean
         - short
         - int
         - long
         - fixed length ASCII strings. Use `WithPadding` variants to write with padding (this is useful for reused flyweights). In all cases, trailing space chars get trimmed on read.
-- Generates a helper to detect message types in a buffer
-    - see Aeron Cookbook for [sample in use](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)      
+- Optional Header generation plus a helper to detect message types in a buffer
+    - see Aeron Cookbook for [sample in use](https://github.com/eleventy7/aeron-cookbook-code/blob/master/cluster-core/src/main/java/com/aeroncookbook/cluster/rsm/node/RsmDemuxer.java)
+    - headers can be turned off for use with Agrona RingBuffer implementations which has a built-in message type id header.
 - Sequence Generator
 - Optional repositories
     - Note! Repositories hold data within internal buffers and maps. This will cause allocation.
@@ -51,7 +53,7 @@ Features not planned for future releases:
 - thread safety
 - schema validation
 - migrations
-- mulitple variable length fields
+- multiple variable length fields
 - repeating groups and sub-objects
 - Nullable objects with customizable null representations 
 - Maven Central publishing

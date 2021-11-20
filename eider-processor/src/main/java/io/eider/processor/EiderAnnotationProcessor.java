@@ -354,6 +354,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             repositoryName,
             annotation.transactional(),
             enableTransactionalRepository,
+            annotation.header(),
             preprocessedEiderProperties);
 
         objects.add(obj);

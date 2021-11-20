@@ -30,4 +30,5 @@ public @interface EiderSpec
     boolean transactional() default false;
     String name() default "";
     short eiderGroup() default 1;
+    boolean header() default true;
 }

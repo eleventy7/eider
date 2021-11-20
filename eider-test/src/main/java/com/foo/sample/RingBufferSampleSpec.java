@@ -16,18 +16,13 @@
 
 package com.foo.sample;
 
-import io.eider.annotation.EiderAttribute;
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(name = "Order")
-public class OrderSpec
+@EiderSpec(name = "RingBufferFlyweight", header = false)
+public class RingBufferSampleSpec
 {
-    @EiderAttribute(maxLength = 14)
-    private String clOrdId;
-    @EiderAttribute(maxLength = 1)
-    private String side;
+    private short side;
     private long price;
     private long quantity;
-    @EiderAttribute(maxLength = 9)
-    private String instrument;
+    private short asset;
 }
