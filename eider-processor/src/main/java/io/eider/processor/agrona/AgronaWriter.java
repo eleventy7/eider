@@ -16,29 +16,29 @@
 
 package io.eider.processor.agrona;
 
-import static io.eider.processor.agrona.Constants.BUFFER;
-import static io.eider.processor.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
-import static io.eider.processor.agrona.Constants.OFFSET;
-
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.JavaFileObject;
-
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-
 import com.squareup.javapoet.TypeVariableName;
-
-import org.agrona.DirectBuffer;
 
 import io.eider.processor.EiderCodeWriter;
 import io.eider.processor.PreprocessedEiderComposite;
 import io.eider.processor.PreprocessedEiderObject;
+import io.eider.processor.PreprocessedEiderRepeatableRecord;
+
+import org.agrona.DirectBuffer;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.eider.processor.agrona.Constants.BUFFER;
+import static io.eider.processor.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
+import static io.eider.processor.agrona.Constants.OFFSET;
 
 public class AgronaWriter implements EiderCodeWriter
 {
@@ -46,7 +46,9 @@ public class AgronaWriter implements EiderCodeWriter
     private final AgronaSpecGenerator specGenerator = new AgronaSpecGenerator();
 
     @Override
-    public void generate(final ProcessingEnvironment pe, final List<PreprocessedEiderObject> objects,
+    public void generate(final ProcessingEnvironment pe,
+                         final List<PreprocessedEiderRepeatableRecord> records,
+                         final List<PreprocessedEiderObject> objects,
                          final List<PreprocessedEiderComposite> composites)
     {
         String packageName = null;
@@ -57,7 +59,7 @@ public class AgronaWriter implements EiderCodeWriter
         {
             packageName = object.getPackageNameGen();
             AgronaWriterState state = new AgronaWriterState();
-            specGenerator.generateSpecObject(pe, object, state, globalState);
+            specGenerator.generateSpecObject(pe, object, records, state, globalState);
             if (object.buildRepository())
             {
                 specGenerator.generateSpecRepository(pe, object);

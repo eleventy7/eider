@@ -1,40 +1,9 @@
 package io.eider.processor.agrona;
 
-import com.squareup.javapoet.ArrayTypeName;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-
-import io.eider.processor.EiderPropertyType;
-import io.eider.processor.PreprocessedEiderObject;
-import io.eider.processor.PreprocessedEiderProperty;
-
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Int2IntHashMap;
-import org.agrona.collections.Int2ObjectHashMap;
-import org.agrona.collections.IntHashSet;
-import org.agrona.collections.Object2ObjectHashMap;
-import org.agrona.collections.ObjectHashSet;
-import org.agrona.concurrent.UnsafeBuffer;
-
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.CRC32;
-
 import static io.eider.processor.AttributeConstants.INDEXED;
 import static io.eider.processor.AttributeConstants.KEY;
 import static io.eider.processor.AttributeConstants.MAXLENGTH;
+import static io.eider.processor.AttributeConstants.REPEATED_RECORD;
 import static io.eider.processor.AttributeConstants.SEQUENCE_GENERATOR;
 import static io.eider.processor.AttributeConstants.UNIQUE;
 import static io.eider.processor.agrona.Constants.BUFFER;
@@ -69,6 +38,39 @@ import static io.eider.processor.agrona.Util.fromTypeToStr;
 import static io.eider.processor.agrona.Util.getBoxedType;
 import static io.eider.processor.agrona.Util.getComparator;
 import static io.eider.processor.agrona.Util.upperFirst;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.CRC32;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaFileObject;
+
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
+import org.agrona.collections.IntHashSet;
+import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.collections.ObjectHashSet;
+import org.agrona.concurrent.UnsafeBuffer;
+
+import io.eider.processor.EiderPropertyType;
+import io.eider.processor.PreprocessedEiderObject;
+import io.eider.processor.PreprocessedEiderProperty;
+import io.eider.processor.PreprocessedEiderRepeatableRecord;
 
 public class AgronaSpecGenerator
 {
@@ -695,7 +697,7 @@ public class AgronaSpecGenerator
             .build());
 
         results.add(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()),
-            "appendFlyweight")
+                "appendFlyweight")
             .addJavadoc("The flyweight used by the repository for reads during append from buffer operations.")
             .initializer("null")
             .addModifiers(Modifier.PRIVATE)
@@ -745,7 +747,7 @@ public class AgronaSpecGenerator
             if (object.isTransactional())
             {
                 results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName())
-                    + "Copy")
+                        + "Copy")
                     .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
                     .initializer(NEW_$_T, indexDataMap)
                     .addModifiers(Modifier.PRIVATE)
@@ -766,7 +768,7 @@ public class AgronaSpecGenerator
             if (object.isTransactional())
             {
                 results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR
-                    + upperFirst(prop.getName()) + "Copy")
+                        + upperFirst(prop.getName()) + "Copy")
                     .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
                     .initializer(NEW_$_T, reversedIndex)
                     .addModifiers(Modifier.PRIVATE)
@@ -833,8 +835,23 @@ public class AgronaSpecGenerator
         return null;
     }
 
-    public void generateSpecObject(final ProcessingEnvironment processingEnv, final PreprocessedEiderObject object,
-                                   final AgronaWriterState state, final AgronaWriterGlobalState globalState)
+    public boolean hasRecord(final PreprocessedEiderObject object)
+    {
+        for (final PreprocessedEiderProperty property : object.getPropertyList())
+        {
+            if (property.getType().equals(EiderPropertyType.REPEATABLE_RECORD))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void generateSpecObject(final ProcessingEnvironment processingEnv,
+                                   final PreprocessedEiderObject object,
+                                   final List<PreprocessedEiderRepeatableRecord> records,
+                                   final AgronaWriterState state,
+                                   final AgronaWriterGlobalState globalState)
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
             .addModifiers(Modifier.PUBLIC)
@@ -850,6 +867,12 @@ public class AgronaSpecGenerator
         {
             builder.addField(buildEiderGroupIdField(object.getEiderGroupId()))
                 .addMethod(buildSetUnderlyingBufferAndWriteHeader());
+        }
+
+        if (hasRecord(object))
+        {
+            builder.addFields(buildRecordFields(object, records, state, globalState));
+            //builder.addMethods(buildRecordMethods(object, records, state, globalState));
         }
 
         if (object.isTransactional())
@@ -879,6 +902,55 @@ public class AgronaSpecGenerator
             // Note: calling e.printStackTrace() will print IO errors
             // that occur from the file already existing after its first run, this is normal
         }
+    }
+
+    private Iterable<MethodSpec> buildRecordMethods(PreprocessedEiderObject object,
+                                                    List<PreprocessedEiderRepeatableRecord> records,
+                                                    AgronaWriterState state,
+                                                    AgronaWriterGlobalState globalState)
+    {
+        return null;
+    }
+
+    private Iterable<FieldSpec> buildRecordFields(PreprocessedEiderObject object,
+                                                  List<PreprocessedEiderRepeatableRecord> records,
+                                                  AgronaWriterState state,
+                                                  AgronaWriterGlobalState globalState)
+    {
+        List<FieldSpec> results = new ArrayList<>();
+        List<PreprocessedEiderRepeatableRecord> genRecords = objectRecords(object, records);
+
+        for (final PreprocessedEiderRepeatableRecord record : genRecords)
+        {
+
+        }
+
+        return results;
+    }
+
+    private List<PreprocessedEiderRepeatableRecord> objectRecords(final PreprocessedEiderObject object,
+                                                                  final List<PreprocessedEiderRepeatableRecord> records)
+    {
+        List<PreprocessedEiderRepeatableRecord> recordsToGenerate = new ArrayList<>();
+
+        for (final PreprocessedEiderProperty property : object.getPropertyList())
+        {
+            if (property.getType().equals(REPEATED_RECORD))
+            {
+                for (final PreprocessedEiderRepeatableRecord record : records)
+                {
+                    if (record.getName().equals(property.getRecordType()))
+                    {
+                        System.out.println("Gen: " + property.getName() + " type: " + property.getType() + " record: "
+                            + property.getRecordType());
+                        recordsToGenerate.add(record);
+                    }
+                }
+            }
+
+        }
+
+        return recordsToGenerate;
     }
 
     private Iterable<MethodSpec> buildNonTransactionHelpers()
@@ -1031,7 +1103,7 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)
-            .initializer(Boolean.toString(true))
+            .initializer(Boolean.toString(!hasRecord(object)))
             .build());
 
         if (object.isTransactional())
@@ -1134,7 +1206,10 @@ public class AgronaSpecGenerator
 
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
-            results.add(genOffset(property, state));
+            if (property.getType() != EiderPropertyType.REPEATABLE_RECORD)
+            {
+                results.add(genOffset(property, state));
+            }
         }
 
         results.add(FieldSpec
@@ -1260,6 +1335,11 @@ public class AgronaSpecGenerator
 
         for (final PreprocessedEiderProperty property : propertyList)
         {
+            if (property.getType() == EiderPropertyType.REPEATABLE_RECORD)
+            {
+                break;
+            }
+
             results.add(genReadProperty(property));
             if (!property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
             {
@@ -1316,7 +1396,7 @@ public class AgronaSpecGenerator
     private MethodSpec genWritePropertyWithPadding(PreprocessedEiderProperty property)
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()
-            + "WithPadding"))
+                + "WithPadding"))
             .addModifiers(Modifier.PUBLIC)
             .returns(boolean.class)
             .addJavadoc("Writes " + property.getName() + " to the buffer with padding. ")
@@ -1353,8 +1433,8 @@ public class AgronaSpecGenerator
         final String init = "initialize" + upperFirst(property.getName());
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder("next" + upperFirst(property.getName())
-            +
-            "Sequence")
+                +
+                "Sequence")
             .addModifiers(Modifier.PUBLIC)
             .returns(fromType(property.getType()))
             .addJavadoc("Increments and returns the sequence in field " + property.getName() + ".")

@@ -21,14 +21,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target( {ElementType.FIELD})
+@Target( {ElementType.TYPE})
 @Retention(RetentionPolicy.CLASS)
-public @interface EiderAttribute
+public @interface EiderRepeatableRecord
 {
-    int maxLength() default Integer.MIN_VALUE;
-    boolean sequence() default false;
-    boolean key() default false;
-    boolean indexed() default false;
-    boolean unique() default false;
-    boolean repeatedRecord() default false;
+    int maxCount() default Integer.MAX_VALUE;
 }

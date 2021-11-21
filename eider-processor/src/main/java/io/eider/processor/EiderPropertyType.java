@@ -24,6 +24,7 @@ public enum EiderPropertyType
     INT,
     LONG,
     FIXED_STRING,
+    REPEATABLE_RECORD,
     INVALID;
 
     public static EiderPropertyType from(String toString)

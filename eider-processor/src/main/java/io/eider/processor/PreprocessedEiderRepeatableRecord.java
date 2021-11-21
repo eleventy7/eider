@@ -16,24 +16,20 @@
 
 package io.eider.processor;
 
-import java.util.Map;
+import java.util.List;
 
-public class PreprocessedEiderProperty
+public class PreprocessedEiderRepeatableRecord
 {
     private final String name;
-    private final EiderPropertyType type;
-    private final String recordType;
-    private final Map<String, String> annotations;
+    private final String classNameInput;
+    private final List<PreprocessedEiderProperty> propertyList;
 
-    public PreprocessedEiderProperty(final String name,
-                                     final EiderPropertyType type,
-                                     final String recordType,
-                                     final Map<String, String> annotations)
+    public PreprocessedEiderRepeatableRecord(final String name, final String classNameInput,
+                                             final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
-        this.type = type;
-        this.recordType = recordType;
-        this.annotations = annotations;
+        this.classNameInput = classNameInput;
+        this.propertyList = propertyList;
     }
 
     public String getName()
@@ -41,18 +37,13 @@ public class PreprocessedEiderProperty
         return name;
     }
 
-    public EiderPropertyType getType()
+    public String getClassNameInput()
     {
-        return type;
+        return classNameInput;
     }
 
-    public String getRecordType()
+    public List<PreprocessedEiderProperty> getPropertyList()
     {
-        return recordType;
-    }
-
-    public Map<String, String> getAnnotations()
-    {
-        return annotations;
+        return propertyList;
     }
 }

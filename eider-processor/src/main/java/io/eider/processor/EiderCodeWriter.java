@@ -22,6 +22,7 @@ import java.util.List;
 public interface EiderCodeWriter
 {
     void generate(ProcessingEnvironment pe,
+                  List<PreprocessedEiderRepeatableRecord> records,
                   List<PreprocessedEiderObject> objects,
                   List<PreprocessedEiderComposite> composites);
 }
