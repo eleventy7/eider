@@ -427,4 +427,4 @@ It's primarily being used for another project with messages sent over Aeron and 
 
 - Java 17
 - Gradle 7.3 
-- Agrona 1.13.0
+- Agrona 1.14.0
