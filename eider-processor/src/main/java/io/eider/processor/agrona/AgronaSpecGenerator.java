@@ -1,5 +1,39 @@
 package io.eider.processor.agrona;
 
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+
+import io.eider.processor.EiderPropertyType;
+import io.eider.processor.PreprocessedEiderObject;
+import io.eider.processor.PreprocessedEiderProperty;
+import io.eider.processor.PreprocessedEiderRepeatableRecord;
+
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
+import org.agrona.collections.IntHashSet;
+import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.collections.ObjectHashSet;
+import org.agrona.concurrent.UnsafeBuffer;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.zip.CRC32;
+
 import static io.eider.processor.AttributeConstants.INDEXED;
 import static io.eider.processor.AttributeConstants.KEY;
 import static io.eider.processor.AttributeConstants.MAXLENGTH;
@@ -38,39 +72,6 @@ import static io.eider.processor.agrona.Util.fromTypeToStr;
 import static io.eider.processor.agrona.Util.getBoxedType;
 import static io.eider.processor.agrona.Util.getComparator;
 import static io.eider.processor.agrona.Util.upperFirst;
-
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.CRC32;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.JavaFileObject;
-
-import com.squareup.javapoet.ArrayTypeName;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Int2IntHashMap;
-import org.agrona.collections.Int2ObjectHashMap;
-import org.agrona.collections.IntHashSet;
-import org.agrona.collections.Object2ObjectHashMap;
-import org.agrona.collections.ObjectHashSet;
-import org.agrona.concurrent.UnsafeBuffer;
-
-import io.eider.processor.EiderPropertyType;
-import io.eider.processor.PreprocessedEiderObject;
-import io.eider.processor.PreprocessedEiderProperty;
-import io.eider.processor.PreprocessedEiderRepeatableRecord;
 
 public class AgronaSpecGenerator
 {
@@ -835,7 +836,7 @@ public class AgronaSpecGenerator
         return null;
     }
 
-    public boolean hasRecord(final PreprocessedEiderObject object)
+    public boolean hasAtLeastOneRecord(final PreprocessedEiderObject object)
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -845,6 +846,26 @@ public class AgronaSpecGenerator
             }
         }
         return false;
+    }
+
+    public List<PreprocessedEiderRepeatableRecord> listRecords(final PreprocessedEiderObject object,
+                                                               final List<PreprocessedEiderRepeatableRecord> records)
+    {
+        final List<PreprocessedEiderRepeatableRecord> results = new ArrayList<>();
+        for (final PreprocessedEiderProperty property : object.getPropertyList())
+        {
+            if (property.getType().equals(EiderPropertyType.REPEATABLE_RECORD))
+            {
+                for (final PreprocessedEiderRepeatableRecord rec : records)
+                {
+                    if (property.getRecordType().contains(rec.getClassNameInput()))
+                    {
+                        results.add(rec);
+                    }
+                }
+            }
+        }
+        return results;
     }
 
     public void generateSpecObject(final ProcessingEnvironment processingEnv,
@@ -857,8 +878,8 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.PUBLIC)
             .addField(buildEiderIdField(object.getEiderId(), object.mustBuildHeader()));
 
-        builder.addFields(offsetsForFields(object, state, globalState))
-            .addFields(internalFields(object))
+        builder.addFields(offsetsForFields(object, records, state, globalState))
+            .addFields(internalFields(object, records))
             .addMethod(buildSetUnderlyingBuffer(object))
             .addMethod(buildEiderId())
             .addMethods(forInternalFields(object));
@@ -869,12 +890,6 @@ public class AgronaSpecGenerator
                 .addMethod(buildSetUnderlyingBufferAndWriteHeader());
         }
 
-        if (hasRecord(object))
-        {
-            builder.addFields(buildRecordFields(object, records, state, globalState));
-            //builder.addMethods(buildRecordMethods(object, records, state, globalState));
-        }
-
         if (object.isTransactional())
         {
             builder.addMethods(buildTransactionHelpers());
@@ -882,6 +897,12 @@ public class AgronaSpecGenerator
         else
         {
             builder.addMethods(buildNonTransactionHelpers());
+        }
+
+        if (hasAtLeastOneRecord(object))
+        {
+            //builder.addFields(buildRecordFields(object, records, state, globalState));
+            builder.addMethods(buildRecordHelpers(object, records, state, globalState));
         }
 
         TypeSpec generated = builder.build();
@@ -904,29 +925,103 @@ public class AgronaSpecGenerator
         }
     }
 
-    private Iterable<MethodSpec> buildRecordMethods(PreprocessedEiderObject object,
-                                                    List<PreprocessedEiderRepeatableRecord> records,
-                                                    AgronaWriterState state,
-                                                    AgronaWriterGlobalState globalState)
-    {
-        return null;
-    }
-
     private Iterable<FieldSpec> buildRecordFields(PreprocessedEiderObject object,
                                                   List<PreprocessedEiderRepeatableRecord> records,
                                                   AgronaWriterState state,
                                                   AgronaWriterGlobalState globalState)
     {
-        List<FieldSpec> results = new ArrayList<>();
-        List<PreprocessedEiderRepeatableRecord> genRecords = objectRecords(object, records);
-
-        for (final PreprocessedEiderRepeatableRecord record : genRecords)
-        {
-
-        }
-
-        return results;
+        //field per record?
+        return null;
     }
+
+    private Iterable<MethodSpec> buildRecordHelpers(PreprocessedEiderObject object,
+                                                    List<PreprocessedEiderRepeatableRecord> records,
+                                                    AgronaWriterState state,
+                                                    AgronaWriterGlobalState globalState)
+    {
+        final List<PreprocessedEiderRepeatableRecord> toGen = listRecords(object, records);
+        final List<MethodSpec> methods = new ArrayList<>();
+
+        //3 methods:
+        // - precomputeBufferLength(with per rec type item count), allows for tryClaims
+        // - resize(new item count) - method per rec type
+        // - .record(int offset) - gets the generated spec for the record at given offset
+
+        MethodSpec.Builder precomputeBufferLength = MethodSpec.methodBuilder("precomputeBufferLength")
+            .addJavadoc("Precomputes the required buffer length with the given record sizes")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(int.class);
+
+        MethodSpec.Builder committedBufferLength = MethodSpec.methodBuilder("committedBufferLength")
+            .addJavadoc("The required buffer size given current max record counts")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(int.class);
+
+        String preCompute = "return";
+        String committed = "return";
+        for (final PreprocessedEiderRepeatableRecord rec : toGen)
+        {
+            precomputeBufferLength.addParameter(int.class, rec.getName() + "Count");
+            preCompute += " BUFFER_LENGTH + (" + rec.getName() + "Count * " + rec.getClassNameInput()
+                + ".BUFFER_LENGTH) +";
+            committed += " BUFFER_LENGTH + (" + rec.getName().toUpperCase() + "_COMMITTED_SIZE * "
+                + rec.getClassNameInput() +".BUFFER_LENGTH) +";
+        }
+        preCompute += ";";
+        committed += ";";
+        precomputeBufferLength.addStatement(preCompute.replace(" +;", ""));
+        committedBufferLength.addStatement(committed.replace(" +;", ""));
+        methods.add(precomputeBufferLength.build());
+        methods.add(committedBufferLength.build());
+
+        for (final PreprocessedEiderRepeatableRecord rec : toGen)
+        {
+            MethodSpec.Builder resetSize = MethodSpec.methodBuilder("reset" + rec.getName() + "Size")
+                .addJavadoc("Sets the amount of " + rec.getName() + " items that can be written to the buffer")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(int.class, rec.getName() + "CommittedSize")
+                .addStatement(rec.getName().toUpperCase() + "_COMMITTED_SIZE = " + rec.getName() + "CommittedSize")
+                .addStatement("buffer.checkLimit(committedBufferLength())")
+                .addStatement("mutableBuffer.putInt(" + rec.getName().toUpperCase() + "_COUNT_OFFSET + initialOffset, "
+                    + rec.getName() + "CommittedSize"+", java.nio.ByteOrder.LITTLE_ENDIAN)")
+                .returns(void.class);
+            methods.add(resetSize.build());
+
+            MethodSpec.Builder readSize = MethodSpec.methodBuilder("read" + rec.getName() + "Size")
+                .addJavadoc("Returns & internally sets the amount of " + rec.getName()
+                    + " items that the buffer potentially contains")
+                .addModifiers(Modifier.PUBLIC)
+                .addStatement(rec.getName().toUpperCase() + "_COMMITTED_SIZE = mutableBuffer.getInt("
+                    + rec.getName().toUpperCase() + "_COUNT_OFFSET)")
+                .addStatement("return " + rec.getName().toUpperCase() + "_COMMITTED_SIZE")
+                .returns(int.class);
+            methods.add(readSize.build());
+
+            //todo : add a method to get the record at a given offset
+            final ClassName recordName = ClassName.get(rec.getPackageNameGen(), rec.getName());
+
+            MethodSpec.Builder getRecordAtOffset = MethodSpec.methodBuilder("get" + rec.getName())
+                .addJavadoc("Gets the " + rec.getName() + " flyweight at the given index")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(int.class, "offset")
+                .addStatement("if (" + rec.getName().toUpperCase() + "_COMMITTED_SIZE < offset) throw new "
+                    + "RuntimeException(\"cannot access record beyond committed size\")")
+                .addStatement(rec.getName().toUpperCase()+"_FLYWEIGHT.setUnderlyingBuffer(this.buffer, "
+                    + rec.getName().toUpperCase() + "_RECORD_START_OFFSET + initialOffset + (offset * "
+                    + rec.getName() + ".BUFFER_LENGTH))")
+                .addStatement("return " + rec.getName().toUpperCase()+"_FLYWEIGHT")
+                .returns(recordName);
+            methods.add(getRecordAtOffset.build());
+        }
+        return methods;
+    }
+
+    private MethodSpec buildRecordHelper(PreprocessedEiderObject object, PreprocessedEiderRepeatableRecord rec,
+                                         AgronaWriterState state, AgronaWriterGlobalState globalState)
+    {
+        return null;
+    }
+
 
     private List<PreprocessedEiderRepeatableRecord> objectRecords(final PreprocessedEiderObject object,
                                                                   final List<PreprocessedEiderRepeatableRecord> records)
@@ -939,10 +1034,10 @@ public class AgronaSpecGenerator
             {
                 for (final PreprocessedEiderRepeatableRecord record : records)
                 {
-                    if (record.getName().equals(property.getRecordType()))
+                    System.out.println("Gen: " + property.getName() + " type: " + property.getType() + " record: "
+                        + property.getRecordType());
+                    if (record.getClassNameInput().contains(property.getRecordType()))
                     {
-                        System.out.println("Gen: " + property.getName() + " type: " + property.getType() + " record: "
-                            + property.getRecordType());
                         recordsToGenerate.add(record);
                     }
                 }
@@ -1019,7 +1114,8 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<FieldSpec> internalFields(PreprocessedEiderObject object)
+    private Iterable<FieldSpec> internalFields(PreprocessedEiderObject object,
+                                               List<PreprocessedEiderRepeatableRecord> recs)
     {
         List<FieldSpec> results = new ArrayList<>();
 
@@ -1103,7 +1199,7 @@ public class AgronaSpecGenerator
             .addModifiers(Modifier.STATIC)
             .addModifiers(Modifier.PUBLIC)
             .addModifiers(Modifier.FINAL)
-            .initializer(Boolean.toString(!hasRecord(object)))
+            .initializer(Boolean.toString(!hasAtLeastOneRecord(object)))
             .build());
 
         if (object.isTransactional())
@@ -1132,6 +1228,31 @@ public class AgronaSpecGenerator
                 .addModifiers(Modifier.PRIVATE)
                 .build());
         }
+
+
+        if (hasAtLeastOneRecord(object))
+        {
+            final List<PreprocessedEiderRepeatableRecord> records = listRecords(object, recs);
+            for (final PreprocessedEiderRepeatableRecord rec : records)
+            {
+                results.add(FieldSpec
+                    .builder(int.class, rec.getName().toUpperCase() + "_COMMITTED_SIZE")
+                    .addJavadoc("The max number of items allocated for this record. Use resize() to alter.")
+                    .initializer("0")
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
+
+                final ClassName recordName = ClassName.get(rec.getPackageNameGen(), rec.getName());
+                results.add(FieldSpec
+                    .builder(recordName, rec.getName().toUpperCase() + "_FLYWEIGHT")
+                    .addJavadoc("The flyweight for the " + rec.getName() + " record.")
+                    .initializer("new " + rec.getName()+ "()")
+                    .addModifiers(Modifier.PRIVATE)
+                    .build());
+
+            }
+        }
+
 
         return results;
     }
@@ -1163,6 +1284,7 @@ public class AgronaSpecGenerator
     }
 
     private Iterable<FieldSpec> offsetsForFields(PreprocessedEiderObject object,
+                                                 List<PreprocessedEiderRepeatableRecord> records,
                                                  AgronaWriterState state,
                                                  AgronaWriterGlobalState globalState)
     {
@@ -1212,14 +1334,49 @@ public class AgronaSpecGenerator
             }
         }
 
-        results.add(FieldSpec
-            .builder(int.class, "BUFFER_LENGTH")
-            .addJavadoc("The total bytes required to store the object.")
-            .addModifiers(Modifier.STATIC)
-            .addModifiers(Modifier.PUBLIC)
-            .addModifiers(Modifier.FINAL)
-            .initializer(Integer.toString(state.getCurrentOffset()))
-            .build());
+        if (hasAtLeastOneRecord(object))
+        {
+            final List<PreprocessedEiderRepeatableRecord> recs = listRecords(object, records);
+            for (final PreprocessedEiderRepeatableRecord rec : recs)
+            {
+                PreprocessedEiderProperty fake = new PreprocessedEiderProperty(rec.getName().toUpperCase()+"_COUNT",
+                    EiderPropertyType.INT, "", Collections.EMPTY_MAP);
+                results.add(genOffset(fake, state));
+
+                results.add(FieldSpec.builder(int.class, rec.getName().toUpperCase() + "_RECORD_START_OFFSET")
+                    .addJavadoc("The byte offset in the byte array to start writing " + rec.getName() + ".")
+                    .addModifiers(Modifier.STATIC)
+                    .addModifiers(Modifier.PRIVATE)
+                    .addModifiers(Modifier.FINAL)
+                    .initializer(Integer.toString(state.getCurrentOffset()))
+                    .build());
+            }
+        }
+
+
+        if(!hasAtLeastOneRecord(object))
+        {
+            results.add(FieldSpec
+                .builder(int.class, "BUFFER_LENGTH")
+                .addJavadoc("The total bytes required to store this fixed length object.")
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.FINAL)
+                .initializer(Integer.toString(state.getCurrentOffset()))
+                .build());
+        }
+        else
+        {
+            results.add(FieldSpec
+                .builder(int.class, "BUFFER_LENGTH")
+                .addJavadoc("The total bytes required to store the core data, excluding any repeating record data. "
+                    + "Use precomputeBufferLength to compute buffer length this object.")
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.FINAL)
+                .initializer(Integer.toString(state.getCurrentOffset()))
+                .build());
+        }
 
         globalState.getBufferLengths().put(object.getName(), state.getCurrentOffset());
 
@@ -1767,5 +1924,156 @@ public class AgronaSpecGenerator
             return true;
         }
         return false;
+    }
+
+    public void generateSpecRecord(ProcessingEnvironment pe,
+                                   PreprocessedEiderRepeatableRecord rec,
+                                   AgronaWriterGlobalState globalState)
+    {
+        TypeSpec.Builder builder = TypeSpec.classBuilder(rec.getName())
+            .addModifiers(Modifier.PUBLIC);
+
+        AgronaWriterState state = new AgronaWriterState();
+
+        builder.addFields(offsetsForRecFields(rec, state, globalState))
+            .addFields(internalRecFields(rec))
+            .addMethod(buildSetUnderlyingRecBuffer(rec))
+            .addMethods(forInternalRecFields(rec));
+
+        TypeSpec generated = builder.build();
+
+        JavaFile javaFile = JavaFile.builder(rec.getPackageNameGen(), generated)
+            .build();
+
+        try
+        { // write the file
+            JavaFileObject source = pe.getFiler()
+                .createSourceFile(rec.getPackageNameGen() + "." + rec.getName());
+            Writer writer = source.openWriter();
+            javaFile.writeTo(writer);
+            writer.flush();
+            writer.close();
+        } catch (IOException e)
+        {
+            // Note: calling e.printStackTrace() will print IO errors
+            // that occur from the file already existing after its first run, this is normal
+        }
+    }
+
+    private Iterable<MethodSpec> forInternalRecFields(PreprocessedEiderRepeatableRecord rec)
+    {
+        List<PreprocessedEiderProperty> propertyList = rec.getPropertyList();
+        List<MethodSpec> results = new ArrayList<>();
+
+        for (final PreprocessedEiderProperty property : propertyList)
+        {
+            if (property.getType() == EiderPropertyType.REPEATABLE_RECORD)
+            {
+                break;
+            }
+
+            results.add(genReadProperty(property));
+            if (!property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
+            {
+                results.add(genWriteProperty(property));
+                if (property.getType() == EiderPropertyType.FIXED_STRING)
+                {
+                    results.add(genWritePropertyWithPadding(property));
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private Iterable<FieldSpec> offsetsForRecFields(PreprocessedEiderRepeatableRecord rec,
+                                                    AgronaWriterState state,
+                                                    AgronaWriterGlobalState globalState)
+    {
+        List<FieldSpec> results = new ArrayList<>();
+
+        for (final PreprocessedEiderProperty property : rec.getPropertyList())
+        {
+            if (property.getType() != EiderPropertyType.REPEATABLE_RECORD)
+            {
+                results.add(genOffset(property, state));
+            }
+        }
+
+        results.add(FieldSpec
+            .builder(int.class, "BUFFER_LENGTH")
+            .addJavadoc("The total bytes required to store a single record.")
+            .addModifiers(Modifier.STATIC)
+            .addModifiers(Modifier.PUBLIC)
+            .addModifiers(Modifier.FINAL)
+            .initializer(Integer.toString(state.getCurrentOffset()))
+            .build());
+
+        globalState.getBufferLengths().put(rec.getName(), state.getCurrentOffset());
+
+        return results;
+    }
+
+
+    private MethodSpec buildSetUnderlyingRecBuffer(PreprocessedEiderRepeatableRecord rec)
+    {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("setUnderlyingBuffer")
+            .addModifiers(Modifier.PUBLIC)
+            .returns(void.class)
+            .addJavadoc("Uses the provided {@link org.agrona.DirectBuffer} from the given offset.\n"
+                +
+                "@param buffer - buffer to read from and write to.\n"
+                +
+                "@param offset - offset to begin reading from/writing to in the buffer.\n")
+            .addParameter(DirectBuffer.class, BUFFER)
+            .addParameter(int.class, OFFSET)
+            .addStatement("this.initialOffset = offset")
+            .addStatement("this.buffer = buffer")
+            .beginControlFlow("if (buffer instanceof MutableDirectBuffer)")
+            .addStatement(MUTABLE_BUFFER + " = (MutableDirectBuffer) buffer")
+            .addStatement("isMutable = true")
+            .endControlFlow()
+            .beginControlFlow("else")
+            .addStatement("isMutable = false")
+            .endControlFlow();
+
+        builder.addStatement("buffer.checkLimit(initialOffset + BUFFER_LENGTH)");
+        return builder.build();
+    }
+
+    private Iterable<FieldSpec> internalRecFields(PreprocessedEiderRepeatableRecord rec)
+    {
+        List<FieldSpec> results = new ArrayList<>();
+
+        results.add(FieldSpec
+            .builder(DirectBuffer.class, BUFFER)
+            .addJavadoc("The internal DirectBuffer.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("null")
+            .build());
+
+        results.add(FieldSpec
+            .builder(MutableDirectBuffer.class, MUTABLE_BUFFER)
+            .addJavadoc("The internal DirectBuffer used for mutatation opertions. "
+                +
+                "Valid only if a mutable buffer was provided.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer("null")
+            .build());
+
+        results.add(FieldSpec
+            .builder(int.class, "initialOffset")
+            .addJavadoc("The starting offset for reading and writing.")
+            .addModifiers(Modifier.PRIVATE)
+            .build());
+
+        results.add(FieldSpec
+            .builder(boolean.class, "isMutable")
+            .addJavadoc("Flag indicating if the buffer is mutable.")
+            .addModifiers(Modifier.PRIVATE)
+            .initializer(FALSE)
+            .build());
+
+        return results;
     }
 }

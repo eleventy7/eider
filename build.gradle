@@ -223,6 +223,8 @@ project('eider-test') {
         implementation "org.openjdk.jmh:jmh-core:1.33"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.1'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.1'
     }
 
     compileGeneratedJava.dependsOn(compileJava)

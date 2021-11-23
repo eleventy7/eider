@@ -389,7 +389,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                                             final List<PreprocessedEiderRepeatableRecord> records)
     {
         final String classNameInput = typeElement.getSimpleName().toString();
-        final String classNameGen = classNameInput + "Eider";
+        final String classNameGen = classNameInput;
         final String packageName = typeElement.getQualifiedName().toString();
         final String packageNameGen = packageName.replace(classNameInput, "gen");
         sequence += (short) 1;
@@ -452,6 +452,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
         final PreprocessedEiderRepeatableRecord obj = new PreprocessedEiderRepeatableRecord(classNameGen,
             classNameInput,
+            packageNameGen,
             preprocessedEiderProperties);
 
         records.add(obj);

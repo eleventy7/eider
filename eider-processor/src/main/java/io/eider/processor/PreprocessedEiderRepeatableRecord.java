@@ -22,13 +22,16 @@ public class PreprocessedEiderRepeatableRecord
 {
     private final String name;
     private final String classNameInput;
+    private final String packageNameGen;
     private final List<PreprocessedEiderProperty> propertyList;
 
     public PreprocessedEiderRepeatableRecord(final String name, final String classNameInput,
+                                             final String packageNameGen,
                                              final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
         this.classNameInput = classNameInput;
+        this.packageNameGen = packageNameGen;
         this.propertyList = propertyList;
     }
 
@@ -40,6 +43,11 @@ public class PreprocessedEiderRepeatableRecord
     public String getClassNameInput()
     {
         return classNameInput;
+    }
+
+    public String getPackageNameGen()
+    {
+        return packageNameGen;
     }
 
     public List<PreprocessedEiderProperty> getPropertyList()

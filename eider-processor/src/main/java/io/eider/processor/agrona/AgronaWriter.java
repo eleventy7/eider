@@ -54,9 +54,32 @@ public class AgronaWriter implements EiderCodeWriter
         String packageName = null;
 
         final AgronaWriterGlobalState globalState = new AgronaWriterGlobalState();
+        final List<PreprocessedEiderRepeatableRecord> alreadyGeneratedRecs = new ArrayList<>();
 
         for (final PreprocessedEiderObject object : objects)
         {
+            //todo generate records that are used by this object; don't generate them if they already exist
+            if (specGenerator.hasAtLeastOneRecord(object))
+            {
+                List<PreprocessedEiderRepeatableRecord> requiredRecs = specGenerator.listRecords(object, records);
+                if (requiredRecs.size() > 1)
+                {
+                    throw new RuntimeException("cannot have more than one repeated record at this time.");
+                }
+                for (PreprocessedEiderRepeatableRecord rec : requiredRecs)
+                {
+                    if (!alreadyGeneratedRecs.contains(rec))
+                    {
+                        //want the writing to be within the main object; this is just the basic outline
+                        specGenerator.generateSpecRecord(pe, rec, globalState);
+                    }
+                    else
+                    {
+                        System.out.println("skipping writing rec for :" + rec.getName());
+                    }
+                }
+            }
+
             packageName = object.getPackageNameGen();
             AgronaWriterState state = new AgronaWriterState();
             specGenerator.generateSpecObject(pe, object, records, state, globalState);

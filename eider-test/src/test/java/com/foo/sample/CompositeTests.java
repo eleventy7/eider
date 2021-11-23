@@ -1,12 +1,14 @@
 package com.foo.sample;
 
 import com.foo.sample.gen.Order;
+import com.foo.sample.gen.OrderBook;
 import com.foo.sample.gen.OrderBookEntry;
 
 import com.foo.sample.gen.OrderBookEntryRepository;
 
 import io.eider.util.EiderHelper;
 
+import org.agrona.ExpandableArrayBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,58 @@ class CompositeTests
         assertEquals(1_000_000L, entry.getOrder().readQuantity());
         assertEquals(500L, entry.getStatus().readAcceptedTimestamp());
         assertEquals(800L, entry.getStatus().readFilledTimestamp());
+    }
+
+    @Test
+    void canWriteRepeatedRecordsSameObject()
+    {
+        OrderBook entry = new OrderBook();
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(entry.precomputeBufferLength(10));
+        entry.setUnderlyingBuffer(buffer, 0);
+        entry.resetOrderBookItemSize(10);
+        entry.writePair((short)1);
+        entry.writeVenue((short)2);
+
+        for (int i = 0; i < 10; i++)
+        {
+            entry.getOrderBookItem(i).writePrice(i * 100);
+            entry.getOrderBookItem(i).writeSize(i * 1000);
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            assertEquals(i * 100, entry.getOrderBookItem(i).readPrice());
+            assertEquals(i * 1000, entry.getOrderBookItem(i).readSize());
+        }
+    }
+
+    @Test
+    void canWriteRepeatedRecordsNewObject()
+    {
+        OrderBook entry = new OrderBook();
+        ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(entry.precomputeBufferLength(10));
+        entry.setUnderlyingBuffer(buffer, 0);
+        entry.resetOrderBookItemSize(10);
+        entry.writePair((short)1);
+        entry.writeVenue((short)2);
+
+        for (int i = 0; i < 10; i++)
+        {
+            entry.getOrderBookItem(i).writePrice(i * 100);
+            entry.getOrderBookItem(i).writeSize(i * 1000);
+        }
+
+        OrderBook reader = new OrderBook();
+        reader.setUnderlyingBuffer(buffer, 0);
+        reader.readOrderBookItemSize();
+        assertEquals((short)1, reader.readPair());
+        assertEquals((short)2, reader.readVenue());
+
+        for (int i = 0; i < 10; i++)
+        {
+            assertEquals(i * 100, reader.getOrderBookItem(i).readPrice());
+            assertEquals(i * 1000, reader.getOrderBookItem(i).readSize());
+        }
     }
 
     @Test
