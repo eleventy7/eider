@@ -54,7 +54,7 @@ Features not planned for future releases:
 - schema validation
 - migrations
 - multiple variable length fields
-- repeating groups and sub-objects
+- more than one repeating group per message
 - Nullable objects with customizable null representations 
 - Maven Central publishing
 
@@ -167,6 +167,68 @@ generator.initializeTradeId(1);
 
 //get next tradeId
 int nextTrade = generator.nextTradeIdSequence();
+```
+
+### Repeating Groups
+
+Warning: support is basic at this time, and is focused on a use case involving Agrona RingBuffer `tryClaim`.
+
+```java
+@EiderRepeatableRecord
+public class OrderBookItem
+{
+    private long price;
+    private long size;
+}
+
+@EiderSpec(eiderId = 111, name = "OrderBook", header = false)
+public class OrderBookSpec
+{
+    private short pair;
+    private short venue;
+    @EiderAttribute(repeatedRecord = true)
+    private OrderBookItem items;
+}
+```
+
+A repeating group can be specified with the `@EiderRepeatableRecord` annotation. Some notes:
+
+- repeating group messages are not fixed length. To get the length of the repeating group, use the generated `precomputeBufferLength` method, specifying how many records are to be included.
+- the `@EiderAttribute` annotation must be on object to be the repeating group, plus `@EiderAttribute(repeatedRecord = true)` on the field to be repeated.
+- some features are not supported with repeating groups, notably Repositories, Transactional and Indexed fields.
+- resizing a pre-existing repeating group may leave garbage in the buffer. The initial use case is to use this with Agrona/Aeron tryClaim functionality, which does not result in buffer reuse.
+
+Writing the repeating group:
+
+```java
+OrderBook entry = new OrderBook();
+ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(entry.precomputeBufferLength(10));
+entry.setUnderlyingBuffer(buffer, 0);
+entry.resetOrderBookItemSize(10); //sets the max size to 10; performs a buffer limit check
+entry.writePair((short)1);
+entry.writeVenue((short)2);
+
+for (int i = 0; i < 10; i++)
+{
+    entry.getOrderBookItem(i).writePrice(i * 100);
+    entry.getOrderBookItem(i).writeSize(i * 1000);
+}
+```
+
+Reading the repeating group:
+
+```java
+OrderBook reader = new OrderBook();
+reader.setUnderlyingBuffer(buffer, 0);
+reader.readOrderBookItemSize(); //read the size of the repeating group from the dedicated size field in the buffer
+assertEquals((short)1, reader.readPair());
+assertEquals((short)2, reader.readVenue());
+
+for (int i = 0; i < 10; i++)
+{
+    assertEquals(i * 100, reader.getOrderBookItem(i).readPrice());
+    assertEquals(i * 1000, reader.getOrderBookItem(i).readSize());
+}
 ```
 
 ### Repository Sample
