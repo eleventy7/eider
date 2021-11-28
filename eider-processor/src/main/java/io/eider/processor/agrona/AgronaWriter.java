@@ -42,6 +42,8 @@ import static io.eider.processor.agrona.Constants.OFFSET;
 
 public class AgronaWriter implements EiderCodeWriter
 {
+    private static final String IO_EIDER_UTIL = "io.eider.util";
+
     private final AgronaCompositeGenerator compositeGenerator = new AgronaCompositeGenerator();
     private final AgronaSpecGenerator specGenerator = new AgronaSpecGenerator();
 
@@ -58,7 +60,6 @@ public class AgronaWriter implements EiderCodeWriter
 
         for (final PreprocessedEiderObject object : objects)
         {
-            //todo generate records that are used by this object; don't generate them if they already exist
             if (specGenerator.hasAtLeastOneRecord(object))
             {
                 List<PreprocessedEiderRepeatableRecord> requiredRecs = specGenerator.listRecords(object, records);
@@ -72,10 +73,7 @@ public class AgronaWriter implements EiderCodeWriter
                     {
                         //want the writing to be within the main object; this is just the basic outline
                         specGenerator.generateSpecRecord(pe, rec, globalState);
-                    }
-                    else
-                    {
-                        System.out.println("skipping writing rec for :" + rec.getName());
+                        alreadyGeneratedRecs.add(rec);
                     }
                 }
             }
@@ -107,7 +105,7 @@ public class AgronaWriter implements EiderCodeWriter
 
     private void generateEiderHelperInterfaces(ProcessingEnvironment pe)
     {
-        final String packageName = "io.eider.util";
+        final String packageName = IO_EIDER_UTIL;
 
         TypeSpec.Builder builder = TypeSpec.interfaceBuilder("IndexUpdateConsumer")
             .addModifiers(Modifier.PUBLIC)
@@ -144,7 +142,7 @@ public class AgronaWriter implements EiderCodeWriter
 
     private void generateEiderHelperInterfaceForUnqiueIndex(ProcessingEnvironment pe)
     {
-        final String packageName = "io.eider.util";
+        final String packageName = IO_EIDER_UTIL;
 
         TypeSpec.Builder builder = TypeSpec.interfaceBuilder("IndexUniquenessConsumer")
             .addModifiers(Modifier.PUBLIC)
@@ -182,7 +180,7 @@ public class AgronaWriter implements EiderCodeWriter
 
     private void generateEiderHelper(ProcessingEnvironment pe)
     {
-        final String packageName = "io.eider.util";
+        final String packageName = IO_EIDER_UTIL;
 
         TypeSpec.Builder builder = TypeSpec.classBuilder("EiderHelper")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
