@@ -21,6 +21,15 @@ import io.eider.annotation.EiderComposite;
 import io.eider.annotation.EiderRepeatableRecord;
 import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
+import io.eider.internals.EiderPropertyType;
+import io.eider.internals.PreprocessedEiderComposite;
+import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderProperty;
+import io.eider.internals.PreprocessedEiderRepeatableRecord;
+import io.eider.internals.PreprocessedNamedEiderObject;
+import io.eider.javawriter.EiderCodeWriter;
+import io.eider.javawriter.agrona.AgronaWriter;
+import io.eider.javawriter.agrona.AttributeConstants;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -53,7 +62,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
     public synchronized void init(ProcessingEnvironment processingEnv)
     {
         super.init(processingEnv);
-        writer = WriterFactory.getWriter(EiderGeneratorType.AGRONA);
+        writer = new AgronaWriter();
     }
 
     @Override

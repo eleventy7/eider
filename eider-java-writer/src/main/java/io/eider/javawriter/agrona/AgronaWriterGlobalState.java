@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
 
 import java.util.HashMap;
 import java.util.Map;

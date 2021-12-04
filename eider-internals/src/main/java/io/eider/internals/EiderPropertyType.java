@@ -14,24 +14,36 @@
  * limitations under the License.
  */
 
-package io.eider.processor.agrona;
+package io.eider.internals;
 
-public class AgronaWriterState
+public enum EiderPropertyType
 {
-    private int currentOffset;
+    BOOLEAN,
+    DOUBLE,
+    SHORT,
+    INT,
+    LONG,
+    FIXED_STRING,
+    REPEATABLE_RECORD,
+    INVALID;
 
-    public int getCurrentOffset()
+    public static EiderPropertyType from(String toString)
     {
-        return currentOffset;
+        switch (toString)
+        {
+            case "int":
+                return INT;
+            case "short":
+                return SHORT;
+            case "long":
+                return LONG;
+            case "boolean":
+                return BOOLEAN;
+            case "double":
+                return DOUBLE;
+            default:
+                return INVALID;
+        }
     }
 
-    public void setCurrentOffset(final int currentOffset)
-    {
-        this.currentOffset = currentOffset;
-    }
-
-    public void extendCurrentOffset(final int byBytes)
-    {
-        this.currentOffset = currentOffset + byBytes;
-    }
 }

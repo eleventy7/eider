@@ -19,4 +19,7 @@
 rootProject.name = 'eider'
 
 include 'eider-processor'
+include 'eider-java-writer'
+include 'eider-internals'
+include 'eider-parser'
 include 'eider-test'

@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package io.eider.processor;
+package io.eider.javawriter.agrona;
 
-public class PreprocessedNamedEiderObject
+public class AgronaWriterState
 {
-    private final String name;
-    private final PreprocessedEiderObject object;
+    private int currentOffset;
 
-    public PreprocessedNamedEiderObject(final String name, final PreprocessedEiderObject object)
+    public int getCurrentOffset()
     {
-        this.name = name;
-        this.object = object;
+        return currentOffset;
     }
 
-    public String getName()
+    public void setCurrentOffset(final int currentOffset)
     {
-        return name;
+        this.currentOffset = currentOffset;
     }
 
-    public PreprocessedEiderObject getObject()
+    public void extendCurrentOffset(final int byBytes)
     {
-        return object;
+        this.currentOffset = currentOffset + byBytes;
     }
 }

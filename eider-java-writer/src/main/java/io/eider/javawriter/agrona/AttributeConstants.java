@@ -1,4 +1,4 @@
-package io.eider.processor;
+package io.eider.javawriter.agrona;
 
 public final class AttributeConstants
 {

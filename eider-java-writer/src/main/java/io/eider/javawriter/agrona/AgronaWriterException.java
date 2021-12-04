@@ -1,4 +1,4 @@
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
 
 public class AgronaWriterException extends RuntimeException
 {

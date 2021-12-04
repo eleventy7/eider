@@ -1,4 +1,4 @@
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -9,10 +9,10 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-import io.eider.processor.EiderPropertyType;
-import io.eider.processor.PreprocessedEiderComposite;
-import io.eider.processor.PreprocessedEiderProperty;
-import io.eider.processor.PreprocessedNamedEiderObject;
+import io.eider.internals.EiderPropertyType;
+import io.eider.internals.PreprocessedEiderComposite;
+import io.eider.internals.PreprocessedEiderProperty;
+import io.eider.internals.PreprocessedNamedEiderObject;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.collections.Int2IntHashMap;
@@ -24,24 +24,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.eider.processor.agrona.Constants.BUFFER;
-import static io.eider.processor.agrona.Constants.BUFFER_LENGTH_1;
-import static io.eider.processor.agrona.Constants.CAPACITY;
-import static io.eider.processor.agrona.Constants.FLYWEIGHT;
-import static io.eider.processor.agrona.Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER;
-import static io.eider.processor.agrona.Constants.INTERNAL_BUFFER;
-import static io.eider.processor.agrona.Constants.ITERATOR;
-import static io.eider.processor.agrona.Constants.JAVA_UTIL;
-import static io.eider.processor.agrona.Constants.OFFSET;
-import static io.eider.processor.agrona.Constants.RETURN_FALSE;
-import static io.eider.processor.agrona.Constants.RETURN_FLYWEIGHT;
-import static io.eider.processor.agrona.Constants.RETURN_NULL;
-import static io.eider.processor.agrona.Constants.RETURN_TRUE;
-import static io.eider.processor.agrona.Constants.THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION;
-import static io.eider.processor.agrona.Constants.UNFILTERED_ITERATOR;
-import static io.eider.processor.agrona.Constants.WRITE;
-import static io.eider.processor.agrona.Util.upperFirst;
 
 public class AgronaCompositeGenerator
 {
@@ -86,11 +68,11 @@ public class AgronaCompositeGenerator
     {
         List<TypeSpec> results = new ArrayList<>();
 
-        final ClassName iterator = ClassName.get(JAVA_UTIL, ITERATOR);
+        final ClassName iterator = ClassName.get(Constants.JAVA_UTIL, Constants.ITERATOR);
         final ClassName genObj = ClassName.get("", composite.getName());
         final TypeName iteratorGen = ParameterizedTypeName.get(iterator, genObj);
 
-        TypeSpec allItems = TypeSpec.classBuilder(UNFILTERED_ITERATOR)
+        TypeSpec allItems = TypeSpec.classBuilder(Constants.UNFILTERED_ITERATOR)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
             .addSuperinterface(iteratorGen)
             .addField(FieldSpec.builder(ClassName.get(composite.getPackageNameGen(), composite.getName()),
@@ -110,7 +92,7 @@ public class AgronaCompositeGenerator
     {
         return MethodSpec.methodBuilder("reset")
             .addModifiers(Modifier.PUBLIC)
-            .returns(ClassName.get("", UNFILTERED_ITERATOR))
+            .returns(ClassName.get("", Constants.UNFILTERED_ITERATOR))
             .addStatement("currentOffset = 0")
             .addStatement("return this")
             .build();
@@ -124,13 +106,13 @@ public class AgronaCompositeGenerator
             .returns(ClassName.get(composite.getPackageNameGen(), composite.getName()))
             .beginControlFlow("if (hasNext())")
             .beginControlFlow("if (currentOffset > maxUsedOffset)")
-            .addStatement(THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION)
+            .addStatement(Constants.THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION)
             .endControlFlow()
             .addStatement("iteratorFlyweight.setUnderlyingBuffer(internalBuffer, currentOffset)")
-            .addStatement("currentOffset = currentOffset + " + composite.getName() + BUFFER_LENGTH_1)
+            .addStatement("currentOffset = currentOffset + " + composite.getName() + Constants.BUFFER_LENGTH_1)
             .addStatement("return iteratorFlyweight")
             .endControlFlow()
-            .addStatement(THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION)
+            .addStatement(Constants.THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION)
             .build();
     }
 
@@ -159,7 +141,7 @@ public class AgronaCompositeGenerator
             .build());
 
         results.add(FieldSpec
-            .builder(ExpandableDirectByteBuffer.class, INTERNAL_BUFFER)
+            .builder(ExpandableDirectByteBuffer.class, Constants.INTERNAL_BUFFER)
             .addJavadoc("The internal MutableDirectBuffer holding capacity instances.")
             .addModifiers(Modifier.FINAL)
             .addModifiers(Modifier.PRIVATE)
@@ -187,7 +169,7 @@ public class AgronaCompositeGenerator
             .build());
 
         results.add(FieldSpec
-            .builder(ClassName.get("", UNFILTERED_ITERATOR), "unfilteredIterator")
+            .builder(ClassName.get("", Constants.UNFILTERED_ITERATOR), "unfilteredIterator")
             .addJavadoc("The iterator for unfiltered items.")
             .addModifiers(Modifier.PRIVATE)
             .addModifiers(Modifier.FINAL)
@@ -216,7 +198,7 @@ public class AgronaCompositeGenerator
             MethodSpec.constructorBuilder()
                 .addJavadoc("Standard constructor.")
                 .addParameter(
-                    ParameterSpec.builder(int.class, CAPACITY)
+                    ParameterSpec.builder(int.class, Constants.CAPACITY)
                         .addJavadoc("capacity to build.")
                         .build()
                 )
@@ -238,7 +220,7 @@ public class AgronaCompositeGenerator
                 .addJavadoc("Creates a respository holding at most capacity elements.")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
-                .addParameter(int.class, CAPACITY)
+                .addParameter(int.class, Constants.CAPACITY)
                 .returns(ClassName.get(composite.getPackageNameGen(), composite.getRepositoryName()))
                 .addStatement("return new " + composite.getRepositoryName() + "(capacity)")
                 .build()
@@ -252,18 +234,18 @@ public class AgronaCompositeGenerator
                 .addParameter(int.class, "id")
                 .returns(ClassName.get(composite.getPackageNameGen(), composite.getName()))
                 .beginControlFlow("if (currentCount >= maxCapacity)")
-                .addStatement(RETURN_NULL)
+                .addStatement(Constants.RETURN_NULL)
                 .endControlFlow()
                 .beginControlFlow("if (offsetByKey.containsKey(id))")
-                .addStatement(RETURN_NULL)
+                .addStatement(Constants.RETURN_NULL)
                 .endControlFlow()
                 .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, maxUsedOffset)")
                 .addStatement("offsetByKey.put(id, maxUsedOffset)")
-                .addStatement("flyweight.write" + upperFirst(composite.getKeyName()) + "(id)")
+                .addStatement("flyweight.write" + Util.upperFirst(composite.getKeyName()) + "(id)")
                 .addStatement("flyweight.lockKeyId()")
                 .addStatement("currentCount += 1")
-                .addStatement("maxUsedOffset = maxUsedOffset + " + composite.getName() + BUFFER_LENGTH_1)
-                .addStatement(RETURN_FLYWEIGHT)
+                .addStatement("maxUsedOffset = maxUsedOffset + " + composite.getName() + Constants.BUFFER_LENGTH_1)
+                .addStatement(Constants.RETURN_FLYWEIGHT)
                 .build()
         );
 
@@ -306,13 +288,13 @@ public class AgronaCompositeGenerator
                 .addStatement("int offset = offsetByKey.get(id)")
                 .addStatement("flyweight.setUnderlyingBuffer(internalBuffer, offset)")
                 .addStatement("flyweight.lockKeyId()")
-                .addStatement(RETURN_FLYWEIGHT)
+                .addStatement(Constants.RETURN_FLYWEIGHT)
                 .endControlFlow()
-                .addStatement(RETURN_NULL)
+                .addStatement(Constants.RETURN_NULL)
                 .build()
         );
 
-        final ClassName iterator = ClassName.get(JAVA_UTIL, ITERATOR);
+        final ClassName iterator = ClassName.get(Constants.JAVA_UTIL, Constants.ITERATOR);
         final ClassName genObj = ClassName.get("", composite.getName());
         final TypeName iteratorGen = ParameterizedTypeName.get(iterator, genObj);
 
@@ -373,7 +355,7 @@ public class AgronaCompositeGenerator
             constructor.addStatement(
                 compositeItem.getName().toUpperCase()
                     +
-                    FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
+                    Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
                     +
                     compositeItem.getName().toUpperCase()
                     +
@@ -392,7 +374,7 @@ public class AgronaCompositeGenerator
             .addJavadoc("Constructor that does not allocate, it sits atop an external buffer.")
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ExpandableDirectByteBuffer.class, "bufferToUse")
-            .addParameter(int.class, OFFSET)
+            .addParameter(int.class, Constants.OFFSET)
             .addStatement("bufferToUse.checkLimit(offset + BUFFER_LENGTH)")
             .addStatement("initialOffset = offset")
             .addStatement("internalBuffer = bufferToUse")
@@ -404,7 +386,7 @@ public class AgronaCompositeGenerator
             constructorExistingBuffer.addStatement(
                 compositeItem.getName().toUpperCase()
                     +
-                    FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
+                    Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
                     +
                     compositeItem.getName().toUpperCase()
                     +
@@ -422,8 +404,8 @@ public class AgronaCompositeGenerator
         MethodSpec.Builder setUnderlyingBuffer = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Updates the internal buffer and initial offset.")
-            .addParameter(ExpandableDirectByteBuffer.class, BUFFER)
-            .addParameter(int.class, OFFSET)
+            .addParameter(ExpandableDirectByteBuffer.class, Constants.BUFFER)
+            .addParameter(int.class, Constants.OFFSET)
             .addStatement("internalBuffer = buffer")
             .addStatement("initialOffset = offset")
             .addStatement("keyLocked = false");
@@ -433,7 +415,7 @@ public class AgronaCompositeGenerator
             setUnderlyingBuffer.addStatement(
                 compositeItem.getName().toUpperCase()
                     +
-                    FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
+                    Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER
                     +
                     compositeItem.getName().toUpperCase()
                     +
@@ -447,23 +429,23 @@ public class AgronaCompositeGenerator
 
         if (composite.getKeyType().equals(EiderPropertyType.INT))
         {
-            MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
+            MethodSpec keyReader = MethodSpec.methodBuilder("read" + Util.upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
                 .addJavadoc("Reads the key value from the buffer.")
                 .returns(int.class)
                 .addStatement("return internalBuffer.getInt(initialOffset + KEY_FIELD_OFFSET)")
                 .build();
 
-            MethodSpec keyWriter = MethodSpec.methodBuilder(WRITE + upperFirst(composite.getKeyName()))
+            MethodSpec keyWriter = MethodSpec.methodBuilder(Constants.WRITE + Util.upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
                 .addJavadoc("Returns true if the provided key was written, false if not.")
                 .addParameter(int.class, "key")
                 .returns(boolean.class)
                 .beginControlFlow("if (!keyLocked)")
                 .addStatement("internalBuffer.putInt(initialOffset + KEY_FIELD_OFFSET, key)")
-                .addStatement(RETURN_TRUE)
+                .addStatement(Constants.RETURN_TRUE)
                 .endControlFlow()
-                .addStatement(RETURN_FALSE)
+                .addStatement(Constants.RETURN_FALSE)
                 .build();
 
             results.add(keyReader);
@@ -471,30 +453,30 @@ public class AgronaCompositeGenerator
         }
         else
         {
-            MethodSpec keyReader = MethodSpec.methodBuilder("read" + upperFirst(composite.getKeyName()))
+            MethodSpec keyReader = MethodSpec.methodBuilder("read" + Util.upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
                 .addJavadoc("Reads the key value from the buffer.")
                 .returns(long.class)
                 .addStatement("return internalBuffer.getLong(initialOffset + KEY_FIELD_OFFSET)")
                 .build();
 
-            MethodSpec keyWriter = MethodSpec.methodBuilder(WRITE + upperFirst(composite.getKeyName()))
+            MethodSpec keyWriter = MethodSpec.methodBuilder(Constants.WRITE + Util.upperFirst(composite.getKeyName()))
                 .addModifiers(Modifier.PUBLIC)
                 .addJavadoc("Returns true if the provided key was written, false if not.")
                 .addParameter(long.class, "key")
                 .returns(boolean.class)
                 .beginControlFlow("if (!keyLocked)")
                 .addStatement("internalBuffer.putLong(initialOffset + KEY_FIELD_OFFSET, key)")
-                .addStatement(RETURN_TRUE)
+                .addStatement(Constants.RETURN_TRUE)
                 .endControlFlow()
-                .addStatement(RETURN_FALSE)
+                .addStatement(Constants.RETURN_FALSE)
                 .build();
 
             results.add(keyReader);
             results.add(keyWriter);
         }
 
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("lockKey" + upperFirst(composite.getKeyName()))
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("lockKey" + Util.upperFirst(composite.getKeyName()))
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Prevents any further updates to the key field.")
             .addStatement("keyLocked = true");
@@ -504,11 +486,11 @@ public class AgronaCompositeGenerator
         for (final PreprocessedNamedEiderObject compositeItem : composite.getObjectList())
         {
             results.add(
-                MethodSpec.methodBuilder("copy" + upperFirst(compositeItem.getName()) + "FromBuffer")
+                MethodSpec.methodBuilder("copy" + Util.upperFirst(compositeItem.getName()) + "FromBuffer")
                     .addJavadoc("Copies " + compositeItem.getName() + " from the source to the buffer.")
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(ExpandableDirectByteBuffer.class, "sourceBuffer")
-                    .addParameter(int.class, OFFSET)
+                    .addParameter(int.class, Constants.OFFSET)
                     .addStatement("internalBuffer.putBytes("
                         +
                         compositeItem.getName().toUpperCase()
@@ -521,29 +503,29 @@ public class AgronaCompositeGenerator
                     .build()
             );
 
-            String flyWeight = compositeItem.getName().toUpperCase() + FLYWEIGHT;
+            String flyWeight = compositeItem.getName().toUpperCase() + Constants.FLYWEIGHT;
 
-            MethodSpec.Builder source = MethodSpec.methodBuilder("put" + upperFirst(compositeItem.getName()))
+            MethodSpec.Builder source = MethodSpec.methodBuilder("put" + Util.upperFirst(compositeItem.getName()))
                 .addJavadoc("Copies the contents from source to this " + compositeItem.getName() + " buffer.")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get("", upperFirst(compositeItem.getObject().getName())), "source");
+                .addParameter(ClassName.get("", Util.upperFirst(compositeItem.getObject().getName())), "source");
 
             List<PreprocessedEiderProperty> propertyList = compositeItem.getObject().getPropertyList();
 
             for (final PreprocessedEiderProperty property : propertyList)
             {
-                final String prop = upperFirst(property.getName());
+                final String prop = Util.upperFirst(property.getName());
                 source.addStatement(flyWeight + ".write" + prop + "(source.read" + prop + "())");
             }
 
             results.add(source.build());
 
             results.add(
-                MethodSpec.methodBuilder("get" + upperFirst(compositeItem.getName()))
-                    .addJavadoc("Returns the " + upperFirst(compositeItem.getObject().getName()) + " flyweight.")
+                MethodSpec.methodBuilder("get" + Util.upperFirst(compositeItem.getName()))
+                    .addJavadoc("Returns the " + Util.upperFirst(compositeItem.getObject().getName()) + " flyweight.")
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(ClassName.get("", upperFirst(compositeItem.getObject().getName())))
-                    .addStatement("return " + compositeItem.getName().toUpperCase() + FLYWEIGHT)
+                    .returns(ClassName.get("", Util.upperFirst(compositeItem.getObject().getName())))
+                    .addStatement("return " + compositeItem.getName().toUpperCase() + Constants.FLYWEIGHT)
                     .build()
             );
         }
@@ -678,7 +660,7 @@ public class AgronaCompositeGenerator
 
             fields.add(FieldSpec
                 .builder(ClassName.get("", compositeItem.getObject().getName()),
-                    compositeItem.getName().toUpperCase() + FLYWEIGHT)
+                    compositeItem.getName().toUpperCase() + Constants.FLYWEIGHT)
                 .addJavadoc("The flyweight for the " + compositeItem.getName() + " within this buffer.")
                 .addModifiers(Modifier.FINAL)
                 .addModifiers(Modifier.PRIVATE)
@@ -690,7 +672,7 @@ public class AgronaCompositeGenerator
         }
 
         fields.add(FieldSpec
-            .builder(ExpandableDirectByteBuffer.class, INTERNAL_BUFFER)
+            .builder(ExpandableDirectByteBuffer.class, Constants.INTERNAL_BUFFER)
             .addJavadoc("The internal buffer to hold this composite object.")
             .addModifiers(Modifier.PRIVATE)
             .build());

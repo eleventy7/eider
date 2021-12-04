@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-package io.eider.processor;
+package io.eider.javawriter;
+
+import io.eider.internals.PreprocessedEiderComposite;
+import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderRepeatableRecord;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import java.util.List;

@@ -20,7 +20,6 @@ plugins {
     id 'checkstyle'
     id 'maven-publish'
     id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
-    id "org.sonarqube" version "3.3"
 }
 
 defaultTasks 'clean', 'check', 'build', 'test'
@@ -28,36 +27,6 @@ defaultTasks 'clean', 'check', 'build', 'test'
 def eiderGroup = 'io.eider'
 def eiderVersion = file('version.txt').text.trim()
 def javaVersion = JavaVersion.VERSION_17
-
-def propFile = file('sonar.properties')
-def sonar_login;
-def sonar_organization;
-def sonar_projectKey;
-def Properties props = new Properties()
-if (propFile.canRead()) {
-    props.load(new FileInputStream(propFile))
-    if (props != null && props.containsKey('sonarProjectKey')) {
-        sonar_projectKey = props['sonarProjectKey']
-    } else {
-        sonar_projectKey = System.getenv("SONAR_PROJECT_KEY")
-    }
-
-    if (props != null && props.containsKey('sonarLogin')) {
-        sonar_login = props['sonarLogin']
-    } else {
-        sonar_login = System.getenv("SONAR_LOGIN")
-    }
-
-    if (props != null && props.containsKey('sonarOrganization')) {
-        sonar_organization = props['sonarOrganization']
-    } else {
-        sonar_organization = System.getenv("SONAR_ORGANIZATION")
-    }
-} else {
-    sonar_projectKey = System.getenv("SONAR_PROJECT_KEY")
-    sonar_login = System.getenv("SONAR_LOGIN")
-    sonar_organization = System.getenv("SONAR_ORGANIZATION")
-}
 
 allprojects {
     apply plugin: 'java'
@@ -138,6 +107,21 @@ allprojects {
     }
 }
 
+project('eider-internals') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+}
+
+project('eider-java-writer') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+
+    dependencies {
+        implementation 'com.squareup:javapoet:1.13.0'
+        implementation project(path: ':eider-internals')
+    }
+}
+
 project('eider-processor') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
@@ -145,7 +129,8 @@ project('eider-processor') {
     apply plugin: 'maven-publish'
 
     dependencies {
-        implementation 'com.squareup:javapoet:1.13.0'
+        implementation project(path: ':eider-internals')
+        implementation project(path: ':eider-java-writer')
     }
 
     publishing {
@@ -172,6 +157,17 @@ project('eider-processor') {
             }
         }
 
+    }
+}
+
+
+project('eider-parser') {
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+
+    dependencies {
+        implementation project(path: ':eider-internals')
+        implementation project(path: ':eider-java-writer')
     }
 }
 
@@ -237,14 +233,5 @@ project('eider-test') {
     task jmh(type: JavaExec, description: 'Executing JMH benchmarks') {
         classpath = sourceSets.jmh.runtimeClasspath
         mainClass = 'org.openjdk.jmh.Main'
-    }
-}
-
-sonarqube {
-    properties {
-        property "sonar.projectKey", sonar_projectKey
-        property "sonar.organization", sonar_organization
-        property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.login", sonar_login
     }
 }

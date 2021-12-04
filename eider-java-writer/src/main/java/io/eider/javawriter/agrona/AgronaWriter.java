@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
 
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 
-import io.eider.processor.EiderCodeWriter;
-import io.eider.processor.PreprocessedEiderComposite;
-import io.eider.processor.PreprocessedEiderObject;
-import io.eider.processor.PreprocessedEiderRepeatableRecord;
+import io.eider.javawriter.EiderCodeWriter;
+import io.eider.internals.PreprocessedEiderComposite;
+import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderRepeatableRecord;
 
 import org.agrona.DirectBuffer;
 
@@ -35,10 +35,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.eider.processor.agrona.Constants.BUFFER;
-import static io.eider.processor.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
-import static io.eider.processor.agrona.Constants.OFFSET;
 
 public class AgronaWriter implements EiderCodeWriter
 {
@@ -222,9 +218,9 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(short.class)
-                .addParameter(DirectBuffer.class, BUFFER)
-                .addParameter(int.class, OFFSET)
-                .addStatement("return buffer.getShort(offset" + JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                .addParameter(DirectBuffer.class, Constants.BUFFER)
+                .addParameter(int.class, Constants.OFFSET)
+                .addStatement("return buffer.getShort(offset" + Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
         );
 
@@ -234,11 +230,11 @@ public class AgronaWriter implements EiderCodeWriter
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(short.class)
-                .addParameter(DirectBuffer.class, BUFFER)
-                .addParameter(int.class, OFFSET)
+                .addParameter(DirectBuffer.class, Constants.BUFFER)
+                .addParameter(int.class, Constants.OFFSET)
                 .addStatement("return buffer.getShort(offset + 2"
                     +
-                    JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
+                    Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1)
                 .build()
         );
 

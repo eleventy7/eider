@@ -1,9 +1,9 @@
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
 
 import java.util.Map;
 
-import io.eider.processor.AttributeConstants;
-import io.eider.processor.EiderPropertyType;
+import io.eider.javawriter.agrona.AttributeConstants;
+import io.eider.internals.EiderPropertyType;
 
 public final class Util
 {

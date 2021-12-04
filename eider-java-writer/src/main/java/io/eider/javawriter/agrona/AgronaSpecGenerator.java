@@ -1,4 +1,14 @@
-package io.eider.processor.agrona;
+package io.eider.javawriter.agrona;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.zip.CRC32;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Modifier;
+import javax.tools.JavaFileObject;
 
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -10,11 +20,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-import io.eider.processor.EiderPropertyType;
-import io.eider.processor.PreprocessedEiderObject;
-import io.eider.processor.PreprocessedEiderProperty;
-import io.eider.processor.PreprocessedEiderRepeatableRecord;
-
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2IntHashMap;
@@ -24,53 +29,38 @@ import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.collections.ObjectHashSet;
 import org.agrona.concurrent.UnsafeBuffer;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Modifier;
-import javax.tools.JavaFileObject;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.zip.CRC32;
+import io.eider.internals.EiderPropertyType;
+import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderProperty;
+import io.eider.internals.PreprocessedEiderRepeatableRecord;
 
-import static io.eider.processor.AttributeConstants.INDEXED;
-import static io.eider.processor.AttributeConstants.KEY;
-import static io.eider.processor.AttributeConstants.MAXLENGTH;
-import static io.eider.processor.AttributeConstants.SEQUENCE_GENERATOR;
-import static io.eider.processor.AttributeConstants.UNIQUE;
-import static io.eider.processor.agrona.Constants.BUFFER;
-import static io.eider.processor.agrona.Constants.BUFFER_LENGTH_1;
-import static io.eider.processor.agrona.Constants.CAPACITY;
-import static io.eider.processor.agrona.Constants.FALSE;
-import static io.eider.processor.agrona.Constants.FIELD;
-import static io.eider.processor.agrona.Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER_OFFSET;
-import static io.eider.processor.agrona.Constants.INDEX_DATA_FOR;
-import static io.eider.processor.agrona.Constants.INTERNAL_BUFFER;
-import static io.eider.processor.agrona.Constants.ITERATOR;
-import static io.eider.processor.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN;
-import static io.eider.processor.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
-import static io.eider.processor.agrona.Constants.JAVA_UTIL;
-import static io.eider.processor.agrona.Constants.MUTABLE_BUFFER;
-import static io.eider.processor.agrona.Constants.NEW_$_T;
-import static io.eider.processor.agrona.Constants.OFFSET;
-import static io.eider.processor.agrona.Constants.RETURN_FALSE;
-import static io.eider.processor.agrona.Constants.RETURN_FLYWEIGHT;
-import static io.eider.processor.agrona.Constants.RETURN_NULL;
-import static io.eider.processor.agrona.Constants.RETURN_TRUE;
-import static io.eider.processor.agrona.Constants.REVERSE_INDEX_DATA_FOR;
-import static io.eider.processor.agrona.Constants.THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION;
-import static io.eider.processor.agrona.Constants.TRANSACTION_COPY_BUFFER_SET_FALSE;
-import static io.eider.processor.agrona.Constants.TRUE;
-import static io.eider.processor.agrona.Constants.UNFILTERED_ITERATOR;
-import static io.eider.processor.agrona.Constants.UNSAFE_BUFFER;
-import static io.eider.processor.agrona.Constants.WRITE;
-import static io.eider.processor.agrona.Util.byteLength;
-import static io.eider.processor.agrona.Util.fromType;
-import static io.eider.processor.agrona.Util.fromTypeToStr;
-import static io.eider.processor.agrona.Util.getBoxedType;
-import static io.eider.processor.agrona.Util.getComparator;
-import static io.eider.processor.agrona.Util.upperFirst;
+import static io.eider.javawriter.agrona.Constants.BUFFER;
+import static io.eider.javawriter.agrona.Constants.BUFFER_LENGTH_1;
+import static io.eider.javawriter.agrona.Constants.CAPACITY;
+import static io.eider.javawriter.agrona.Constants.FALSE;
+import static io.eider.javawriter.agrona.Constants.FIELD;
+import static io.eider.javawriter.agrona.Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER_OFFSET;
+import static io.eider.javawriter.agrona.Constants.INDEX_DATA_FOR;
+import static io.eider.javawriter.agrona.Constants.INTERNAL_BUFFER;
+import static io.eider.javawriter.agrona.Constants.ITERATOR;
+import static io.eider.javawriter.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN;
+import static io.eider.javawriter.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
+import static io.eider.javawriter.agrona.Constants.JAVA_UTIL;
+import static io.eider.javawriter.agrona.Constants.MUTABLE_BUFFER;
+import static io.eider.javawriter.agrona.Constants.NEW_$_T;
+import static io.eider.javawriter.agrona.Constants.OFFSET;
+import static io.eider.javawriter.agrona.Constants.RETURN_FALSE;
+import static io.eider.javawriter.agrona.Constants.RETURN_FLYWEIGHT;
+import static io.eider.javawriter.agrona.Constants.RETURN_NULL;
+import static io.eider.javawriter.agrona.Constants.RETURN_TRUE;
+import static io.eider.javawriter.agrona.Constants.REVERSE_INDEX_DATA_FOR;
+import static io.eider.javawriter.agrona.Constants.THROW_NEW_JAVA_UTIL_NO_SUCH_ELEMENT_EXCEPTION;
+import static io.eider.javawriter.agrona.Constants.TRANSACTION_COPY_BUFFER_SET_FALSE;
+import static io.eider.javawriter.agrona.Constants.TRUE;
+import static io.eider.javawriter.agrona.Constants.UNFILTERED_ITERATOR;
+import static io.eider.javawriter.agrona.Constants.UNSAFE_BUFFER;
+import static io.eider.javawriter.agrona.Constants.WRITE;
+
 
 public class AgronaSpecGenerator
 {
@@ -135,19 +125,19 @@ public class AgronaSpecGenerator
 
         for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
+            final String indexName = INDEX_DATA_FOR + Util.upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName());
 
-            MethodSpec.Builder builder = MethodSpec.methodBuilder("updateIndexFor" + upperFirst(prop.getName()))
+            MethodSpec.Builder builder = MethodSpec.methodBuilder("updateIndexFor" + Util.upperFirst(prop.getName()))
                 .addJavadoc("Accepts a notification that a flyweight's indexed field has been modified")
                 .addModifiers(Modifier.PRIVATE)
                 .addParameter(int.class, OFFSET)
-                .addParameter(getBoxedType(prop.getType()), VALUE)
+                .addParameter(Util.getBoxedType(prop.getType()), VALUE)
                 .beginControlFlow("if (" + revIndexName + ".containsKey(offset))")
-                .addStatement(fromTypeToStr(prop.getType()) + " oldValue = "
+                .addStatement(Util.fromTypeToStr(prop.getType()) + " oldValue = "
                     + revIndexName + ".get(offset)")
                 .beginControlFlow("if (!" + revIndexName + ".get(offset)."
-                    + getComparator(prop.getType(), VALUE) + ")")
+                    + Util.getComparator(prop.getType(), VALUE) + ")")
                 .addStatement(indexName + ".get(oldValue).remove(offset)")
                 .endControlFlow()
                 .endControlFlow()
@@ -162,7 +152,7 @@ public class AgronaSpecGenerator
 
             if (isUniqueIndexOnProp(prop))
             {
-                final String uniqueIndex = UNIQUE_INDEX_FOR + upperFirst(prop.getName());
+                final String uniqueIndex = UNIQUE_INDEX_FOR + Util.upperFirst(prop.getName());
                 builder.addStatement(uniqueIndex + ".add(value)");
             }
 
@@ -180,10 +170,10 @@ public class AgronaSpecGenerator
                 .get(iteratorImpl, genObj);
 
             results.add(
-                MethodSpec.methodBuilder("getAllWithIndex" + upperFirst(prop.getName() + "Value"))
+                MethodSpec.methodBuilder("getAllWithIndex" + Util.upperFirst(prop.getName() + "Value"))
                     .addJavadoc("Uses index to return list of offsets matching given value.")
                     .addModifiers(Modifier.PUBLIC)
-                    .addParameter(getBoxedType(prop.getType()), VALUE)
+                    .addParameter(Util.getBoxedType(prop.getType()), VALUE)
                     .returns(indexResults)
                     .addStatement("List<Integer> results = new $T()", indexResultsImpl)
                     .beginControlFlow("if (" + indexName + ".containsKey(value))")
@@ -195,12 +185,12 @@ public class AgronaSpecGenerator
 
             if (isUniqueIndexOnProp(prop))
             {
-                final String uniqueIndex = UNIQUE_INDEX_FOR + upperFirst(prop.getName());
+                final String uniqueIndex = UNIQUE_INDEX_FOR + Util.upperFirst(prop.getName());
                 results.add(
-                    MethodSpec.methodBuilder("isUnique" + upperFirst(prop.getName() + "Value"))
+                    MethodSpec.methodBuilder("isUnique" + Util.upperFirst(prop.getName() + "Value"))
                         .addJavadoc("Uses unique index to confirm if the repository contains this value or not.")
                         .addModifiers(Modifier.PRIVATE)
-                        .addParameter(getBoxedType(prop.getType()), VALUE)
+                        .addParameter(Util.getBoxedType(prop.getType()), VALUE)
                         .returns(boolean.class)
                         .addStatement("return !" + uniqueIndex + ".contains(value)")
                         .build()
@@ -228,10 +218,10 @@ public class AgronaSpecGenerator
 
         for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
-            final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            final String indexName = INDEX_DATA_FOR + Util.upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName());
+            final String indexNameCopy = INDEX_DATA_FOR + Util.upperFirst(prop.getName() + "Copy");
+            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName() + "Copy");
             //
             beginTransaction.addStatement(indexNameCopy + CLEAR);
             beginTransaction.addStatement(indexNameCopy + PUT_ALL + indexName + ")");
@@ -240,8 +230,8 @@ public class AgronaSpecGenerator
 
             if (isUniqueIndexOnProp(prop))
             {
-                final String unqiueIndex = UNIQUE_INDEX_FOR + upperFirst(prop.getName());
-                final String unqiueIndexCopy = UNIQUE_INDEX_COPY_FOR + upperFirst(prop.getName());
+                final String unqiueIndex = UNIQUE_INDEX_FOR + Util.upperFirst(prop.getName());
+                final String unqiueIndexCopy = UNIQUE_INDEX_COPY_FOR + Util.upperFirst(prop.getName());
                 beginTransaction.addStatement(unqiueIndexCopy + CLEAR);
                 beginTransaction.addStatement(unqiueIndexCopy + ".addAll(" + unqiueIndex + ")");
             }
@@ -277,10 +267,10 @@ public class AgronaSpecGenerator
 
         for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            final String indexName = INDEX_DATA_FOR + upperFirst(prop.getName());
-            final String revIndexName = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName());
-            final String indexNameCopy = INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
-            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName() + "Copy");
+            final String indexName = INDEX_DATA_FOR + Util.upperFirst(prop.getName());
+            final String revIndexName = REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName());
+            final String indexNameCopy = INDEX_DATA_FOR + Util.upperFirst(prop.getName() + "Copy");
+            final String revIndexNameCopy = REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName() + "Copy");
             //
             rollback.addStatement(indexName + CLEAR);
             rollback.addStatement(indexName + PUT_ALL + indexNameCopy + ")");
@@ -291,8 +281,8 @@ public class AgronaSpecGenerator
 
             if (isUniqueIndexOnProp(prop))
             {
-                final String unqiueIndex = UNIQUE_INDEX_FOR + upperFirst(prop.getName());
-                final String unqiueIndexCopy = UNIQUE_INDEX_COPY_FOR + upperFirst(prop.getName());
+                final String unqiueIndex = UNIQUE_INDEX_FOR + Util.upperFirst(prop.getName());
+                final String unqiueIndexCopy = UNIQUE_INDEX_COPY_FOR + Util.upperFirst(prop.getName());
                 beginTransaction.addStatement(unqiueIndex + CLEAR);
                 beginTransaction.addStatement(unqiueIndex + ".addAll(" + unqiueIndexCopy + ")");
                 beginTransaction.addStatement(unqiueIndexCopy + CLEAR);
@@ -407,13 +397,13 @@ public class AgronaSpecGenerator
 
         for (PreprocessedEiderProperty prop : indexFields(object))
         {
-            builder.addStatement("flyweight.setIndexNotifierFor" + upperFirst(prop.getName())
-                + "(this::updateIndexFor" + upperFirst(prop.getName()) + ")");
+            builder.addStatement("flyweight.setIndexNotifierFor" + Util.upperFirst(prop.getName())
+                + "(this::updateIndexFor" + Util.upperFirst(prop.getName()) + ")");
 
             if (isUniqueIndexOnProp(prop))
             {
-                builder.addStatement("flyweight.setIndexUniqueCheckerFor" + upperFirst(prop.getName())
-                    + "(this::isUnique" + upperFirst(prop.getName()) + "Value)");
+                builder.addStatement("flyweight.setIndexUniqueCheckerFor" + Util.upperFirst(prop.getName())
+                    + "(this::isUnique" + Util.upperFirst(prop.getName()) + "Value)");
             }
         }
 
@@ -447,7 +437,7 @@ public class AgronaSpecGenerator
                 .addStatement("offsetByKey.put(id, maxUsedOffset)")
                 .addStatement("validOffsets.add(maxUsedOffset)")
                 .addStatement("flyweight.writeHeader()")
-                .addStatement("flyweight.write" + upperFirst(getKeyField(object)) + "(id)")
+                .addStatement("flyweight.write" + Util.upperFirst(getKeyField(object)) + "(id)")
                 .addStatement(FLYWEIGHT_LOCK_KEY_ID)
                 .addStatement("currentCount += 1")
                 .addStatement("maxUsedOffset = maxUsedOffset + " + object.getName() + BUFFER_LENGTH_1)
@@ -455,7 +445,7 @@ public class AgronaSpecGenerator
                 .build()
         );
 
-        final String readKeyMethod = "appendFlyweight.read" + upperFirst(getKeyField(object));
+        final String readKeyMethod = "appendFlyweight.read" + Util.upperFirst(getKeyField(object));
 
         MethodSpec.Builder bufferCopy = MethodSpec.methodBuilder("appendByCopyFromBuffer")
             .addJavadoc("Appends an element in the buffer by copying over from source buffer. ")
@@ -483,11 +473,11 @@ public class AgronaSpecGenerator
         {
             for (PreprocessedEiderProperty prop : object.getPropertyList())
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                if (prop.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
                 {
                     //need to update the index for each item read.
-                    String read = "appendFlyweight.read" + upperFirst(prop.getName()) + "()";
-                    String call = "updateIndexFor" + upperFirst(prop.getName() + "(maxUsedOffset, " + read + ")");
+                    String read = "appendFlyweight.read" + Util.upperFirst(prop.getName()) + "()";
+                    String call = "updateIndexFor" + Util.upperFirst(prop.getName() + "(maxUsedOffset, " + read + ")");
                     bufferCopy.addStatement(call);
                 }
             }
@@ -724,11 +714,11 @@ public class AgronaSpecGenerator
 
             final ClassName topLevelMap =
                 ClassName.get(Object2ObjectHashMap.class);
-            final ClassName genObj = ClassName.get(getBoxedType(prop.getType()));
+            final ClassName genObj = ClassName.get(Util.getBoxedType(prop.getType()));
             final TypeName indexDataMap = ParameterizedTypeName
                 .get(topLevelMap, genObj, itemList);
 
-            results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName()))
+            results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + Util.upperFirst(prop.getName()))
                 .addJavadoc("Holds the index data for the " + prop.getName() + FIELD)
                 .initializer(NEW_$_T, indexDataMap)
                 .addModifiers(Modifier.PRIVATE)
@@ -741,7 +731,7 @@ public class AgronaSpecGenerator
                 final TypeName indexDataSet = ParameterizedTypeName
                     .get(topLevelUniqueSet, genObj);
 
-                results.add(FieldSpec.builder(indexDataSet, UNIQUE_INDEX_FOR + upperFirst(prop.getName()))
+                results.add(FieldSpec.builder(indexDataSet, UNIQUE_INDEX_FOR + Util.upperFirst(prop.getName()))
                     .addJavadoc("Holds the unique index data for the " + prop.getName() + FIELD)
                     .initializer(NEW_$_T, indexDataSet)
                     .addModifiers(Modifier.PRIVATE)
@@ -749,7 +739,7 @@ public class AgronaSpecGenerator
 
                 if (object.isTransactional())
                 {
-                    results.add(FieldSpec.builder(indexDataSet, UNIQUE_INDEX_COPY_FOR + upperFirst(prop.getName()))
+                    results.add(FieldSpec.builder(indexDataSet, UNIQUE_INDEX_COPY_FOR + Util.upperFirst(prop.getName()))
                         .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
                         .initializer(NEW_$_T, indexDataSet)
                         .addModifiers(Modifier.PRIVATE)
@@ -759,7 +749,7 @@ public class AgronaSpecGenerator
 
             if (object.isTransactional())
             {
-                results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + upperFirst(prop.getName())
+                results.add(FieldSpec.builder(indexDataMap, INDEX_DATA_FOR + Util.upperFirst(prop.getName())
                         + "Copy")
                     .addJavadoc("Holds the transactional copy index data for the " + prop.getName() + FIELD)
                     .initializer(NEW_$_T, indexDataMap)
@@ -772,7 +762,8 @@ public class AgronaSpecGenerator
             final TypeName reversedIndex = ParameterizedTypeName
                 .get(reverseMap, genObj);
 
-            results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR + upperFirst(prop.getName()))
+            results.add(FieldSpec.builder(reversedIndex,
+                    REVERSE_INDEX_DATA_FOR + Util.upperFirst(prop.getName()))
                 .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
                 .initializer(NEW_$_T, reversedIndex)
                 .addModifiers(Modifier.PRIVATE)
@@ -781,7 +772,7 @@ public class AgronaSpecGenerator
             if (object.isTransactional())
             {
                 results.add(FieldSpec.builder(reversedIndex, REVERSE_INDEX_DATA_FOR
-                        + upperFirst(prop.getName()) + "Copy")
+                        + Util.upperFirst(prop.getName()) + "Copy")
                     .addJavadoc("Holds the reverse index data for the " + prop.getName() + FIELD)
                     .initializer(NEW_$_T, reversedIndex)
                     .addModifiers(Modifier.PRIVATE)
@@ -840,7 +831,7 @@ public class AgronaSpecGenerator
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
-            if (property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+            if (property.getAnnotations().get(AttributeConstants.KEY).equalsIgnoreCase(TRUE))
             {
                 return property.getName();
             }
@@ -965,7 +956,7 @@ public class AgronaSpecGenerator
             preCompute += " BUFFER_LENGTH + (" + rec.getName() + "Count * " + rec.getClassNameInput()
                 + ".BUFFER_LENGTH) +";
             committed += " BUFFER_LENGTH + (" + rec.getName().toUpperCase() + "_COMMITTED_SIZE * "
-                + rec.getClassNameInput() +".BUFFER_LENGTH) +";
+                + rec.getClassNameInput() + ".BUFFER_LENGTH) +";
         }
         preCompute += ";";
         committed += ";";
@@ -983,7 +974,7 @@ public class AgronaSpecGenerator
                 .addStatement(rec.getName().toUpperCase() + "_COMMITTED_SIZE = " + rec.getName() + COMMITTED_SIZE)
                 .addStatement("buffer.checkLimit(committedBufferLength())")
                 .addStatement("mutableBuffer.putInt(" + rec.getName().toUpperCase() + "_COUNT_OFFSET + initialOffset, "
-                    + rec.getName() + COMMITTED_SIZE +", java.nio.ByteOrder.LITTLE_ENDIAN)")
+                    + rec.getName() + COMMITTED_SIZE + ", java.nio.ByteOrder.LITTLE_ENDIAN)")
                 .returns(void.class);
             methods.add(resetSize.build());
 
@@ -1005,10 +996,10 @@ public class AgronaSpecGenerator
                 .addParameter(int.class, "offset")
                 .addStatement("if (" + rec.getName().toUpperCase() + "_COMMITTED_SIZE < offset) throw new "
                     + "RuntimeException(\"cannot access record beyond committed size\")")
-                .addStatement(rec.getName().toUpperCase()+"_FLYWEIGHT.setUnderlyingBuffer(this.buffer, "
+                .addStatement(rec.getName().toUpperCase() + "_FLYWEIGHT.setUnderlyingBuffer(this.buffer, "
                     + rec.getName().toUpperCase() + "_RECORD_START_OFFSET + initialOffset + (offset * "
                     + rec.getName() + ".BUFFER_LENGTH))")
-                .addStatement(RETURN + rec.getName().toUpperCase()+"_FLYWEIGHT")
+                .addStatement(RETURN + rec.getName().toUpperCase() + "_FLYWEIGHT")
                 .returns(recordName);
             methods.add(getRecordAtOffset.build());
         }
@@ -1113,12 +1104,12 @@ public class AgronaSpecGenerator
         {
             final ClassName indexNotifier =
                 ClassName.get(IO_EIDER_UTIL, "IndexUpdateConsumer");
-            final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+            final ClassName fieldName = ClassName.get(Util.getBoxedType(prop.getType()));
             final TypeName indexUpdateNotifier = ParameterizedTypeName
                 .get(indexNotifier, fieldName);
 
             results.add(FieldSpec
-                .builder(indexUpdateNotifier, "indexUpdateNotifier" + upperFirst(prop.getName()))
+                .builder(indexUpdateNotifier, "indexUpdateNotifier" + Util.upperFirst(prop.getName()))
                 .addJavadoc("The consumer notified of indexed field updates. Used to maintain indexes.")
                 .addModifiers(Modifier.PRIVATE)
                 .initializer("null")
@@ -1132,7 +1123,7 @@ public class AgronaSpecGenerator
             if (isUniqueIndexOnProp(prop))
             {
                 results.add(FieldSpec
-                    .builder(indexUniquenessChecker, "indexUniquenessChecker" + upperFirst(prop.getName()))
+                    .builder(indexUniquenessChecker, "indexUniquenessChecker" + Util.upperFirst(prop.getName()))
                     .addJavadoc("The used to confirm the uniqueness of an index value.")
                     .addModifiers(Modifier.PRIVATE)
                     .initializer("null")
@@ -1213,7 +1204,7 @@ public class AgronaSpecGenerator
                 results.add(FieldSpec
                     .builder(recordName, rec.getName().toUpperCase() + "_FLYWEIGHT")
                     .addJavadoc("The flyweight for the " + rec.getName() + " record.")
-                    .initializer("new " + rec.getName()+ "()")
+                    .initializer("new " + rec.getName() + "()")
                     .addModifiers(Modifier.PRIVATE)
                     .build());
 
@@ -1228,8 +1219,8 @@ public class AgronaSpecGenerator
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
-            if (property.getAnnotations() != null && property.getAnnotations().containsKey(INDEXED)
-                && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+            if (property.getAnnotations() != null && property.getAnnotations().containsKey(AttributeConstants.INDEXED)
+                && property.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
             {
                 return true;
             }
@@ -1241,8 +1232,8 @@ public class AgronaSpecGenerator
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
-            if (property.getAnnotations() != null && property.getAnnotations().containsKey(KEY)
-                && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+            if (property.getAnnotations() != null && property.getAnnotations().containsKey(AttributeConstants.KEY)
+                && property.getAnnotations().get(AttributeConstants.KEY).equalsIgnoreCase(TRUE))
             {
                 return true;
             }
@@ -1306,7 +1297,7 @@ public class AgronaSpecGenerator
             final List<PreprocessedEiderRepeatableRecord> recs = listRecords(object, records);
             for (final PreprocessedEiderRepeatableRecord rec : recs)
             {
-                PreprocessedEiderProperty fake = new PreprocessedEiderProperty(rec.getName().toUpperCase()+"_COUNT",
+                PreprocessedEiderProperty fake = new PreprocessedEiderProperty(rec.getName().toUpperCase() + "_COUNT",
                     EiderPropertyType.INT, "", Collections.emptyMap());
                 results.add(genOffset(fake, state));
 
@@ -1321,7 +1312,7 @@ public class AgronaSpecGenerator
         }
 
 
-        if(!hasAtLeastOneRecord(object))
+        if (!hasAtLeastOneRecord(object))
         {
             results.add(FieldSpec
                 .builder(int.class, BUFFER_LENGTH)
@@ -1353,7 +1344,7 @@ public class AgronaSpecGenerator
     private FieldSpec genOffset(PreprocessedEiderProperty property,
                                 AgronaWriterState runningOffset)
     {
-        int bytes = byteLength(property.getType(), property.getAnnotations());
+        int bytes = Util.byteLength(property.getType(), property.getAnnotations());
         int startAt = runningOffset.getCurrentOffset();
         runningOffset.extendCurrentOffset(bytes);
 
@@ -1424,16 +1415,16 @@ public class AgronaSpecGenerator
         {
             final ClassName iterator =
                 ClassName.get(IO_EIDER_UTIL, "IndexUpdateConsumer");
-            final ClassName fieldName = ClassName.get(getBoxedType(prop.getType()));
+            final ClassName fieldName = ClassName.get(Util.getBoxedType(prop.getType()));
             final TypeName indexUpdateNotifier = ParameterizedTypeName
                 .get(iterator, fieldName);
 
             results.add(
-                MethodSpec.methodBuilder("setIndexNotifierFor" + upperFirst(prop.getName()))
+                MethodSpec.methodBuilder("setIndexNotifierFor" + Util.upperFirst(prop.getName()))
                     .addModifiers(Modifier.PUBLIC)
                     .addJavadoc("Sets the indexed field update notifier to provided consumer.")
                     .addParameter(indexUpdateNotifier, "indexedNotifier")
-                    .addStatement("this.indexUpdateNotifier" + upperFirst(prop.getName())
+                    .addStatement("this.indexUpdateNotifier" + Util.upperFirst(prop.getName())
                         + " = indexedNotifier")
                     .build()
             );
@@ -1446,11 +1437,11 @@ public class AgronaSpecGenerator
                     .get(uniqueIndexChecker, fieldName);
 
                 results.add(
-                    MethodSpec.methodBuilder("setIndexUniqueCheckerFor" + upperFirst(prop.getName()))
+                    MethodSpec.methodBuilder("setIndexUniqueCheckerFor" + Util.upperFirst(prop.getName()))
                         .addModifiers(Modifier.PUBLIC)
                         .addJavadoc("Sets the indexed field checker to provided method.")
                         .addParameter(indexUniquenessChecker, "indexChecker")
-                        .addStatement("this.indexUniquenessChecker" + upperFirst(prop.getName())
+                        .addStatement("this.indexUniquenessChecker" + Util.upperFirst(prop.getName())
                             + " = indexChecker")
                         .build()
                 );
@@ -1465,7 +1456,7 @@ public class AgronaSpecGenerator
             }
 
             results.add(genReadProperty(property));
-            if (!property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
+            if (!property.getAnnotations().get(AttributeConstants.SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
             {
                 results.add(genWriteProperty(property));
                 if (property.getType() == EiderPropertyType.FIXED_STRING)
@@ -1475,11 +1466,11 @@ public class AgronaSpecGenerator
             }
             if (property.getAnnotations() != null)
             {
-                if (property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+                if (property.getAnnotations().get(AttributeConstants.KEY).equalsIgnoreCase(TRUE))
                 {
                     results.add(getKeyLock(property));
                 }
-                if (property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
+                if (property.getAnnotations().get(AttributeConstants.SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
                 {
                     results.add(buildInternalBufferAllocator(object));
                     results.add(buildSequenceGenerator(property));
@@ -1510,7 +1501,7 @@ public class AgronaSpecGenerator
 
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
-            builder.addStatement("instance.initialize" + upperFirst(property.getName() + "(1)"));
+            builder.addStatement("instance.initialize" + Util.upperFirst(property.getName() + "(1)"));
         }
 
         builder.addStatement("return instance");
@@ -1519,15 +1510,15 @@ public class AgronaSpecGenerator
 
     private MethodSpec genWritePropertyWithPadding(PreprocessedEiderProperty property)
     {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + Util.upperFirst(property.getName()
                 + "WithPadding"))
             .addModifiers(Modifier.PUBLIC)
             .returns(boolean.class)
             .addJavadoc("Writes " + property.getName() + " to the buffer with padding. ")
             .addParameter(getInputType(property));
 
-        final String underlying = WRITE + upperFirst(property.getName());
-        int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+        final String underlying = WRITE + Util.upperFirst(property.getName());
+        int maxLength = Integer.parseInt(property.getAnnotations().get(AttributeConstants.MAXLENGTH));
         builder.addStatement("final String padded = String.format(\"%" + maxLength + "s\", value)");
         builder.addStatement(RETURN + underlying + "(padded)");
         return builder.build();
@@ -1535,12 +1526,13 @@ public class AgronaSpecGenerator
 
     private MethodSpec buildSequenceInitialize(PreprocessedEiderProperty property)
     {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("initialize" + upperFirst(property.getName()))
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("initialize" + Util.upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Initializes " + property.getName() + " to the provided value. ")
             .addParameter(getInputType(property));
 
-        if (property.getAnnotations() != null && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+        if (property.getAnnotations() != null
+            && property.getAnnotations().get(AttributeConstants.KEY).equalsIgnoreCase(TRUE))
         {
             builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key after locking\")");
             builder.addJavadoc("This field is marked key=true.");
@@ -1552,22 +1544,22 @@ public class AgronaSpecGenerator
 
     private MethodSpec buildSequenceGenerator(PreprocessedEiderProperty property)
     {
-        final String read = "read" + upperFirst(property.getName());
+        final String read = "read" + Util.upperFirst(property.getName());
         final String offset = property.getName().toUpperCase() + "_OFFSET";
-        final String init = "initialize" + upperFirst(property.getName());
+        final String init = "initialize" + Util.upperFirst(property.getName());
 
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("next" + upperFirst(property.getName())
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("next" + Util.upperFirst(property.getName())
                 +
                 "Sequence")
             .addModifiers(Modifier.PUBLIC)
-            .returns(fromType(property.getType()))
+            .returns(Util.fromType(property.getType()))
             .addJavadoc("Increments and returns the sequence in field " + property.getName() + ".")
             .beginControlFlow("if (isUnsafe)")
-            .addStatement(FINAL + fromTypeToStr(property.getType()) + " currentVal = "
+            .addStatement(FINAL + Util.fromTypeToStr(property.getType()) + " currentVal = "
                 + "unsafeBuffer.getAndAddInt(initialOffset + " + offset + ", 1)")
             .addStatement("return currentVal")
             .endControlFlow()
-            .addStatement(FINAL + fromTypeToStr(property.getType()) + " safeCurrentVal = " + read + "()")
+            .addStatement(FINAL + Util.fromTypeToStr(property.getType()) + " safeCurrentVal = " + read + "()")
             .addStatement(init + "(safeCurrentVal + 1)")
             .addStatement(RETURN + read + "()");
 
@@ -1576,7 +1568,7 @@ public class AgronaSpecGenerator
 
     private MethodSpec getKeyLock(PreprocessedEiderProperty property)
     {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder("lockKey" + upperFirst(property.getName()))
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("lockKey" + Util.upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Prevents any further updates to the key field.")
             .addStatement("keyLocked = true");
@@ -1586,7 +1578,7 @@ public class AgronaSpecGenerator
 
     private MethodSpec genWriteProperty(PreprocessedEiderProperty property)
     {
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + upperFirst(property.getName()))
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(WRITE + Util.upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
             .returns(boolean.class)
             .addJavadoc("Writes " + property.getName() + " to the buffer. Returns true if success, false if not.")
@@ -1596,24 +1588,27 @@ public class AgronaSpecGenerator
 
         if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            int maxLength = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+            int maxLength = Integer.parseInt(property.getAnnotations().get(AttributeConstants.MAXLENGTH));
             builder.addStatement(fixedLengthStringCheck(property, maxLength));
         }
 
-        if (property.getAnnotations() != null && property.getAnnotations().get(KEY).equalsIgnoreCase(TRUE))
+        if (property.getAnnotations() != null
+            && property.getAnnotations().get(AttributeConstants.KEY).equalsIgnoreCase(TRUE))
         {
             builder.addStatement("if (keyLocked) throw new RuntimeException(\"Cannot write key after locking\")");
             builder.addJavadoc("This field is marked key=true.");
         }
 
-        if (property.getAnnotations() != null && property.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+        if (property.getAnnotations() != null
+            && property.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
         {
 
-            if (property.getAnnotations().get(UNIQUE).equalsIgnoreCase(TRUE))
+            if (property.getAnnotations().get(AttributeConstants.UNIQUE).equalsIgnoreCase(TRUE))
             {
                 //this.indexUniquenessChecker
-                builder.beginControlFlow("if (indexUniquenessChecker" + upperFirst(property.getName()) + " != null)");
-                final String condition = "indexUniquenessChecker" + upperFirst(property.getName())
+                builder.beginControlFlow("if (indexUniquenessChecker" + Util.upperFirst(property.getName())
+                    + " != " + "null)");
+                final String condition = "indexUniquenessChecker" + Util.upperFirst(property.getName())
                     + ".isUnique(value)";
                 builder.beginControlFlow("if (!" + condition + ")");
                 builder.addStatement(RETURN_FALSE);
@@ -1627,8 +1622,8 @@ public class AgronaSpecGenerator
                 builder.addJavadoc(" Indexed field. ");
             }
 
-            builder.beginControlFlow("if (indexUpdateNotifier" + upperFirst(property.getName()) + " != null)");
-            builder.addStatement("indexUpdateNotifier" + upperFirst(property.getName())
+            builder.beginControlFlow("if (indexUpdateNotifier" + Util.upperFirst(property.getName()) + " != null)");
+            builder.addStatement("indexUpdateNotifier" + Util.upperFirst(property.getName())
                 + ".accept(initialOffset, value)");
             builder.endControlFlow();
         }
@@ -1649,7 +1644,7 @@ public class AgronaSpecGenerator
 
     private ParameterSpec getInputType(PreprocessedEiderProperty property)
     {
-        return ParameterSpec.builder(fromType(property.getType()), VALUE)
+        return ParameterSpec.builder(Util.fromType(property.getType()), VALUE)
             .addJavadoc("Value for the " + property.getName() + " to write to buffer.")
             .build();
     }
@@ -1704,10 +1699,10 @@ public class AgronaSpecGenerator
 
     private MethodSpec genReadProperty(PreprocessedEiderProperty property)
     {
-        return MethodSpec.methodBuilder("read" + upperFirst(property.getName()))
+        return MethodSpec.methodBuilder("read" + Util.upperFirst(property.getName()))
             .addModifiers(Modifier.PUBLIC)
             .addJavadoc("Reads " + property.getName() + " as stored in the buffer.")
-            .returns(fromType(property.getType()))
+            .returns(Util.fromType(property.getType()))
             .addStatement(bufferRead(property))
             .build();
     }
@@ -1728,7 +1723,7 @@ public class AgronaSpecGenerator
         }
         else if (property.getType() == EiderPropertyType.FIXED_STRING)
         {
-            int length = Integer.parseInt(property.getAnnotations().get(MAXLENGTH));
+            int length = Integer.parseInt(property.getAnnotations().get(AttributeConstants.MAXLENGTH));
             return "return buffer.getStringWithoutLengthAscii(initialOffset + " + getOffsetName(property.getName())
                 +
                 ", " + length + ").trim()";
@@ -1874,7 +1869,7 @@ public class AgronaSpecGenerator
         {
             for (PreprocessedEiderProperty prop : object.getPropertyList())
             {
-                if (prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE))
+                if (prop.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE))
                 {
                     result.add(prop);
                 }
@@ -1885,8 +1880,8 @@ public class AgronaSpecGenerator
 
     private boolean isUniqueIndexOnProp(PreprocessedEiderProperty prop)
     {
-        return prop.getAnnotations().get(INDEXED).equalsIgnoreCase(TRUE)
-            && prop.getAnnotations().get(UNIQUE).equalsIgnoreCase(TRUE);
+        return prop.getAnnotations().get(AttributeConstants.INDEXED).equalsIgnoreCase(TRUE)
+            && prop.getAnnotations().get(AttributeConstants.UNIQUE).equalsIgnoreCase(TRUE);
     }
 
     public void generateSpecRecord(ProcessingEnvironment pe,
@@ -1936,7 +1931,7 @@ public class AgronaSpecGenerator
             }
 
             results.add(genReadProperty(property));
-            if (!property.getAnnotations().get(SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
+            if (!property.getAnnotations().get(AttributeConstants.SEQUENCE_GENERATOR).equalsIgnoreCase(TRUE))
             {
                 results.add(genWriteProperty(property));
                 if (property.getType() == EiderPropertyType.FIXED_STRING)

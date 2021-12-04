@@ -1,3 +1,5 @@
+package io.eider.internals;
+
 /*
  * Copyright 2019-2021 Shaun Laurens.
  *
@@ -14,36 +16,24 @@
  * limitations under the License.
  */
 
-package io.eider.processor;
-
-public enum EiderPropertyType
+public class PreprocessedNamedEiderObject
 {
-    BOOLEAN,
-    DOUBLE,
-    SHORT,
-    INT,
-    LONG,
-    FIXED_STRING,
-    REPEATABLE_RECORD,
-    INVALID;
+    private final String name;
+    private final PreprocessedEiderObject object;
 
-    public static EiderPropertyType from(String toString)
+    public PreprocessedNamedEiderObject(final String name, final PreprocessedEiderObject object)
     {
-        switch (toString)
-        {
-            case "int":
-                return INT;
-            case "short":
-                return SHORT;
-            case "long":
-                return LONG;
-            case "boolean":
-                return BOOLEAN;
-            case "double":
-                return DOUBLE;
-            default:
-                return INVALID;
-        }
+        this.name = name;
+        this.object = object;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
+    public PreprocessedEiderObject getObject()
+    {
+        return object;
+    }
 }
