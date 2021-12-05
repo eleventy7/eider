@@ -1,0 +1,1 @@
+The Eider Writer project contains the code required to output Eider code in Java.
