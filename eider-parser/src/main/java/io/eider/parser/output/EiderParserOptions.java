@@ -1,4 +1,4 @@
-package io.eider.parser;
+package io.eider.parser.output;
 
 public class EiderParserOptions
 {

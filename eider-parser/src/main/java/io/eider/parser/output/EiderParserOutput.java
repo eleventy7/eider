@@ -7,7 +7,6 @@ import io.eider.internals.PreprocessedEiderEnum;
 import io.eider.internals.PreprocessedEiderMessage;
 import io.eider.internals.PreprocessedEiderRepeatableRecord;
 import io.eider.internals.PreprocessedEiderRepository;
-import io.eider.parser.EiderParserOptions;
 
 public class EiderParserOutput
 {

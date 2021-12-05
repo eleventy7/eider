@@ -29,10 +29,6 @@
 
     <property name="fileExtensions" value="java, properties, xml"/>
 
-    <module name="FileTabCharacter">
-        <property name="eachLine" value="true"/>
-    </module>
-
     <module name="SuppressWarningsFilter"/>
     <module name="LineLength">
         <property name="max" value="120"/>

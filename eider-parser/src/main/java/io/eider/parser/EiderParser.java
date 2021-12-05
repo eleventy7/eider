@@ -6,6 +6,12 @@ public class EiderParser
 {
     public EiderParserOutput parse(String input)
     {
+        validateInput(input);
         return null;
+    }
+
+    private void validateInput(String input)
+    {
+
     }
 }
