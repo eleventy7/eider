@@ -23,7 +23,7 @@ import io.eider.annotation.EiderRepository;
 import io.eider.annotation.EiderSpec;
 import io.eider.internals.EiderPropertyType;
 import io.eider.internals.PreprocessedEiderComposite;
-import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderMessage;
 import io.eider.internals.PreprocessedEiderProperty;
 import io.eider.internals.PreprocessedEiderRepeatableRecord;
 import io.eider.internals.PreprocessedNamedEiderObject;
@@ -74,7 +74,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         }
 
         List<PreprocessedEiderRepeatableRecord> records = new ArrayList<>();
-        List<PreprocessedEiderObject> objects = new ArrayList<>();
+        List<PreprocessedEiderMessage> objects = new ArrayList<>();
         List<PreprocessedEiderComposite> composites = new ArrayList<>();
 
         for (Element el : roundEnv.getElementsAnnotatedWith(EiderRepeatableRecord.class))
@@ -135,7 +135,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
     @SuppressWarnings("all")
     private void preprocessCompositeObject(ProcessingEnvironment pe, TypeElement typeElement,
-                                           List<PreprocessedEiderObject> objects,
+                                           List<PreprocessedEiderMessage> objects,
                                            List<PreprocessedEiderComposite> composites)
     {
         final String classNameInput = typeElement.getSimpleName().toString();
@@ -204,7 +204,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
                 }
                 else
                 {
-                    PreprocessedEiderObject eiderObject = getEiderObject(element.asType().toString(), objects);
+                    PreprocessedEiderMessage eiderObject = getEiderObject(element.asType().toString(), objects);
 
                     if (eiderObject == null)
                     {
@@ -253,14 +253,14 @@ public class EiderAnnotationProcessor extends AbstractProcessor
         composites.add(composite);
     }
 
-    private PreprocessedEiderObject getEiderObject(String attrName,
-                                                   List<PreprocessedEiderObject> objects)
+    private PreprocessedEiderMessage getEiderObject(String attrName,
+                                                    List<PreprocessedEiderMessage> objects)
     {
 
         final String[] f = attrName.split("\\.");
         final String typeNameNoPkg = f[f.length - 1];
 
-        for (final PreprocessedEiderObject object : objects)
+        for (final PreprocessedEiderMessage object : objects)
         {
             if (object.getClassNameInput().equalsIgnoreCase(typeNameNoPkg))
             {
@@ -272,7 +272,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
 
     @SuppressWarnings("all")
     private void preprocessObject(TypeElement typeElement,
-                                  final List<PreprocessedEiderObject> objects,
+                                  final List<PreprocessedEiderMessage> objects,
                                   final List<PreprocessedEiderRepeatableRecord> records)
     {
         final String classNameInput = typeElement.getSimpleName().toString();
@@ -377,7 +377,7 @@ public class EiderAnnotationProcessor extends AbstractProcessor
             enableTransactionalRepository = repository.transactional();
         }
 
-        final PreprocessedEiderObject obj = new PreprocessedEiderObject(name,
+        final PreprocessedEiderMessage obj = new PreprocessedEiderMessage(name,
             classNameInput,
             objectEiderId,
             annotation.eiderGroup(),

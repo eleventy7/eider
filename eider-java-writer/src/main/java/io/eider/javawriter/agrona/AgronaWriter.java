@@ -23,7 +23,7 @@ import com.squareup.javapoet.TypeVariableName;
 
 import io.eider.javawriter.EiderCodeWriter;
 import io.eider.internals.PreprocessedEiderComposite;
-import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderMessage;
 import io.eider.internals.PreprocessedEiderRepeatableRecord;
 
 import org.agrona.DirectBuffer;
@@ -46,7 +46,7 @@ public class AgronaWriter implements EiderCodeWriter
     @Override
     public void generate(final ProcessingEnvironment pe,
                          final List<PreprocessedEiderRepeatableRecord> records,
-                         final List<PreprocessedEiderObject> objects,
+                         final List<PreprocessedEiderMessage> objects,
                          final List<PreprocessedEiderComposite> composites)
     {
         String packageName = null;
@@ -54,7 +54,7 @@ public class AgronaWriter implements EiderCodeWriter
         final AgronaWriterGlobalState globalState = new AgronaWriterGlobalState();
         final List<PreprocessedEiderRepeatableRecord> alreadyGeneratedRecs = new ArrayList<>();
 
-        for (final PreprocessedEiderObject object : objects)
+        for (final PreprocessedEiderMessage object : objects)
         {
             if (specGenerator.hasAtLeastOneRecord(object))
             {

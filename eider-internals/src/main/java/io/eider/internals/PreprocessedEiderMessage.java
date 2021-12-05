@@ -18,7 +18,7 @@ package io.eider.internals;
 
 import java.util.List;
 
-public class PreprocessedEiderObject
+public class PreprocessedEiderMessage
 {
     private final String name;
     private final String classNameInput;
@@ -33,13 +33,13 @@ public class PreprocessedEiderObject
     private final boolean transactionalRepository;
     private final List<PreprocessedEiderProperty> propertyList;
 
-    public PreprocessedEiderObject(final String name, final String classNameInput,
-                                   final short eiderId, final short eiderGroupId,
-                                   final String packageNameGen,
-                                   final boolean fixedLength,
-                                   final boolean buildRepository, final String repositoryName,
-                                   final boolean transactional, final boolean transactionalRepository,
-                                   final boolean buildHeader, final List<PreprocessedEiderProperty> propertyList)
+    public PreprocessedEiderMessage(final String name, final String classNameInput,
+                                    final short eiderId, final short eiderGroupId,
+                                    final String packageNameGen,
+                                    final boolean fixedLength,
+                                    final boolean buildRepository, final String repositoryName,
+                                    final boolean transactional, final boolean transactionalRepository,
+                                    final boolean buildHeader, final List<PreprocessedEiderProperty> propertyList)
     {
         this.name = name;
         this.classNameInput = classNameInput;

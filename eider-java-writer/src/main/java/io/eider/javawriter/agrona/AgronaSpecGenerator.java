@@ -30,7 +30,7 @@ import org.agrona.collections.ObjectHashSet;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import io.eider.internals.EiderPropertyType;
-import io.eider.internals.PreprocessedEiderObject;
+import io.eider.internals.PreprocessedEiderMessage;
 import io.eider.internals.PreprocessedEiderProperty;
 import io.eider.internals.PreprocessedEiderRepeatableRecord;
 
@@ -78,7 +78,7 @@ public class AgronaSpecGenerator
     private static final String FINAL = "final ";
     private static final String VALUE_JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
 
-    public void generateSpecRepository(final ProcessingEnvironment pe, final PreprocessedEiderObject object)
+    public void generateSpecRepository(final ProcessingEnvironment pe, final PreprocessedEiderMessage object)
     {
         String keyField = getKeyField(object);
 
@@ -119,7 +119,7 @@ public class AgronaSpecGenerator
         }
     }
 
-    private Iterable<MethodSpec> buildRepositoryIndexMethods(PreprocessedEiderObject object)
+    private Iterable<MethodSpec> buildRepositoryIndexMethods(PreprocessedEiderMessage object)
     {
         List<MethodSpec> results = new ArrayList<>();
 
@@ -201,7 +201,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<MethodSpec> buildRepositoryTransactionalHelpers(PreprocessedEiderObject object)
+    private Iterable<MethodSpec> buildRepositoryTransactionalHelpers(PreprocessedEiderMessage object)
     {
         List<MethodSpec> results = new ArrayList<>();
 
@@ -296,7 +296,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<TypeSpec> buildRepositoryIterators(PreprocessedEiderObject object)
+    private Iterable<TypeSpec> buildRepositoryIterators(PreprocessedEiderMessage object)
     {
         List<TypeSpec> results = new ArrayList<>();
 
@@ -330,7 +330,7 @@ public class AgronaSpecGenerator
             .build();
     }
 
-    private MethodSpec buildAllIteratorNext(PreprocessedEiderObject object)
+    private MethodSpec buildAllIteratorNext(PreprocessedEiderMessage object)
     {
         return MethodSpec.methodBuilder("next")
             .addAnnotation(Override.class)
@@ -348,7 +348,7 @@ public class AgronaSpecGenerator
             .build();
     }
 
-    private MethodSpec buildAllIteratorHasNext(PreprocessedEiderObject object)
+    private MethodSpec buildAllIteratorHasNext(PreprocessedEiderMessage object)
     {
         return MethodSpec.methodBuilder("hasNext")
             .addAnnotation(Override.class)
@@ -362,7 +362,7 @@ public class AgronaSpecGenerator
             .build();
     }
 
-    private Iterable<MethodSpec> buildRepositoryMethods(PreprocessedEiderObject object)
+    private Iterable<MethodSpec> buildRepositoryMethods(PreprocessedEiderMessage object)
     {
         List<MethodSpec> results = new ArrayList<>();
 
@@ -625,7 +625,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<FieldSpec> buildRepositoryFields(PreprocessedEiderObject object)
+    private Iterable<FieldSpec> buildRepositoryFields(PreprocessedEiderMessage object)
     {
         List<FieldSpec> results = new ArrayList<>();
 
@@ -827,7 +827,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private String getKeyField(PreprocessedEiderObject object)
+    private String getKeyField(PreprocessedEiderMessage object)
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -839,7 +839,7 @@ public class AgronaSpecGenerator
         return null;
     }
 
-    public boolean hasAtLeastOneRecord(final PreprocessedEiderObject object)
+    public boolean hasAtLeastOneRecord(final PreprocessedEiderMessage object)
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -851,7 +851,7 @@ public class AgronaSpecGenerator
         return false;
     }
 
-    public List<PreprocessedEiderRepeatableRecord> listRecords(final PreprocessedEiderObject object,
+    public List<PreprocessedEiderRepeatableRecord> listRecords(final PreprocessedEiderMessage object,
                                                                final List<PreprocessedEiderRepeatableRecord> records)
     {
         final List<PreprocessedEiderRepeatableRecord> results = new ArrayList<>();
@@ -872,7 +872,7 @@ public class AgronaSpecGenerator
     }
 
     public void generateSpecObject(final ProcessingEnvironment processingEnv,
-                                   final PreprocessedEiderObject object,
+                                   final PreprocessedEiderMessage object,
                                    final List<PreprocessedEiderRepeatableRecord> records,
                                    final AgronaWriterState state,
                                    final AgronaWriterGlobalState globalState)
@@ -927,7 +927,7 @@ public class AgronaSpecGenerator
         }
     }
 
-    private Iterable<MethodSpec> buildRecordHelpers(PreprocessedEiderObject object,
+    private Iterable<MethodSpec> buildRecordHelpers(PreprocessedEiderMessage object,
                                                     List<PreprocessedEiderRepeatableRecord> records)
     {
         final List<PreprocessedEiderRepeatableRecord> toGen = listRecords(object, records);
@@ -1072,7 +1072,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private Iterable<FieldSpec> internalFields(PreprocessedEiderObject object,
+    private Iterable<FieldSpec> internalFields(PreprocessedEiderMessage object,
                                                List<PreprocessedEiderRepeatableRecord> recs)
     {
         List<FieldSpec> results = new ArrayList<>();
@@ -1215,7 +1215,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private boolean objectHasIndexedField(PreprocessedEiderObject object)
+    private boolean objectHasIndexedField(PreprocessedEiderMessage object)
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -1228,7 +1228,7 @@ public class AgronaSpecGenerator
         return false;
     }
 
-    private boolean containsKeyField(PreprocessedEiderObject object)
+    private boolean containsKeyField(PreprocessedEiderMessage object)
     {
         for (final PreprocessedEiderProperty property : object.getPropertyList())
         {
@@ -1241,7 +1241,7 @@ public class AgronaSpecGenerator
         return false;
     }
 
-    private Iterable<FieldSpec> offsetsForFields(PreprocessedEiderObject object,
+    private Iterable<FieldSpec> offsetsForFields(PreprocessedEiderMessage object,
                                                  List<PreprocessedEiderRepeatableRecord> records,
                                                  AgronaWriterState state,
                                                  AgronaWriterGlobalState globalState)
@@ -1365,7 +1365,7 @@ public class AgronaSpecGenerator
     }
 
     @SuppressWarnings("all")
-    private Iterable<MethodSpec> forInternalFields(PreprocessedEiderObject object)
+    private Iterable<MethodSpec> forInternalFields(PreprocessedEiderMessage object)
     {
         List<PreprocessedEiderProperty> propertyList = object.getPropertyList();
         List<MethodSpec> results = new ArrayList<>();
@@ -1482,7 +1482,7 @@ public class AgronaSpecGenerator
         return results;
     }
 
-    private MethodSpec buildInternalBufferAllocator(PreprocessedEiderObject object)
+    private MethodSpec buildInternalBufferAllocator(PreprocessedEiderMessage object)
     {
         final ClassName genObj = ClassName.get("", object.getName());
         final TypeName typeEab = TypeName.get(UnsafeBuffer.class);
@@ -1799,7 +1799,7 @@ public class AgronaSpecGenerator
 
     }
 
-    private MethodSpec buildSetUnderlyingBuffer(PreprocessedEiderObject object)
+    private MethodSpec buildSetUnderlyingBuffer(PreprocessedEiderMessage object)
     {
         MethodSpec.Builder builder = MethodSpec.methodBuilder("setUnderlyingBuffer")
             .addModifiers(Modifier.PUBLIC)
@@ -1862,7 +1862,7 @@ public class AgronaSpecGenerator
         return builder.build();
     }
 
-    private List<PreprocessedEiderProperty> indexFields(PreprocessedEiderObject object)
+    private List<PreprocessedEiderProperty> indexFields(PreprocessedEiderMessage object)
     {
         final List<PreprocessedEiderProperty> result = new ArrayList<>();
         if (objectHasIndexedField(object))

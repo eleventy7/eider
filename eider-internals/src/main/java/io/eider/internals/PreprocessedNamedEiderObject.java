@@ -19,9 +19,9 @@ package io.eider.internals;
 public class PreprocessedNamedEiderObject
 {
     private final String name;
-    private final PreprocessedEiderObject object;
+    private final PreprocessedEiderMessage object;
 
-    public PreprocessedNamedEiderObject(final String name, final PreprocessedEiderObject object)
+    public PreprocessedNamedEiderObject(final String name, final PreprocessedEiderMessage object)
     {
         this.name = name;
         this.object = object;
@@ -32,7 +32,7 @@ public class PreprocessedNamedEiderObject
         return name;
     }
 
-    public PreprocessedEiderObject getObject()
+    public PreprocessedEiderMessage getObject()
     {
         return object;
     }

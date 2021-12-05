@@ -76,7 +76,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '8.45'
+            toolVersion = '9.2'
             ignoreFailures = false
             showViolations = true
         }
