@@ -7,6 +7,7 @@ import io.eider.parser.internals.ParsedAttribute;
 import io.eider.parser.internals.EiderParserUtils;
 
 import io.eider.parser.internals.ParsedEnum;
+import io.eider.parser.internals.ParsedRecord;
 import io.eider.parser.output.EiderParserError;
 
 import org.junit.jupiter.api.Test;
@@ -218,7 +219,7 @@ class EiderParserUtilsTest
     }
 
     @Test
-    void raisesErrorWithInvalidEnumSyntax2()
+    void raisesErrorWithInvalidInputRegionType()
     {
         final String input = """
             repository PriceType {
@@ -240,5 +241,99 @@ class EiderParserUtilsTest
 
         assertNull(eiderEnum);
         assertEquals(1, errors.size());
+    }
+
+
+    @Test
+    void parsesRecordWithEnumType()
+    {
+        final String input = """
+           
+               enum PriceType {
+           	VALUE1 (1)
+                              	VALUE2( 2 )
+            }
+             
+            //a sample record
+           record PriceRecord {
+                 	double    price;
+            double size ;
+            	PriceType priceType;
+            }
+                                         
+            """;
+        final List<EiderParserError> errors = new ArrayList<>();
+        final List<InputLine> inputLines = EiderParserUtils.splitInputIntoUsefulLines(input);
+        List<EiderParserRegion> eiderParserRegions = EiderParserUtils.extractRegions(inputLines, errors);
+
+        assertEquals(2, eiderParserRegions.size());
+        assertEquals(EiderParserRegionType.ENUM, eiderParserRegions.get(0).getType());
+        assertEquals(EiderParserRegionType.RECORD, eiderParserRegions.get(1).getType());
+
+        final ParsedEnum eiderEnum = EiderParserUtils.parseEnum(inputLines, eiderParserRegions.get(0).getStart(),
+            eiderParserRegions.get(0).getEnd(), errors);
+        List<ParsedEnum> enums = new ArrayList<>();
+        enums.add(eiderEnum);
+
+        final ParsedRecord eiderRecord = EiderParserUtils.parseRecord(inputLines, eiderParserRegions.get(1).getStart(),
+            eiderParserRegions.get(1).getEnd(), enums, errors);
+
+        assertNotNull(eiderRecord);
+        assertEquals(0, errors.size());
+        assertEquals("PriceRecord", eiderRecord.getName());
+        assertEquals(3, eiderRecord.getFields().size());
+        assertEquals("price", eiderRecord.getFields().get(0).getName());
+        assertEquals("size", eiderRecord.getFields().get(1).getName());
+        assertEquals("priceType", eiderRecord.getFields().get(2).getName());
+    }
+
+    @Test
+    void parsesRecordWithAttributes()
+    {
+        final String input = """
+           
+               enum PriceType {
+           	VALUE1 (1)
+                              	VALUE2( 2 )
+            }
+             
+            @something
+           record PriceRecord {
+                 	double    price;
+           @index(type=agrona)
+            double size ;
+           @index
+           @key(a=b)
+            	PriceType priceType;
+            }
+                                         
+            """;
+        final List<EiderParserError> errors = new ArrayList<>();
+        final List<InputLine> inputLines = EiderParserUtils.splitInputIntoUsefulLines(input);
+        List<EiderParserRegion> eiderParserRegions = EiderParserUtils.extractRegions(inputLines, errors);
+
+        assertEquals(2, eiderParserRegions.size());
+        assertEquals(EiderParserRegionType.ENUM, eiderParserRegions.get(0).getType());
+        assertEquals(EiderParserRegionType.RECORD, eiderParserRegions.get(1).getType());
+
+        final ParsedEnum eiderEnum = EiderParserUtils.parseEnum(inputLines, eiderParserRegions.get(0).getStart(),
+            eiderParserRegions.get(0).getEnd(), errors);
+        List<ParsedEnum> enums = new ArrayList<>();
+        enums.add(eiderEnum);
+
+        final ParsedRecord eiderRecord = EiderParserUtils.parseRecord(inputLines, eiderParserRegions.get(1).getStart(),
+            eiderParserRegions.get(1).getEnd(), enums, errors);
+
+        assertNotNull(eiderRecord);
+        assertEquals(0, errors.size());
+        assertEquals("PriceRecord", eiderRecord.getName());
+        assertEquals("something", eiderRecord.getAttributes().get(0).getName());
+        assertEquals(3, eiderRecord.getFields().size());
+        assertEquals("price", eiderRecord.getFields().get(0).getName());
+        assertEquals("size", eiderRecord.getFields().get(1).getName());
+        assertEquals("index", eiderRecord.getFields().get(1).getAttributes().get(0).getName());
+        assertEquals("priceType", eiderRecord.getFields().get(2).getName());
+        assertEquals("index", eiderRecord.getFields().get(2).getAttributes().get(0).getName());
+        assertEquals("key", eiderRecord.getFields().get(2).getAttributes().get(1).getName());
     }
 }
