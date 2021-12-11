@@ -5,6 +5,6 @@ public enum EiderParserRegionType
     ENUM,
     RECORD,
     MESSAGE,
-    REPOSITORY,
+    RESIDENT_DATA,
     UNKNOWN
 }

@@ -9,6 +9,7 @@ import io.eider.parser.internals.EiderParserUtils;
 import io.eider.parser.internals.ParsedEnum;
 import io.eider.parser.internals.ParsedMessage;
 import io.eider.parser.internals.ParsedRecord;
+import io.eider.parser.internals.ParsedResidentData;
 import io.eider.parser.output.EiderParserError;
 
 import org.junit.jupiter.api.Test;
@@ -134,7 +135,7 @@ class EiderParserUtilsTest
             }
                         
             @options(snapshotable,difftracking,targetsize=tiny,paged)
-            repository Orders {
+            resident Orders {
             	@key(unique=true)
             	int64 key;
             	...
@@ -164,7 +165,7 @@ class EiderParserUtilsTest
         assertEquals(EiderParserRegionType.MESSAGE, eiderParserRegions.get(2).getType());
         assertEquals(8, eiderParserRegions.get(2).getStart());
         assertEquals(13, eiderParserRegions.get(2).getEnd());
-        assertEquals(EiderParserRegionType.REPOSITORY, eiderParserRegions.get(3).getType());
+        assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(3).getType());
         assertEquals(14, eiderParserRegions.get(3).getStart());
         assertEquals(26, eiderParserRegions.get(3).getEnd());
     }
@@ -223,7 +224,7 @@ class EiderParserUtilsTest
     void raisesErrorWithInvalidInputRegionType()
     {
         final String input = """
-            repository PriceType {
+            resident PriceType {
             	VALUE1 (1),
             	VALUE2( 2 )
             }
@@ -235,7 +236,7 @@ class EiderParserUtilsTest
 
 
         assertEquals(1, eiderParserRegions.size());
-        assertEquals(EiderParserRegionType.REPOSITORY, eiderParserRegions.get(0).getType());
+        assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(0).getType());
 
         final ParsedEnum eiderEnum = EiderParserUtils.parseEnum(inputLines, eiderParserRegions.get(0).getStart(),
             eiderParserRegions.get(0).getEnd(), errors);
@@ -364,7 +365,7 @@ class EiderParserUtilsTest
               PriceRecord priceRecord;
               PriceType priceType;
               int64 field1;
-              int64 field2; 
+              int64 field2;
             }
             """;
         final List<EiderParserError> errors = new ArrayList<>();
@@ -402,5 +403,71 @@ class EiderParserUtilsTest
         assertEquals("int64", eiderMessage.getFields().get(2).getTypeString());
         assertEquals("field2", eiderMessage.getFields().get(3).getName());
         assertEquals("int64", eiderMessage.getFields().get(3).getTypeString());
+    }
+
+    @Test
+    void parsesResidentDataWithEnumRecordAndAttributes()
+    {
+        final String input = """
+            enum PriceType {
+             VALUE1(1);
+             VALUE2(2);
+            }
+             
+            @something
+            record PriceRecord {
+              double price;
+           
+              @index(type=agrona)
+              double size ;
+           
+              @index
+              @key(a=b)
+              PriceType priceType;
+            }
+            
+            @foobar
+            resident PriceDataStore {
+              PriceRecord priceRecord;
+              PriceType priceType;
+              int64 field1;
+              int64 field2;
+            }
+            """;
+        final List<EiderParserError> errors = new ArrayList<>();
+        final List<InputLine> inputLines = EiderParserUtils.splitInputIntoUsefulLines(input);
+        List<EiderParserRegion> eiderParserRegions = EiderParserUtils.extractRegions(inputLines, errors);
+
+        assertEquals(3, eiderParserRegions.size());
+        assertEquals(EiderParserRegionType.ENUM, eiderParserRegions.get(0).getType());
+        assertEquals(EiderParserRegionType.RECORD, eiderParserRegions.get(1).getType());
+        assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(2).getType());
+
+        final ParsedEnum eiderEnum = EiderParserUtils.parseEnum(inputLines, eiderParserRegions.get(0).getStart(),
+            eiderParserRegions.get(0).getEnd(), errors);
+        List<ParsedEnum> enums = new ArrayList<>();
+        enums.add(eiderEnum);
+
+        final ParsedRecord eiderRecord = EiderParserUtils.parseRecord(inputLines, eiderParserRegions.get(1).getStart(),
+            eiderParserRegions.get(1).getEnd(), enums, errors);
+        List<ParsedRecord> records = new ArrayList<>();
+        records.add(eiderRecord);
+
+        final ParsedResidentData eiderResidentData = EiderParserUtils.parseResident(inputLines,
+            eiderParserRegions.get(2).getStart(), eiderParserRegions.get(2).getEnd(), enums, records, errors);
+
+        assertNotNull(eiderResidentData);
+        assertEquals(0, errors.size());
+        assertEquals("PriceDataStore", eiderResidentData.getName());
+        assertEquals("foobar", eiderResidentData.getAttributes().get(0).getName());
+        assertEquals(4, eiderResidentData.getFields().size());
+        assertEquals("priceRecord", eiderResidentData.getFields().get(0).getName());
+        assertEquals("PriceRecord", eiderResidentData.getFields().get(0).getTypeString());
+        assertEquals("priceType", eiderResidentData.getFields().get(1).getName());
+        assertEquals("PriceType", eiderResidentData.getFields().get(1).getTypeString());
+        assertEquals("field1", eiderResidentData.getFields().get(2).getName());
+        assertEquals("int64", eiderResidentData.getFields().get(2).getTypeString());
+        assertEquals("field2", eiderResidentData.getFields().get(3).getName());
+        assertEquals("int64", eiderResidentData.getFields().get(3).getTypeString());
     }
 }
