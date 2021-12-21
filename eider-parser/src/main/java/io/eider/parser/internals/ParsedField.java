@@ -7,6 +7,7 @@ public class ParsedField
     private final String name;
     private final String typeString;
     private final ParsedDataType typeEnum;
+    private final int order;
     private final List<ParsedAttribute> attributes;
 
     public ParsedField(final String name,
@@ -18,6 +19,7 @@ public class ParsedField
         this.name = name;
         this.typeEnum = typeEnum;
         this.typeString = typeString;
+        this.order = order;
         this.attributes = attributes;
     }
 
@@ -34,6 +36,11 @@ public class ParsedField
     public ParsedDataType getTypeEnum()
     {
         return typeEnum;
+    }
+
+    public int getOrder()
+    {
+        return order;
     }
 
     public List<ParsedAttribute> getAttributes()

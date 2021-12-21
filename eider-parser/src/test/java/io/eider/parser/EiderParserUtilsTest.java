@@ -291,6 +291,7 @@ class EiderParserUtilsTest
         assertEquals(3, eiderRecord.getFields().size());
         assertEquals("price", eiderRecord.getFields().get(0).getName());
         assertEquals("size", eiderRecord.getFields().get(1).getName());
+        assertEquals(2, eiderRecord.getFields().get(1).getOrder());
         assertEquals("priceType", eiderRecord.getFields().get(2).getName());
     }
 
