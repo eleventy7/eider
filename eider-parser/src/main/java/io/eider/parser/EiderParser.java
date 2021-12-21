@@ -37,7 +37,7 @@ public class EiderParser
     }
 
     /**
-     * Forging parser which allows enums and records to be in any order.
+     * Forgiving parser which allows enums and records to be in any order.
      * @param input raw body of text
      * @param output intermediate parser output to be filled
      */

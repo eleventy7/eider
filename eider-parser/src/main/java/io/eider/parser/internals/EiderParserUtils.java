@@ -13,7 +13,7 @@ public final class EiderParserUtils
 
     private static final String RECORD = "record";
     private static final String MESSAGE = "message";
-    private static final String RESIDENT = "resident";
+    private static final String RESIDENT_DATA = "resident";
 
     private EiderParserUtils()
     {
@@ -153,7 +153,7 @@ public final class EiderParserUtils
             {
                 return EiderParserRegionType.MESSAGE;
             }
-            else if (line.getContents().startsWith(RESIDENT))
+            else if (line.getContents().startsWith(RESIDENT_DATA))
             {
                 return EiderParserRegionType.RESIDENT_DATA;
             }
@@ -245,9 +245,9 @@ public final class EiderParserUtils
                     for (int j = i + 1; j < end; j++)
                     {
                         final String enumItemContents = inputLines.get(j).getContents();
-                        final String representation = enumItemContents.substring(enumItemContents.indexOf("(") + 1,
-                            enumItemContents.lastIndexOf(")")).trim();
-                        final String enumItemName = enumItemContents.substring(0, enumItemContents.indexOf("(")).trim();
+                        final String representation = enumItemContents.substring(enumItemContents.indexOf("=") + 1,
+                            enumItemContents.lastIndexOf(";")).trim();
+                        final String enumItemName = enumItemContents.substring(0, enumItemContents.indexOf("=")).trim();
                         enumItemsContents.add(new ParsedEnumItem(enumItemName, representation));
                     }
                     return new ParsedEnum(name, enumItemsContents, parsedAttributes);
@@ -296,54 +296,8 @@ public final class EiderParserUtils
                     //extract regions
                     final List<ParsedFieldRegion> regions = extractFieldRegions(inputLines, end, i);
 
-                    //now extract fields by region
-                    final List<ParsedField> fields = new ArrayList<>();
-                    for (ParsedFieldRegion region : regions)
-                    {
-                        final List<ParsedAttribute> fieldAttributes = new ArrayList<>();
-                        String fieldName = "";
-                        String fieldType = "";
-                        ParsedEnum enumType;
-                        ParsedDataType fieldDataType = ParsedDataType.UNKNOWN;
-                        boolean parseSuccess = false;
-                        for (int j = region.getStart(); j <= region.getEnd(); j++)
-                        {
-                            final String fieldContents = inputLines.get(j).getContents();
-                            if (isAttribute(fieldContents))
-                            {
-                                fieldAttributes.add(parseAttribute(fieldContents, parsingErrors));
-                            }
-                            else
-                            {
-                                fieldType = fieldContents.substring(0, fieldContents.indexOf(" ")).trim();
-                                fieldName = fieldContents.substring(fieldContents.indexOf(" ") + 1)
-                                    .trim()
-                                    .replace(";", "")
-                                    .trim();
-                                fieldDataType = ParsedDataType.fromString(fieldType);
-                                if (fieldDataType == ParsedDataType.UNKNOWN)
-                                {
-                                    enumType = attemptEnumMatch(fieldType, enums);
-                                    if (enumType != null)
-                                    {
-                                        fieldDataType = ParsedDataType.ENUM;
-                                    }
-                                }
-                                parseSuccess = true;
-                            }
-                        }
-                        if (parseSuccess)
-                        {
-                            final ParsedField parsedField = new ParsedField(fieldName, fieldType, fieldDataType,
-                                fieldAttributes);
-                            fields.add(parsedField);
-                        }
-                        else
-                        {
-                            parsingErrors.add(new EiderParserError(inputLine.getLineNumber(), 0,
-                                "Could not parse field", ParserIssueType.WARN));
-                        }
-                    }
+                    //now extract fields by region; records cannot be within records, so don't allow matching of records
+                    final List<ParsedField> fields = parseFields(regions, inputLines, parsingErrors, enums, null);
 
                     return new ParsedRecord(name, parsedAttributes, fields);
                 }
@@ -363,6 +317,88 @@ public final class EiderParserUtils
         parsingErrors.add(new EiderParserError(inputLines.get(start).getLineNumber(), 0, "Record definition invalid",
             ParserIssueType.FATAL));
         return null;
+    }
+
+    private static List<ParsedField> parseFields(List<ParsedFieldRegion> regions,
+                                                 List<InputLine> inputLines,
+                                                 List<EiderParserError> parsingErrors,
+                                                 List<ParsedEnum> enums,
+                                                 List<ParsedRecord> records)
+    {
+        final List<ParsedField> fields = new ArrayList<>();
+        for (ParsedFieldRegion region : regions)
+        {
+            final List<ParsedAttribute> fieldAttributes = new ArrayList<>();
+            String fieldName = "";
+            String fieldType = "";
+            String fieldOrder;
+            int fieldOrderInt = -1;
+            int failedLine = 0;
+            ParsedEnum enumType;
+            ParsedRecord recordType;
+            ParsedDataType fieldDataType = ParsedDataType.UNKNOWN;
+            boolean parseSuccess = false;
+            for (int j = region.getStart(); j <= region.getEnd(); j++)
+            {
+                final String fieldContents = inputLines.get(j).getContents();
+                failedLine = inputLines.get(j).getLineNumber();
+                if (isAttribute(fieldContents))
+                {
+                    fieldAttributes.add(parseAttribute(fieldContents, parsingErrors));
+                }
+                else
+                {
+                    if (fieldContents.contains(";") && fieldContents.contains("="))
+                    {
+                        fieldType = fieldContents.substring(0, fieldContents.indexOf(" ")).trim();
+                        fieldName = fieldContents.substring(fieldContents.indexOf(" ") + 1,
+                            fieldContents.indexOf("=")).trim();
+                        fieldOrder = fieldContents.substring(fieldContents.indexOf("=") + 1,
+                            fieldContents.indexOf(";")).trim();
+                        fieldOrderInt = Integer.parseInt(fieldOrder);
+                        fieldDataType = ParsedDataType.fromString(fieldType);
+                        if (fieldDataType == ParsedDataType.UNKNOWN)
+                        {
+                            enumType = attemptEnumMatch(fieldType, enums);
+                            if (enumType != null)
+                            {
+                                fieldDataType = ParsedDataType.ENUM;
+                            }
+                            else
+                            {
+                                if (records != null)
+                                {
+                                    recordType = attemptRecordMatch(fieldType, records);
+                                    if (recordType != null)
+                                    {
+                                        fieldDataType = ParsedDataType.RECORD;
+                                    }
+                                }
+                            }
+
+                        }
+                        parseSuccess = true;
+                    }
+                    else
+                    {
+                        parseSuccess = false;
+                    }
+                }
+            }
+
+            if (parseSuccess)
+            {
+                final ParsedField parsedField = new ParsedField(fieldName, fieldType, fieldDataType,
+                    fieldOrderInt, fieldAttributes);
+                fields.add(parsedField);
+            }
+            else
+            {
+                parsingErrors.add(new EiderParserError(failedLine, 0,
+                    "Could not parse field", ParserIssueType.WARN));
+            }
+        }
+        return fields;
     }
 
     public static ParsedMessage parseMessage(List<InputLine> inputLines, int start, int end,
@@ -393,64 +429,8 @@ public final class EiderParserUtils
                     //extract regions
                     final List<ParsedFieldRegion> regions = extractFieldRegions(inputLines, end, i);
 
-                    //now extract fields by region
-                    final List<ParsedField> fields = new ArrayList<>();
-                    for (ParsedFieldRegion region : regions)
-                    {
-                        final List<ParsedAttribute> fieldAttributes = new ArrayList<>();
-                        String fieldName = "";
-                        String fieldType = "";
-                        ParsedEnum enumType;
-                        ParsedRecord recordType;
-                        ParsedDataType fieldDataType = ParsedDataType.UNKNOWN;
-                        boolean parseSuccess = false;
-                        for (int j = region.getStart(); j <= region.getEnd(); j++)
-                        {
-                            final String fieldContents = inputLines.get(j).getContents();
-                            if (isAttribute(fieldContents))
-                            {
-                                fieldAttributes.add(parseAttribute(fieldContents, parsingErrors));
-                            }
-                            else
-                            {
-                                fieldType = fieldContents.substring(0, fieldContents.indexOf(" ")).trim();
-                                fieldName = fieldContents.substring(fieldContents.indexOf(" ") + 1)
-                                    .trim()
-                                    .replace(";", "")
-                                    .trim();
-                                fieldDataType = ParsedDataType.fromString(fieldType);
-                                if (fieldDataType == ParsedDataType.UNKNOWN)
-                                {
-                                    enumType = attemptEnumMatch(fieldType, enums);
-                                    if (enumType != null)
-                                    {
-                                        fieldDataType = ParsedDataType.ENUM;
-                                    }
-                                    else
-                                    {
-                                        recordType = attemptRecordMatch(fieldType, records);
-                                        if (recordType != null)
-                                        {
-                                            fieldDataType = ParsedDataType.RECORD;
-                                        }
-                                    }
-
-                                }
-                                parseSuccess = true;
-                            }
-                        }
-                        if (parseSuccess)
-                        {
-                            final ParsedField parsedField = new ParsedField(fieldName, fieldType, fieldDataType,
-                                fieldAttributes);
-                            fields.add(parsedField);
-                        }
-                        else
-                        {
-                            parsingErrors.add(new EiderParserError(inputLine.getLineNumber(), 0,
-                                "Could not parse field", ParserIssueType.WARN));
-                        }
-                    }
+                    //extract fields by region
+                    final List<ParsedField> fields = parseFields(regions, inputLines, parsingErrors, enums, records);
 
                     return new ParsedMessage(name, parsedAttributes, fields);
                 }
@@ -489,75 +469,19 @@ public final class EiderParserUtils
             {
                 parsedAttributes.add(parseAttribute(inputLineContents, parsingErrors));
             }
-            else if (inputLineContents.startsWith(RESIDENT))
+            else if (inputLineContents.startsWith(RESIDENT_DATA))
             {
                 if (inputLineContents.contains("{"))
                 {
                     final String name =
-                        inputLineContents.substring(inputLineContents.indexOf(RESIDENT) + RESIDENT.length(),
+                        inputLineContents.substring(inputLineContents.indexOf(RESIDENT_DATA) + RESIDENT_DATA.length(),
                             inputLineContents.indexOf("{")).trim();
 
                     //extract regions
                     final List<ParsedFieldRegion> regions = extractFieldRegions(inputLines, end, i);
 
                     //now extract fields by region
-                    final List<ParsedField> fields = new ArrayList<>();
-                    for (ParsedFieldRegion region : regions)
-                    {
-                        final List<ParsedAttribute> fieldAttributes = new ArrayList<>();
-                        String fieldName = "";
-                        String fieldType = "";
-                        ParsedEnum enumType;
-                        ParsedRecord recordType;
-                        ParsedDataType fieldDataType = ParsedDataType.UNKNOWN;
-                        boolean parseSuccess = false;
-                        for (int j = region.getStart(); j <= region.getEnd(); j++)
-                        {
-                            final String fieldContents = inputLines.get(j).getContents();
-                            if (isAttribute(fieldContents))
-                            {
-                                fieldAttributes.add(parseAttribute(fieldContents, parsingErrors));
-                            }
-                            else
-                            {
-                                fieldType = fieldContents.substring(0, fieldContents.indexOf(" ")).trim();
-                                fieldName = fieldContents.substring(fieldContents.indexOf(" ") + 1)
-                                    .trim()
-                                    .replace(";", "")
-                                    .trim();
-                                fieldDataType = ParsedDataType.fromString(fieldType);
-                                if (fieldDataType == ParsedDataType.UNKNOWN)
-                                {
-                                    enumType = attemptEnumMatch(fieldType, enums);
-                                    if (enumType != null)
-                                    {
-                                        fieldDataType = ParsedDataType.ENUM;
-                                    }
-                                    else
-                                    {
-                                        recordType = attemptRecordMatch(fieldType, records);
-                                        if (recordType != null)
-                                        {
-                                            fieldDataType = ParsedDataType.RECORD;
-                                        }
-                                    }
-
-                                }
-                                parseSuccess = true;
-                            }
-                        }
-                        if (parseSuccess)
-                        {
-                            final ParsedField parsedField = new ParsedField(fieldName, fieldType, fieldDataType,
-                                fieldAttributes);
-                            fields.add(parsedField);
-                        }
-                        else
-                        {
-                            parsingErrors.add(new EiderParserError(inputLine.getLineNumber(), 0,
-                                "Could not parse field", ParserIssueType.WARN));
-                        }
-                    }
+                    final List<ParsedField> fields = parseFields(regions, inputLines, parsingErrors, enums, records);
 
                     return new ParsedResidentData(name, parsedAttributes, fields);
                 }

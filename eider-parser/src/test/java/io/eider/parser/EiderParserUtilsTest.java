@@ -117,8 +117,8 @@ class EiderParserUtilsTest
     {
         final String input = """
             enum PriceType {
-            	VALUE1(1)
-            	VALUE2(2)
+            	VALUE1=1;
+            	VALUE2=2;
             }
                         
             record OrderBookItem {
@@ -138,13 +138,13 @@ class EiderParserUtilsTest
             resident Orders {
             	@key(unique=true)
             	int64 key;
-            	...
+            	
             	@index(type=simple_agronahash, relationship=one_to_many)
             	PriceType priceType;
             	
             	@index(type=roaring_fulltext)
             	@fixedlength(65)
-            	String price;
+            	String searchable;
                         
             	@nullable
             	int64 completedTimestamp;
@@ -167,7 +167,7 @@ class EiderParserUtilsTest
         assertEquals(13, eiderParserRegions.get(2).getEnd());
         assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(3).getType());
         assertEquals(14, eiderParserRegions.get(3).getStart());
-        assertEquals(26, eiderParserRegions.get(3).getEnd());
+        assertEquals(25, eiderParserRegions.get(3).getEnd());
     }
 
     @Test
@@ -175,8 +175,8 @@ class EiderParserUtilsTest
     {
         final String input = """
             enum PriceType {
-            	VALUE1 (1)
-            	VALUE2( 2 )
+            	VALUE1 = 1;
+            	VALUE2 =  2  ;
             }
                         
             """;
@@ -192,6 +192,11 @@ class EiderParserUtilsTest
             eiderParserRegions.get(0).getEnd(), errors);
 
         assertNotNull(eiderEnum);
+        assertEquals("PriceType", eiderEnum.getName());
+        assertEquals("VALUE1", eiderEnum.getEnumItemList().get(0).getName());
+        assertEquals("1", eiderEnum.getEnumItemList().get(0).getRepresentation());
+        assertEquals("VALUE2", eiderEnum.getEnumItemList().get(1).getName());
+        assertEquals("2", eiderEnum.getEnumItemList().get(1).getRepresentation());
     }
 
     @Test
@@ -200,8 +205,8 @@ class EiderParserUtilsTest
         final String input = """
             enum PriceType 
             {
-            	VALUE1 (1)
-            	VALUE2( 2 )
+            	VALUE1=  1;
+            	VALUE2  =   2  ;
             }
                         
             """;
@@ -225,8 +230,8 @@ class EiderParserUtilsTest
     {
         final String input = """
             resident PriceType {
-            	VALUE1 (1),
-            	VALUE2( 2 )
+            	VALUE1=1;
+            	VALUE2=2;
             }
                         
             """;
@@ -252,15 +257,15 @@ class EiderParserUtilsTest
         final String input = """
            
                enum PriceType {
-           	VALUE1 (1)
-                              	VALUE2( 2 )
+           	VALUE1 =1;
+                              	VALUE2= 2 ;
             }
              
             //a sample record
            record PriceRecord {
-                 	double    price;
-            double size ;
-            	PriceType priceType;
+                 	double    price = 1;
+            double size =2;
+            	PriceType priceType=3;
             }
                                          
             """;
@@ -294,19 +299,19 @@ class EiderParserUtilsTest
     {
         final String input = """
            
-               enum PriceType {
-           	VALUE1 (1)
-                              	VALUE2( 2 )
-            }
+           enum PriceType {
+           	     VALUE1=1;
+                 VALUE2=2;
+           }
              
             @something
            record PriceRecord {
-                 	double    price;
+                 	double    price =1;
            @index(type=agrona)
-            double size ;
+            double size =2;
            @index
            @key(a=b)
-            	PriceType priceType;
+            	PriceType priceType =3;
             }
                                          
             """;
@@ -344,28 +349,28 @@ class EiderParserUtilsTest
     {
         final String input = """
             enum PriceType {
-             VALUE1(1);
-             VALUE2(2);
+             VALUE1=1;
+             VALUE2=2;
             }
              
             @something
             record PriceRecord {
-              double price;
+              double price=1;
            
               @index(type=agrona)
-              double size ;
+              double size =2;
            
               @index
               @key(a=b)
-              PriceType priceType;
+              PriceType priceType=3;
             }
             
             @foobar
             message PriceMessage {
-              PriceRecord priceRecord;
-              PriceType priceType;
-              int64 field1;
-              int64 field2;
+              PriceRecord priceRecord=1;
+              PriceType priceType=2;
+              int64 field1=3;
+              int64 field2=4;
             }
             """;
         final List<EiderParserError> errors = new ArrayList<>();
@@ -410,28 +415,28 @@ class EiderParserUtilsTest
     {
         final String input = """
             enum PriceType {
-             VALUE1(1);
-             VALUE2(2);
+             VALUE1=1;
+             VALUE2=2;
             }
              
             @something
             record PriceRecord {
-              double price;
+              double price=1;
            
               @index(type=agrona)
-              double size ;
+              double size =2;
            
               @index
               @key(a=b)
-              PriceType priceType;
+              PriceType priceType=3;
             }
             
             @foobar
             resident PriceDataStore {
-              PriceRecord priceRecord;
-              PriceType priceType;
-              int64 field1;
-              int64 field2;
+              PriceRecord priceRecord=1;
+              PriceType priceType=2;
+              int64 field1=3;
+              int64 field2=4;
             }
             """;
         final List<EiderParserError> errors = new ArrayList<>();

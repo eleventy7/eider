@@ -9,7 +9,10 @@ public class ParsedField
     private final ParsedDataType typeEnum;
     private final List<ParsedAttribute> attributes;
 
-    public ParsedField(final String name, final String typeString, final ParsedDataType typeEnum,
+    public ParsedField(final String name,
+                       final String typeString,
+                       final ParsedDataType typeEnum,
+                       final int order,
                        final List<ParsedAttribute> attributes)
     {
         this.name = name;
