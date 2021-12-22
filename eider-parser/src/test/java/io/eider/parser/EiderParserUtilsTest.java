@@ -6,6 +6,7 @@ import io.eider.parser.internals.InputLine;
 import io.eider.parser.internals.ParsedAttribute;
 import io.eider.parser.internals.EiderParserUtils;
 
+import io.eider.parser.internals.ParsedEiderBlock;
 import io.eider.parser.internals.ParsedEnum;
 import io.eider.parser.internals.ParsedMessage;
 import io.eider.parser.internals.ParsedRecord;
@@ -116,6 +117,11 @@ class EiderParserUtilsTest
     void parsesRegionsCorrectly()
     {
         final String input = """
+            eider {
+                version = 1.0;
+                packageName=com.example.eider;
+            }
+            
             enum PriceType {
             	VALUE1=1;
             	VALUE2=2;
@@ -149,25 +155,36 @@ class EiderParserUtilsTest
             	@nullable
             	int64 completedTimestamp;
             }
+                   
+           demuxer {
+            	foo
+            	bar
+           }
                         
             """;
         final List<EiderParserError> errors = new ArrayList<>();
         final List<InputLine> inputLines = EiderParserUtils.splitInputIntoUsefulLines(input);
         List<EiderParserRegion> eiderParserRegions = EiderParserUtils.extractRegions(inputLines, errors);
 
-        assertEquals(4, eiderParserRegions.size());
-        assertEquals(EiderParserRegionType.ENUM, eiderParserRegions.get(0).getType());
+        assertEquals(6, eiderParserRegions.size());
+        assertEquals(EiderParserRegionType.EIDER, eiderParserRegions.get(0).getType());
         assertEquals(0, eiderParserRegions.get(0).getStart());
         assertEquals(3, eiderParserRegions.get(0).getEnd());
-        assertEquals(EiderParserRegionType.RECORD, eiderParserRegions.get(1).getType());
+        assertEquals(EiderParserRegionType.ENUM, eiderParserRegions.get(1).getType());
         assertEquals(4, eiderParserRegions.get(1).getStart());
         assertEquals(7, eiderParserRegions.get(1).getEnd());
-        assertEquals(EiderParserRegionType.MESSAGE, eiderParserRegions.get(2).getType());
+        assertEquals(EiderParserRegionType.RECORD, eiderParserRegions.get(2).getType());
         assertEquals(8, eiderParserRegions.get(2).getStart());
-        assertEquals(13, eiderParserRegions.get(2).getEnd());
-        assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(3).getType());
-        assertEquals(14, eiderParserRegions.get(3).getStart());
-        assertEquals(25, eiderParserRegions.get(3).getEnd());
+        assertEquals(11, eiderParserRegions.get(2).getEnd());
+        assertEquals(EiderParserRegionType.MESSAGE, eiderParserRegions.get(3).getType());
+        assertEquals(12, eiderParserRegions.get(3).getStart());
+        assertEquals(17, eiderParserRegions.get(3).getEnd());
+        assertEquals(EiderParserRegionType.RESIDENT_DATA, eiderParserRegions.get(4).getType());
+        assertEquals(18, eiderParserRegions.get(4).getStart());
+        assertEquals(29, eiderParserRegions.get(4).getEnd());
+        assertEquals(EiderParserRegionType.DEMUXER, eiderParserRegions.get(5).getType());
+        assertEquals(30, eiderParserRegions.get(5).getStart());
+        assertEquals(33, eiderParserRegions.get(5).getEnd());
     }
 
     @Test
@@ -197,6 +214,32 @@ class EiderParserUtilsTest
         assertEquals("1", eiderEnum.getEnumItemList().get(0).getRepresentation());
         assertEquals("VALUE2", eiderEnum.getEnumItemList().get(1).getName());
         assertEquals("2", eiderEnum.getEnumItemList().get(1).getRepresentation());
+    }
+
+    @Test
+    void parsesEiderBlock()
+    {
+        final String input = """
+            eider {
+            	version = eider42;
+            	packageName = com.foo.bar;
+            }
+                        
+            """;
+        final List<EiderParserError> errors = new ArrayList<>();
+        final List<InputLine> inputLines = EiderParserUtils.splitInputIntoUsefulLines(input);
+        List<EiderParserRegion> eiderParserRegions = EiderParserUtils.extractRegions(inputLines, errors);
+
+
+        assertEquals(1, eiderParserRegions.size());
+        assertEquals(EiderParserRegionType.EIDER, eiderParserRegions.get(0).getType());
+
+        final ParsedEiderBlock eiderBlock = EiderParserUtils.parseEiderBlock(inputLines,
+            eiderParserRegions.get(0).getStart(), eiderParserRegions.get(0).getEnd(), errors);
+
+        assertNotNull(eiderBlock);
+        assertEquals("eider42", eiderBlock.getVersion());
+        assertEquals("com.foo.bar", eiderBlock.getPackageName());
     }
 
     @Test

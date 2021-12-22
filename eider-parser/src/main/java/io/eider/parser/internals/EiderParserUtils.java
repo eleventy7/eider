@@ -14,6 +14,9 @@ public final class EiderParserUtils
     private static final String RECORD = "record";
     private static final String MESSAGE = "message";
     private static final String RESIDENT_DATA = "resident";
+    private static final String EIDER = "eider";
+    private static final String ENUM = "enum";
+    private static final String DEMUXER = "demuxer";
 
     private EiderParserUtils()
     {
@@ -108,7 +111,8 @@ public final class EiderParserUtils
         }
     }
 
-    public static List<EiderParserRegion> extractRegions(List<InputLine> inputLines, List<EiderParserError> errors)
+    public static List<EiderParserRegion> extractRegions(List<InputLine> inputLines,
+                                                         List<EiderParserError> errors)
     {
         Objects.requireNonNull(inputLines);
         Objects.requireNonNull(errors);
@@ -161,7 +165,15 @@ public final class EiderParserUtils
             {
                 return EiderParserRegionType.RECORD;
             }
-            else if (line.getContents().startsWith("enum"))
+            else if (line.getContents().startsWith(DEMUXER))
+            {
+                return EiderParserRegionType.DEMUXER;
+            }
+            else if (line.getContents().startsWith(EIDER))
+            {
+                return EiderParserRegionType.EIDER;
+            }
+            else if (line.getContents().startsWith(ENUM))
             {
                 return EiderParserRegionType.ENUM;
             }
@@ -267,6 +279,56 @@ public final class EiderParserUtils
 
         parsingErrors.add(new EiderParserError(inputLines.get(start).getLineNumber(), 0, "Enum definition invalid",
             ParserIssueType.FATAL));
+        return null;
+    }
+
+    public static ParsedEiderBlock parseEiderBlock(List<InputLine> inputLines, int start, int end,
+                                                   List<EiderParserError> parsingErrors)
+    {
+        Objects.requireNonNull(parsingErrors);
+
+        for (int i = start; i <= end; i++)
+        {
+            final InputLine inputLine = inputLines.get(i);
+            final String inputLineContents = inputLine.getContents();
+            if (inputLineContents.startsWith(EIDER))
+            {
+                if (inputLineContents.contains("{"))
+                {
+                    String version = "eider2";
+                    String packageName = "undefined";
+                    for (int j = i + 1; j < end; j++)
+                    {
+                        final String currentLine = inputLines.get(j).getContents().trim().toLowerCase();
+                        String extractedValue = currentLine.substring(currentLine.indexOf("=") + 1,
+                            currentLine.lastIndexOf(";")).trim();
+
+                        if (currentLine.startsWith("version"))
+                        {
+                            version = extractedValue;
+                        }
+                        else if (currentLine.startsWith("packagename"))
+                        {
+                            packageName = extractedValue;
+                        }
+                    }
+                    return new ParsedEiderBlock(packageName, version);
+                }
+                else
+                {
+                    parsingErrors.add(new EiderParserError(inputLine.getLineNumber(), 0,
+                        "eider block definition invalid. " + "should be 'eider {'", ParserIssueType.FATAL));
+                    return null;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        parsingErrors.add(new EiderParserError(inputLines.get(start).getLineNumber(), 0,
+            "Eider block definition invalid", ParserIssueType.FATAL));
         return null;
     }
 

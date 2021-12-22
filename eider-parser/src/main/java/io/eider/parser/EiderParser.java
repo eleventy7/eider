@@ -12,6 +12,7 @@ import io.eider.parser.internals.ParsedResidentData;
 import io.eider.parser.output.EiderParserError;
 import io.eider.parser.output.EiderParserOutput;
 import io.eider.parser.output.ParserIssueType;
+import io.eider.parser.validator.EiderParserValidator;
 
 import java.util.List;
 
@@ -32,7 +33,11 @@ public class EiderParser
 
     private void validateIntermediate(EiderIntermediateParserOutput output)
     {
-
+        if (hasFatalErrors(output))
+        {
+            return;
+        }
+        EiderParserValidator.validate(output);
 
     }
 
