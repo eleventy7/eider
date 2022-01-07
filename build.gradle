@@ -160,17 +160,6 @@ project('eider-processor') {
     }
 }
 
-
-project('eider-parser') {
-    apply plugin: 'java-library'
-    apply plugin: 'checkstyle'
-
-    dependencies {
-        implementation project(path: ':eider-internals')
-        implementation project(path: ':eider-java-writer')
-    }
-}
-
 project('eider-test') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
