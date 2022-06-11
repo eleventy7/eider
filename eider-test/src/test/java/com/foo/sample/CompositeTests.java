@@ -19,7 +19,6 @@ package com.foo.sample;
 import com.foo.sample.gen.Order;
 import com.foo.sample.gen.OrderBook;
 import com.foo.sample.gen.OrderBookEntry;
-
 import com.foo.sample.gen.OrderBookEntryRepository;
 
 import io.eider.util.EiderHelper;

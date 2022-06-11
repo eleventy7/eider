@@ -18,6 +18,7 @@ package io.eider.javawriter.agrona;
 
 public final class Constants
 {
+    static final String IO_EIDER_UTIL = "io.eider.util";
     static final String MUTABLE_BUFFER = "mutableBuffer";
     static final String NEW_$_T = "new $T()";
     static final String UNSAFE_BUFFER = "unsafeBuffer";

@@ -26,6 +26,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.tools.JavaFileObject;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -58,6 +59,7 @@ import static io.eider.javawriter.agrona.Constants.FIELD;
 import static io.eider.javawriter.agrona.Constants.FLYWEIGHT_SET_UNDERLYING_BUFFER_INTERNAL_BUFFER_OFFSET;
 import static io.eider.javawriter.agrona.Constants.INDEX_DATA_FOR;
 import static io.eider.javawriter.agrona.Constants.INTERNAL_BUFFER;
+import static io.eider.javawriter.agrona.Constants.IO_EIDER_UTIL;
 import static io.eider.javawriter.agrona.Constants.ITERATOR;
 import static io.eider.javawriter.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN;
 import static io.eider.javawriter.agrona.Constants.JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN1;
@@ -90,9 +92,10 @@ public class AgronaSpecGenerator
     private static final String FLYWEIGHT_LOCK_KEY_ID = "flyweight.lockKeyId()";
     private static final String COMMITTED_SIZE = "CommittedSize";
     private static final String RETURN = "return ";
-    private static final String IO_EIDER_UTIL = "io.eider.util";
     private static final String FINAL = "final ";
     private static final String VALUE_JAVA_NIO_BYTE_ORDER_LITTLE_ENDIAN = ", value, java.nio.ByteOrder.LITTLE_ENDIAN)";
+    private final ClassName generatedAnnotation =
+        ClassName.get(IO_EIDER_UTIL, "Generated");
 
     public void generateSpecRepository(final ProcessingEnvironment pe, final PreprocessedEiderMessage object)
     {
@@ -105,6 +108,8 @@ public class AgronaSpecGenerator
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addMethods(buildRepositoryMethods(object))
             .addFields(buildRepositoryFields(object))
             .addMethods(buildRepositoryIndexMethods(object))
@@ -322,6 +327,8 @@ public class AgronaSpecGenerator
 
         TypeSpec allItems = TypeSpec.classBuilder(UNFILTERED_ITERATOR)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addSuperinterface(iteratorGen)
             .addField(FieldSpec.builder(ClassName.get(object.getPackageNameGen(), object.getName()),
                 "iteratorFlyweight", Modifier.PRIVATE).initializer("new " + object.getName() + "()").build())
@@ -895,6 +902,8 @@ public class AgronaSpecGenerator
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(object.getName())
             .addModifiers(Modifier.PUBLIC)
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addField(buildEiderIdField(object.getEiderId(), object.mustBuildHeader()));
 
         builder.addFields(offsetsForFields(object, records, state, globalState))
@@ -1905,6 +1914,8 @@ public class AgronaSpecGenerator
                                    AgronaWriterGlobalState globalState)
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(rec.getName())
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addModifiers(Modifier.PUBLIC);
 
         AgronaWriterState state = new AgronaWriterState();

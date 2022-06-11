@@ -16,6 +16,7 @@
 
 package io.eider.javawriter.agrona;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
@@ -33,6 +34,10 @@ import javax.lang.model.element.Modifier;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,6 +99,7 @@ public class AgronaWriter implements EiderCodeWriter
                 }
             }
             generateEiderHelper(pe);
+            generateEiderGeneratedAttribute(pe);
             generateEiderHelperInterfaces(pe);
             generateEiderHelperInterfaceForUnqiueIndex(pe);
         }
@@ -126,6 +132,46 @@ public class AgronaWriter implements EiderCodeWriter
         { // write the file
             JavaFileObject source = pe.getFiler()
                 .createSourceFile(packageName + ".IndexUpdateConsumer");
+            Writer writer = source.openWriter();
+            javaFile.writeTo(writer);
+            writer.flush();
+            writer.close();
+        } catch (IOException e)
+        {
+            //normal
+        }
+    }
+
+    private void generateEiderGeneratedAttribute(ProcessingEnvironment pe)
+    {
+        final String packageName = IO_EIDER_UTIL;
+
+        TypeSpec.Builder builder = TypeSpec.annotationBuilder("Generated")
+            .addModifiers(Modifier.PUBLIC)
+            .addJavadoc("Indicates that the code was generated; useful to eliminate the generated code when using"
+                + " static analysis tooling.")
+            .addAnnotation(AnnotationSpec.builder(Retention.class)
+                .addMember("value", "$T.CLASS", RetentionPolicy.class).build())
+            .addAnnotation(AnnotationSpec.builder(Target.class)
+                .addMember("value", "$T.TYPE", ElementType.class).build());
+
+        MethodSpec acceptBuilder = MethodSpec.methodBuilder("value")
+            .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+            .addJavadoc("Name of the generator that generated the code")
+            .returns(String[].class)
+            .build();
+
+        builder.addMethod(acceptBuilder);
+
+        TypeSpec generated = builder.build();
+
+        JavaFile javaFile = JavaFile.builder(packageName, generated)
+            .build();
+
+        try
+        { // write the file
+            JavaFileObject source = pe.getFiler()
+                .createSourceFile(packageName + ".Generated");
             Writer writer = source.openWriter();
             javaFile.writeTo(writer);
             writer.flush();

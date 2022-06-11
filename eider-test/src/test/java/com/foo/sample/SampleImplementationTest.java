@@ -17,7 +17,9 @@
 package com.foo.sample;
 
 import com.foo.sample.gen.EiderObject;
+
 import com.foo.sample.gen.EiderObjectRepository;
+
 import com.foo.sample.gen.SequenceGenerator;
 
 import io.eider.util.EiderHelper;

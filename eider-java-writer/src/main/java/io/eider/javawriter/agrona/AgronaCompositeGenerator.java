@@ -16,6 +16,7 @@
 
 package io.eider.javawriter.agrona;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -41,8 +42,13 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.eider.javawriter.agrona.Constants.IO_EIDER_UTIL;
+
+
 public class AgronaCompositeGenerator
 {
+    private final ClassName generatedAnnotation =
+        ClassName.get(IO_EIDER_UTIL, "Generated");
 
     public void generateCompositeRepository(final ProcessingEnvironment pe,
                                             final PreprocessedEiderComposite composite)
@@ -56,6 +62,8 @@ public class AgronaCompositeGenerator
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(composite.getRepositoryName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addMethods(buildCompositeRepositoryMethods(composite))
             .addFields(buildCompositeRepositoryFields(composite))
             .addTypes(buildCompositeRepositoryIterators(composite));
@@ -90,6 +98,8 @@ public class AgronaCompositeGenerator
 
         TypeSpec allItems = TypeSpec.classBuilder(Constants.UNFILTERED_ITERATOR)
             .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addSuperinterface(iteratorGen)
             .addField(FieldSpec.builder(ClassName.get(composite.getPackageNameGen(), composite.getName()),
                 "iteratorFlyweight", Modifier.PRIVATE).initializer("new " + composite.getName() + "()").build())
@@ -331,6 +341,8 @@ public class AgronaCompositeGenerator
     {
         TypeSpec.Builder builder = TypeSpec.classBuilder(composite.getName())
             .addFields(buildCompositeFields(composite, globalState))
+            .addAnnotation(AnnotationSpec.builder(generatedAnnotation).addMember("value", "\"io.eider\"").build())
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unused\"").build())
             .addMethods(buildCompositeMethods(composite))
             .addModifiers(Modifier.PUBLIC);
         TypeSpec generated = builder.build();

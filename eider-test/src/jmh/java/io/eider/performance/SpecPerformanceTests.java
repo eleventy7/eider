@@ -17,6 +17,7 @@
 package io.eider.performance;
 
 import com.foo.sample.gen.EiderObject;
+
 import com.foo.sample.gen.LongObject;
 
 import org.agrona.concurrent.UnsafeBuffer;

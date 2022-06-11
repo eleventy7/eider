@@ -18,11 +18,13 @@ package com.foo.sample;
 
 import io.eider.annotation.EiderSpec;
 
-@EiderSpec(name = "RingBufferFlyweight", header = false)
+@EiderSpec(name = "CreateRfqFlyweight", header = false)
 public class RingBufferSampleSpec
 {
-    private short side;
-    private long price;
+    private int correlation;
+    private long expireTime;
     private long quantity;
-    private short asset;
+    private short side;
+    private int instrumentId;
+    private int createdByUserId;
 }

@@ -63,11 +63,11 @@ allprojects {
     }
 
     dependencies {
-        implementation group: 'org.agrona', name: 'agrona', version: '1.14.0'
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.32'
-        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.9'
+        implementation group: 'org.agrona', name: 'agrona', version: '1.15.1'
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
+        implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.2'
-        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '9.2'
+        checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '10.2'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.2'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
     }
@@ -76,7 +76,7 @@ allprojects {
         checkstyle {
             configFile = "${rootDir}/config/checks.xml" as File
             configProperties = ["suppressionFile": "${rootDir}/config/suppressions.xml"]
-            toolVersion = '9.2'
+            toolVersion = '10.2'
             ignoreFailures = false
             showViolations = true
         }
@@ -201,11 +201,11 @@ project('eider-test') {
     dependencies {
         annotationProcessor project(':eider-processor')
         jmhImplementation project
-        jmhImplementation "org.openjdk.jmh:jmh-core:1.33"
-        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.33"
+        jmhImplementation "org.openjdk.jmh:jmh-core:1.35"
+        jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.35"
         implementation project(path: ':eider-processor')
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
-        implementation "org.openjdk.jmh:jmh-core:1.33"
+        implementation "org.openjdk.jmh:jmh-core:1.35"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.1'
