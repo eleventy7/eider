@@ -18,8 +18,8 @@ plugins {
     id 'java'
     id 'idea'
     id 'checkstyle'
+    id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
     id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version '5.2.0' apply false
 }
 
 defaultTasks 'clean', 'check', 'build', 'test'
@@ -125,13 +125,21 @@ project('eider-java-writer') {
 project('eider-processor') {
     apply plugin: 'java-library'
     apply plugin: 'checkstyle'
-    apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: 'maven-publish'
+    apply plugin: 'com.github.johnrengelman.shadow'
 
     dependencies {
         implementation project(path: ':eider-internals')
         implementation project(path: ':eider-java-writer')
     }
+
+    shadowJar {
+        dependsOn(':eider-internals:jar')
+        dependsOn(':eider-java-writer:jar')
+        archiveClassifier.set('')
+    }
+
+    jar.finalizedBy shadowJar
 
     publishing {
         repositories {
@@ -146,9 +154,6 @@ project('eider-processor') {
         }
 
         publications {
-            shadow(MavenPublication) { publication ->
-                project.shadow.component(publication)
-            }
             ghp(MavenPublication) {
                 groupId project.group
                 artifactId project.name
@@ -166,6 +171,7 @@ project('eider-test') {
 
     def generatedDir = file("${buildDir}/generated")
 
+
     sourceSets {
         generated.java.srcDir generatedDir
         jmh {
@@ -182,6 +188,7 @@ project('eider-test') {
     }
 
     compileJava {
+        dependsOn(':eider-processor:shadowJar')
         String relativePath = "build/generated/src/main/java"
         sourceSets.main.java { srcDir relativePath }
         File generatedSourceDir = project.file("build/generated/src/main/java")
