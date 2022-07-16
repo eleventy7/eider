@@ -39,10 +39,7 @@ allprojects {
     compileJava {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
-        options.compilerArgs.addAll(['--add-exports', 'java.base/java.lang.reflect=ALL-UNNAMED'])
-        options.compilerArgs.addAll(['--add-exports', 'java.base/java.net=ALL-UNNAMED'])
         options.compilerArgs.addAll(['--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED'])
-        options.compilerArgs.addAll(['--add-exports', 'jdk.unsupported/sun.misc=ALL-UNNAMED'])
         options.encoding = 'UTF-8'
         options.deprecation = true
     }
@@ -50,10 +47,7 @@ allprojects {
     compileTestJava {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
-        options.compilerArgs.addAll(['--add-exports', 'java.base/java.lang.reflect=ALL-UNNAMED'])
-        options.compilerArgs.addAll(['--add-exports', 'java.base/java.net=ALL-UNNAMED'])
         options.compilerArgs.addAll(['--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED'])
-        options.compilerArgs.addAll(['--add-exports', 'jdk.unsupported/sun.misc=ALL-UNNAMED'])
         options.encoding = 'UTF-8'
         options.deprecation = true
     }
@@ -63,7 +57,7 @@ allprojects {
     }
 
     dependencies {
-        implementation group: 'org.agrona', name: 'agrona', version: '1.15.2'
+        implementation group: 'org.agrona', name: 'agrona', version: '1.16.0'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.2'
@@ -170,7 +164,6 @@ project('eider-test') {
     apply plugin: 'checkstyle'
 
     def generatedDir = file("${buildDir}/generated")
-
 
     sourceSets {
         generated.java.srcDir generatedDir
