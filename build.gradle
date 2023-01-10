@@ -60,7 +60,7 @@ allprojects {
         implementation group: 'org.agrona', name: 'agrona', version: '1.16.0'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
         implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11'
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.2'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.2'
         checkstyle group: 'com.puppycrawl.tools', name: 'checkstyle', version: '10.3'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.2'
         implementation "org.hdrhistogram:HdrHistogram:2.1.12"
@@ -208,7 +208,7 @@ project('eider-test') {
         implementation "org.openjdk.jmh:jmh-core:1.35"
         testImplementation project(path: ':eider-processor')
         testImplementation sourceSets.generated.output
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.1'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.2'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.1'
     }
 
