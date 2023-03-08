@@ -1,6 +1,6 @@
 # Eider
 
-### Eider is not suitable for production usage as is. Further development on this repo will be done only as needed for changes to Aeron Cookbook.
+### Eider is not suitable for production usage, and further development on Eider has ended.
 
 ![Java CI](https://github.com/eleventy7/eider/workflows/Java%20CI/badge.svg) [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/eleventy7/eider.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/eleventy7/eider/context:java) [![Known Vulnerabilities](https://snyk.io/test/github/eleventy7/eider/badge.svg?targetFile=build.gradle)](https://snyk.io/test/github/eleventy7/eider?targetFile=build.gradle)
 
